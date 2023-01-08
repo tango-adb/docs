@@ -3,12 +3,12 @@ module.exports = {
     title: 'Unofficial ADB Book',
     tagline: 'Deep-dive into ADB',
     url: 'https://yume-chan.github.io',
-    baseUrl: '/ya-webadb/book/',
+    baseUrl: '/unofficial-adb-book/',
     onBrokenLinks: 'throw',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/favicon.ico',
     organizationName: 'yume-chan',
-    projectName: 'ya-webadb', // Usually your repo name.
+    projectName: 'unofficial-adb-book', // Usually your repo name.
     themeConfig: {
         navbar: {
             title: 'Unofficial ADB Book',
@@ -30,7 +30,7 @@ module.exports = {
                     label: 'Commands',
                 },
                 {
-                    href: 'https://github.com/yume-chan/ya-webadb',
+                    href: 'https://github.com/yume-chan/unofficial-adb-book',
                     label: 'GitHub',
                     position: 'right',
                 },
@@ -51,7 +51,7 @@ module.exports = {
                     routeBasePath: '/',
                     // Please change this to your repo.
                     editUrl:
-                        'https://github.com/yume-chan/ya-webadb/edit/main/',
+                        'https://github.com/yume-chan/unofficial-adb-book/edit/main/',
                     remarkPlugins: [require('./scripts/plantuml')],
                 },
                 theme: {
