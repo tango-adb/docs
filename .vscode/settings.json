@@ -1,9 +1,12 @@
 {
-  "editor.tabSize": 4,
-"editor.defaultFormatter": "esbenp.prettier-vscode",
-"cSpell.words": [
-    "runtimes",
-    "Sockify",
-    "yume"
-]
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "cSpell.words": [
+        "runtimes",
+        "Sockify",
+        "yume"
+    ],
+    "yaml.schemas": {
+        "https://json.schemastore.org/github-workflow.json": ".github/workflows/deploy.yml"
+    }
 }
