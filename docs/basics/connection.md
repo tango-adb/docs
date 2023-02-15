@@ -2,14 +2,14 @@
 sidebar_position: 3
 ---
 
+# Connection
+
 <!--
 cspell: ignore bootloader
 cspell: ignore enduml
 cspell: ignore mkdir
 cspell: ignore startuml
 -->
-
-# Connection
 
 In native ADB architecture, once ADB **server** detects a new device, it initiates a connection by sending a `CNXN` [packet](./packet.md).
 

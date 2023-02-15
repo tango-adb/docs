@@ -2,12 +2,12 @@
 sidebar_position: 1
 ---
 
+# Architecture
+
 <!--
 cspell: ignore libusb
 cspell: ignore nodaemon
 -->
-
-# Architecture
 
 This part describes the architecture of native ADB and Web ADB, and why there are designed in this way.
 
@@ -112,35 +112,3 @@ Web ADB reuses native ADB daemons, but there is no **client**/**server**: One ap
 ```
 
 </div>
-
-### Core
-
-**Core** is the `@yume-chan/adb` package. It generates data in ADB protocol, without "host prefix" (not needed because packets are directly sent to **daemons** via a **backend**).
-
-### Backend
-
-One **backend** defines one method to transmit and receive ADB packets. There are already multiple backend implementations, for example `@yume-chan/adb-backend-usb` and `@yume-chan/adb-backend-ws`.
-
-One **core** instance requires one **backend** instance, so it only connects to one device.
-
-Because JavaScript runtimes are generally more isolated, sharing devices between multiple application is not a consideration. However, it is still very easy to share a **core** instance within a single application, and if a runtime has more privileges, sharing **core** using a custom protocol is also not impossible.
-
-Having Backend as an independent part also makes it extremely easy to port to other runtimes (Web Browsers, Node.js, Electron, etc.).
-
-Possible Backend implementations:
-
-* Web Browsers
-  * WebUSB API (USB)
-  * WebSocket + Custom WebSockify forwarder (TCP)
-* Node.js/Electron
-  * Any USB libraries (USB)
-  * `net` module (TCP)
-  * WebSocket + Custom WebSockify forwarder (TCP)
-
-## Comparison
-
-|                                  | Native ADB                             | Web ADB              |
-| -------------------------------- | -------------------------------------- | -------------------- |
-| Who implements all ADB commands? | Client                                 | Core                 |
-| Who directly talks to device?    | Server                                 | Backend              |
-| How does them talk internally?   | TCP Socket (variation of ADB protocol) | JavaScript API calls |

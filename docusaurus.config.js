@@ -21,13 +21,13 @@ module.exports = {
                     type: 'doc',
                     docId: 'basics/intro',
                     position: 'left',
-                    label: 'Basics',
+                    label: 'ADB',
                 },
                 {
                     type: 'doc',
-                    docId: 'commands/shell',
+                    docId: 'adb/shell',
                     position: 'left',
-                    label: 'Commands',
+                    label: 'Tango',
                 },
                 {
                     href: 'https://github.com/yume-chan/unofficial-adb-book',
