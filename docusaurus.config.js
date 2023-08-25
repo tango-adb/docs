@@ -25,7 +25,7 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    docId: 'adb/shell',
+                    docId: 'adb/installation',
                     position: 'left',
                     label: 'Tango',
                 },

@@ -2,8 +2,20 @@
     "editor.tabSize": 4,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "cSpell.words": [
+        "bugreport",
+        "dumpsys",
+        "framebuffer",
+        "getprop",
+        "logcat",
+        "PKCS",
+        "RSASSA",
         "runtimes",
+        "Scrcpy",
+        "sdcard",
         "Sockify",
+        "tcpip",
+        "webcrypto",
+        "webusb",
         "yume"
     ],
     "yaml.schemas": {
