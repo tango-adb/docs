@@ -2,13 +2,13 @@
 module.exports = {
     title: 'Unofficial ADB Book',
     tagline: 'Deep-dive into ADB',
-    url: 'https://yume-chan.github.io',
-    baseUrl: '/unofficial-adb-book/',
+    url: 'https://tango-adb.github.io',
+    baseUrl: '/docs/',
     onBrokenLinks: 'throw',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/favicon.ico',
-    organizationName: 'yume-chan',
-    projectName: 'unofficial-adb-book', // Usually your repo name.
+    organizationName: 'tango-adb',
+    projectName: 'docs', // Usually your repo name.
     themeConfig: {
         navbar: {
             title: 'Unofficial ADB Book',
@@ -30,7 +30,7 @@ module.exports = {
                     label: 'Tango',
                 },
                 {
-                    href: 'https://github.com/yume-chan/unofficial-adb-book',
+                    href: 'https://github.com/tango-adb/docs',
                     label: 'GitHub',
                     position: 'right',
                 },
@@ -51,7 +51,7 @@ module.exports = {
                     routeBasePath: '/',
                     // Please change this to your repo.
                     editUrl:
-                        'https://github.com/yume-chan/unofficial-adb-book/edit/main/',
+                        'https://github.com/tango-adb/docs/edit/main/',
                     remarkPlugins: [require('./scripts/plantuml')],
                 },
                 theme: {
