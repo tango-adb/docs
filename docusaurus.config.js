@@ -6,7 +6,7 @@ module.exports = {
     baseUrl: '/docs/',
     onBrokenLinks: 'throw',
     onBrokenMarkdownLinks: 'warn',
-    favicon: 'img/favicon.ico',
+    favicon: 'img/logo.svg',
     organizationName: 'tango-adb',
     projectName: 'docs', // Usually your repo name.
     themeConfig: {
@@ -52,7 +52,7 @@ module.exports = {
                     // Please change this to your repo.
                     editUrl:
                         'https://github.com/tango-adb/docs/edit/main/',
-                    remarkPlugins: [require('./scripts/plantuml')],
+                    remarkPlugins: [require('./scripts/plantuml'), require('./scripts/ts2js.js'), [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }]],
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),

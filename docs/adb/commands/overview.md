@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+slug: ./
 ---
 
 # Overview
@@ -11,10 +12,10 @@ Exposed as fields of `Adb` class, these are implemented by ADB daemon itself.
 * `subprocess`: Spawn processes on device and read/write their stdin/stdout/stderr
 * `power`: Shutdown/reboot device
 * `reverse`: Manage reverse port forwarding
-* [`tcpip`](./tcpip): Enable/disable ADB over WiFi
+* [`tcpip`](./tcpip.md): Enable/disable ADB over WiFi
 * `getProp`: Shorthand for `shell getprop`
-* [`rm`](./rm): Delete files on device
-* `sync`: Interact with device filesystem
+* [`rm`](./rm.md): Delete files on device
+* [`sync`](./sync/overview.md): Interact with device filesystem
 * `framebuffer`: Capture device screen
 
 ## Binary Wrappers

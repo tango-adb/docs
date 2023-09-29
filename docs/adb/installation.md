@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+slug: ./
 ---
 
 # Quick Start
@@ -9,20 +10,17 @@ cspell: ignore struct
 cspell: ignore webusb
 -->
 
-Tango is separated into many packages. For it to work, you need at least two packages:
+Tango is separated into many packages. Generally, you need at least three packages:
 
 1. The core [`@yume-chan/adb`](https://www.npmjs.com/package/@yume-chan/adb) package
-2. A transport connection to communicate with devices
+2. Polyfill for Web Stream API and utilities for streams [`@yume-chan/stream-extra`](https://www.npmjs.com/package/@yume-chan/stream-extra)
+3. A transport object to communicate with devices
 
+```sh npm2yarn
+npm i @yume-chan/adb @yume-chan/stream-extra
 ```
-npm i @yume-chan/adb
-```
 
-## Working Modes
-
-Tango has two working modes (called `Transport`s). This also affects what type of transport connection package you need.
-
-### Direct Connection Mode
+## Direct Connection Transport
 
 In this mode, Google ADB is not required for Tango to work (in fact, Google ADB must not be running in order to use this mode). Tango communicates with Android devices directly.
 
@@ -30,52 +28,60 @@ This mode is suitable for running on end-users' devices where Google ADB is not 
 
 To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/adb` package, with a daemon connection package, and a credential store package.
 
-#### Daemon Connection Packages
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
 
-| Connection | Browser                           | Node.js                               |
-| ---------- | --------------------------------- | ------------------------------------- |
-| USB        | `npm i @yume-chan/adb-daemon-usb` | `npm i @yume-chan/adb-daemon-usb usb` |
-| TCP        | TODO                              | TODO                                  |
+```sh npm2yarn
+npm i @yume-chan/adb-daemon-usb @yume-chan/adb-credential-web
+```
 
-#### Credential Store
+</TabItem>
+<TabItem value="node" label="Node.js">
 
-| Browser                         | Node.js       |
-| ------------------------------- | ------------- |
-| `@yume-chan/adb-credential-web` | See Next Step |
+```sh npm2yarn
+npm i @yume-chan/adb-daemon-usb usb
+```
 
-#### Next Step
+</TabItem>
+</Tabs>
 
-| Connection | Browser                                | Node.js                             |
-| ---------- | -------------------------------------- | ----------------------------------- |
-| USB        | [Connect to devices](./daemon/browser) | [Connect to devices](./daemon/node) |
-| TCP        | TODO                                   | TODO                                |
+**Next Step:** [Connect to devices](./daemon/credential-store.md)
 
-### Google ADB Client Mode
+## Google ADB Client Transport
 
-In this mode, Tango talks to a Google ADB server, which is either running on the same machine or on a remote machine. This allows other ADB-based tools (e.g. Android Studio, Scrcpy) to work alongside Tango.
+In this mode, Tango talks to a Google ADB server, which can either run on the same machine or on a remote machine. This allows Tango to work with other ADB-based tools (e.g. ADB client, Android Studio, Scrcpy, etc.).
 
 To use this mode, you will use the `AdbServerTransport` class from `@yume-chan/adb` package, with a server connection package.
 
-#### Server Connection Packages
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
 
-| Connection | Browser | Node.js                          |
-| ---------- | ------- | -------------------------------- |
-| TCP        | TODO    | `@yume-chan/adb-server-node-tcp` |
+Currently there is no Web API that allows TCP connection. Looking forward to the [Direct Socket API](https://github.com/WICG/direct-sockets).
 
-#### Connect to local ADB server
+</TabItem>
+<TabItem value="node" label="Node.js">
 
-```ts
+```sh npm2yarn
+npm i @yume-chan/adb-server-node-tcp
+```
+
+Example:
+
+```ts transpile
 import { Adb, AdbServerClient } from "@yume-chan/adb";
 import { AdbServerNodeTcpConnection } from "@yume-chan/adb-server-node-tcp";
 
-const connection = new AdbServerNodeTcpConnection({
+const connection: AdbServerNodeTcpConnection = new AdbServerNodeTcpConnection({
   host: "localhost",
   port: 5037,
 });
-const client = new AdbServerClient(connection);
-const devices = await client.getDevices();
+const client: AdbServerClient = new AdbServerClient(connection);
+const devices: Adb[] = await client.getDevices();
 
 for (const device of devices) {
   const result = await device.subprocess.spawnAndWait("echo 'Hello, World!'");
 }
 ```
+
+</TabItem>
+</Tabs>

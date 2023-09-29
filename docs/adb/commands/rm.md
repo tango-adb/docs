@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# `rm`
+# rm
 
 Delete files on device. This method provides compatibilities across all Android versions.
 
@@ -19,18 +19,18 @@ declare class Adb {
 
 ### Delete a single file
 
-```ts
+```ts transpile
 await adb.rm("/sdcard/Download/foo.txt");
 ```
 
 ### Delete a directory
 
-```ts
+```ts transpile
 await adb.rm("/sdcard/Download/foo", { recursive: true });
 ```
 
 ### Delete multiple files
 
-```ts
+```ts transpile
 await adb.rm(["/sdcard/Download/foo.txt", "/sdcard/Download/bar.txt"]);
 ```
