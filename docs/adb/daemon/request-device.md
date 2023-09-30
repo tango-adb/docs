@@ -7,13 +7,13 @@ import TabItem from "@theme/TabItem";
 
 # Request device permission
 
-## Request permission
-
 :::info
 
-This only applies to browsers. For Node.js, you can skip to the next step.
+This page only applies to browsers. For Node.js, you can skip to the [next step](./get-devices.md).
 
 :::
+
+## Request permission
 
 Access to USB devices in browsers requires user's consent. This method requires [user activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation), such as in a click event handler.
 
