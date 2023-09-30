@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 import Tabs from "@theme/Tabs";
@@ -14,7 +14,7 @@ import TabItem from "@theme/TabItem";
 
 In supported Web browsers, you can use the native implementation.
 
-:::note
+:::info
 
 Electron renderer process does have WebUSB API, but it doesn't have the same permission system as browsers.
 

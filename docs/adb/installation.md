@@ -26,26 +26,65 @@ In this mode, Google ADB is not required for Tango to work (in fact, Google ADB 
 
 This mode is suitable for running on end-users' devices where Google ADB is not installed, or on mobile devices where Google ADB is not available.
 
-To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/adb` package, with a daemon connection package, and a credential store package.
+To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/adb` package with a daemon connection and a credential store.
 
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
+<Tabs className="runtime-tabs" groupId="direct-connection">
+<TabItem value="usb" label="USB">
+
+The `@yume-chan/adb-daemon-usb` package provides a daemon connection that uses WebUSB API.
 
 ```sh npm2yarn
-npm i @yume-chan/adb-daemon-usb @yume-chan/adb-credential-web
+npm i @yume-chan/adb-daemon-usb
+```
+
+</TabItem>
+<TabItem value="tcp" label="TCP">
+
+Currently there is no Web API that allows TCP connection. Looking forward to the [Direct Socket API](https://github.com/WICG/direct-sockets).
+
+</TabItem>
+</Tabs>
+
+The `@yume-chan/adb-credential-web` package provides a credential store that works in browsers.
+
+```sh npm2yarn
+npm i @yume-chan/adb-credential-web
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
+<Tabs className="runtime-tabs" groupId="direct-connection">
+<TabItem value="usb" label="USB">
+
+The `@yume-chan/adb-daemon-usb` package provides a daemon connection that uses WebUSB API.
+
+The `usb` package provides a WebUSB implementation for Node.js.
 
 ```sh npm2yarn
 npm i @yume-chan/adb-daemon-usb usb
 ```
 
+We will create a credential store manually, so you don't need a package for that.
+
+</TabItem>
+<TabItem value="tcp" label="TCP">
+
+We will use the built-in `net` module to create TCP connections, and create other parts manually, so don't need any additional package.
+
+</TabItem>
+</Tabs>
 </TabItem>
 </Tabs>
 
+You can also create your own daemon connection and credential store. You will see how to do this in next steps.
+
+:::note
+
 **Next Step:** [Connect to devices](./daemon/credential-store.md)
+
+:::
 
 ## Google ADB Client Transport
 

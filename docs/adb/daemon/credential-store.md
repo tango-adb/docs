@@ -20,7 +20,7 @@ import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
 const CredentialStore: AdbWebCredentialStore = new AdbWebCredentialStore();
 ```
 
-Optionally, you can provide a name for your keys. On devices with Android 11 or newer, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices".
+Optionally, you can provide a name for your keys. On devices with Android 11 or newer, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `nouser@nohostname`.
 
 ```ts transpile
 import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
@@ -115,6 +115,55 @@ const CredentialStore = new AdbNodeJsCredentialStore(
   `${userInfo().username}@${hostname()}`,
 );
 ```
+
+</TabItem>
+<TabItem value="custom" label="Custom">
+
+Tango expects each private key to have two fields:
+
+- `buffer`: A `Uint8Array` (or `Buffer` in Node.js) containing the private key in PKCS#8 format.
+- `name`: A `string`, the name of the key. On devices with Android 11 or newer, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `nouser@nohostname`.
+
+To create a custom credential store implementation, you need to provide two methods:
+
+- `generateKey`: Generate a new RSA private key with a modulus length of 2048 bits, a public exponent of 65537, and use SHA-1 as the hash algorithm. It can either synchronously or asynchronously return a private key in the above format. It should store the generated key somewhere so that it can be retrieved later.
+- `iterateKeys`: Iterate through all stored private keys. It can return either a synchronous or an asynchronous iterator. Each item in the iterator must be a private key in the above format. The iterator can have either zero, one, or multiple items.
+
+ADB protocol uses two authentication methods:
+
+1. Signature: The device generates a challenge and sends it to the client. The client signs the challenge with the private key and sends the signature back to the device. The device verifies the signature with all trusted public keys.
+2. Public key: The client sends its public key to the device. The device displays a dialog asking the user to confirm the connection. If the user confirms, the connection will be established.
+
+The authentication process is as follows:
+
+1. Tango calls `iterateKeys`
+   1. For each key, Tango uses it in signature authentication. If the authentication succeeds, no further steps will be taken.
+2. Tango calls `iterateKeys` again
+   1. If it returns at least one key, Tango uses the first key in public key authentication. No matter whether the authentication succeeds or not, no further steps will be taken.
+3. `generateKey` is called, and the generated key is used in public key authentication.
+
+See the Node.js tab for an example.
+
+</TabItem>
+</Tabs>
+
+<Tabs className="runtime-tabs" groupId="direct-connection">
+<TabItem value="usb" label="USB">
+
+:::note
+
+**Next Step:** [Get connection over USB](./usb/device-manager.md)
+
+:::
+
+</TabItem>
+<TabItem value="tcp" label="TCP">
+
+:::note
+
+**Next Step:** [Get connection over TCP](./tcp/enable.md)
+
+:::
 
 </TabItem>
 </Tabs>

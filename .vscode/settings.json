@@ -16,6 +16,7 @@
         "tcpip",
         "webcrypto",
         "webusb",
+        "wirelessly",
         "yume"
     ],
     "yaml.schemas": {

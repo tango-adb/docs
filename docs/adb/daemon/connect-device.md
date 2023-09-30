@@ -7,29 +7,9 @@ import TabItem from "@theme/TabItem";
 
 # Connect to device
 
-## Open a connection
-
-Only one process across the whole operating system can access a USB device at a time, and only one tab in a browser can access a USB device at a time. That's why Tango doesn't work with Google ADB in direct connection mode.
-
-Requesting permission to a device doesn't automatically request the exclusive access. You need to call `connect` to do it.
-
-```ts transpile
-import { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
-import { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
-
-const connection: ReadableWritablePair<
-  AdbPacketData,
-  Consumable<AdbPacketInit>
-> = await device.connect();
-```
-
-The connection might fail due to various reasons, such as:
-
-1. Another process (e.g. Google ADB, another browser) already has the exclusive access to the device. Google ADB might be indirectly started by other tools, such as Android Studio, Visual Studio with Mobile development workloads, Godot Editor, Scrcpy...
-2. Another browser tab already has the exclusive access to the device. Such as another instance of your app, or another app that uses Tango or WebUSB.
-3. The device is disconnected between `requestDevice` and `connect`.
-
 ## Authenticate with device
+
+Once you have a `connection` to the device, you can use `AdbDaemonTransport.authenticate` to initiate the handshake and authenticate with the device.
 
 ```ts transpile
 import { AdbDaemonTransport } from "@yume-chan/adb";
@@ -63,4 +43,8 @@ import { Adb } from "@yume-chan/adb";
 const adb: Adb = new Adb(transport);
 ```
 
+:::note
+
 **Next Step:** See [commands](../commands/overview.md) for how to use the `Adb` instance.
+
+:::

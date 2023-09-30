@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Enable/disable ADB over WiFi.
 
-:::note
+:::info
 
 Toggling ADB over WiFi will restart ADB daemon, causing all existing connections to be closed.
 
