@@ -12,12 +12,12 @@ import TabItem from "@theme/TabItem";
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
 
-WebUSB's [`USB#getDevices`](https://wicg.github.io/webusb/#dom-usb-getdevices) method returns all devices that are currently connected and have been granted permission to access by the user.
+WebUSB's [`USB#getDevices`](https://developer.mozilla.org/en-US/docs/Web/API/USB/getDevices) method returns all devices that are currently connected and have been granted permission to access by the user.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-Previously, we have disabled the permission system in `usb` package's WebUSB implementation, so the [`USB#getDevices`](https://wicg.github.io/webusb/#dom-usb-getdevices) method returns all devices that are currently connected.
+Previously, we have disabled the permission system in `usb` package's WebUSB implementation, so the [`USB#getDevices`](https://developer.mozilla.org/en-US/docs/Web/API/USB/getDevices) method returns all devices that are currently connected.
 
 </TabItem>
 </Tabs>
@@ -38,7 +38,7 @@ const device: AdbDaemonWebUsbDevice = devices[0];
 
 ## Filter connected devices
 
-By default, `getDevices` method only returns devices with ADB interface, but custom filters can be provided to limit which devices will be returned. Each filter is an object with the following fields:
+By default, `getDevices` method only returns devices with ADB interface, but custom filters can be provided to select which devices will be returned. Each filter is an object with the following fields:
 
 - `classCode`: (Required) The class code of the ADB interface.
 - `subclassCode`: (Required) The subclass code of the ADB interface.

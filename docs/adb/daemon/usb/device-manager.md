@@ -7,7 +7,7 @@ import TabItem from "@theme/TabItem";
 
 # Get device manager
 
-`@yume-chan/adb-daemon-webusb` package provides an abstraction over [WebUSB](https://wicg.github.io/webusb/) API. It can use varies WebUSB compatible implementations.
+`@yume-chan/adb-daemon-webusb` package provides an abstraction over [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations.
 
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">

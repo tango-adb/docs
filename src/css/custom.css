@@ -29,13 +29,13 @@
 }
 
 .tabs {
-  border: 1px solid #666666;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  border: 1px solid #555;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 }
 
 .tabs > .tabs__item {
-  border-right: 1px solid #666666;
+  border-right: 1px solid #555;
   border-radius: 0;
   padding-top: 10px;
   padding-bottom: 10px;
@@ -44,10 +44,10 @@
 }
 
 .tabs + div {
-  border: 1px solid #666666;
+  border: 1px solid #555;
   border-top-width: 0;
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
   margin-top: 0 !important;
   overflow: hidden;
 }
@@ -57,4 +57,8 @@
   padding-bottom: 16px;
   padding-left: 12px;
   padding-right: 12px;
+}
+
+div[role="tabpanel"] > div:nth-child(1) > div > .prism-code {
+    border-radius: 0;
 }

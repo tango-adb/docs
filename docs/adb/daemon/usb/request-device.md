@@ -15,7 +15,7 @@ This page only applies to browsers. For Node.js, you can skip to the [next step]
 
 ## Request permission
 
-In Web browsers, each website needs to request the permission to access each device separately using WebUSB's [`USB#requestDevice`](https://wicg.github.io/webusb/#dom-usb-requestdevice) method. The `AdbDaemonWebUsbDeviceManager#requestDevice` method wraps that method, passes filters for ADB devices, and converts results to `AdbDaemonWebUsbDevice` instances.
+In Web browsers, each website needs to request the permission to access each device separately using WebUSB's [`USB#requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice) method. The `AdbDaemonWebUsbDeviceManager#requestDevice` method wraps that method, passes filters for ADB devices, and converts results to `AdbDaemonWebUsbDevice` instances.
 
 `requestDevice` requires [user activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation), which means it can only be called in response to a mouse click or keyboard press event.
 
@@ -99,4 +99,4 @@ If a device is connected and the permission to access it was granted, but you do
 device.raw.forget();
 ```
 
-Because there is no way to retrieve permission-granted but disconnected devices (unless you got the `device` before it was disconnected), it's also not possible to drop permissions for them.
+Because there is no way to retrieve permission-granted but disconnected devices (unless you got the `device` before it was disconnected), it's also not possible to drop permissions for them. (See https://github.com/WICG/webusb/issues/166)

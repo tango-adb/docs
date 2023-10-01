@@ -10,6 +10,8 @@ This is not tested yet.
 
 :::
 
+## `TCPSocket`
+
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
 
@@ -101,6 +103,8 @@ export class TCPSocket {
 </TabItem>
 </Tabs>
 
+## `AdbDaemonDirectSocketsDevice`
+
 The following code implements an `AdbDaemonDevice` using a `TCPSocket`:
 
 ```ts transpile
@@ -151,6 +155,8 @@ class AdbDaemonDirectSocketsDevice implements AdbDaemonDevice {
   }
 }
 ```
+
+## Usage
 
 The following code creates a connection:
 

@@ -13,7 +13,7 @@ Exposed as fields of `Adb` class, these are implemented by ADB daemon itself.
 * `power`: Shutdown/reboot device
 * `reverse`: Manage reverse port forwarding
 * [`tcpip`](./tcpip.md): Enable/disable ADB over WiFi
-* `getProp`: Shorthand for `shell getprop`
+* [`getProp`](./get-prop.md): Shorthand for `getprop` executable
 * [`rm`](./rm.md): Delete files on device
 * [`sync`](./sync/overview.md): Interact with device filesystem
 * `framebuffer`: Capture device screen

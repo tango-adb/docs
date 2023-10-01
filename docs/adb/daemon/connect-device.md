@@ -5,7 +5,7 @@ sidebar_position: 5
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-# Connect to device
+# Handshake and authenticate
 
 ## Authenticate with device
 
@@ -43,8 +43,8 @@ import { Adb } from "@yume-chan/adb";
 const adb: Adb = new Adb(transport);
 ```
 
-:::note
+:::note Next Step
 
-**Next Step:** See [commands](../commands/overview.md) for how to use the `Adb` instance.
+See [commands](../commands/overview.md) for how to use the `Adb` instance.
 
 :::
