@@ -1,5 +1,5 @@
 ---
-slug: /
+slug: /internal
 sidebar_position: 0
 ---
 

@@ -16,7 +16,7 @@ Exposed as fields of `Adb` class, these are implemented by ADB daemon itself.
 * [`getProp`](./get-prop.md): Shorthand for `getprop` executable
 * [`rm`](./rm.md): Delete files on device
 * [`sync`](./sync/overview.md): Interact with device filesystem
-* `framebuffer`: Capture device screen
+* [`framebuffer`](./framebuffer.md): Capture device screen
 
 ## Binary Wrappers
 

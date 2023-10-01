@@ -19,18 +19,18 @@ module.exports = {
             items: [
                 {
                     type: 'doc',
-                    docId: 'basics/intro',
-                    position: 'left',
-                    label: 'ADB',
-                },
-                {
-                    type: 'doc',
-                    docId: 'adb/installation',
+                    docId: 'tango/installation',
                     position: 'left',
                     label: 'Tango',
                 },
                 {
-                    href: 'https://github.com/tango-adb/docs',
+                    type: 'doc',
+                    docId: 'internal/intro',
+                    position: 'left',
+                    label: 'ADB',
+                },
+                {
+                    href: 'https://github.com/yume-chan/ya-webadb',
                     label: 'GitHub',
                     position: 'right',
                 },

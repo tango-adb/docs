@@ -14,7 +14,7 @@ We have seen `AdbDaemonWebUsbDevice` class in USB connection and `AdbDaemonDirec
 
 :::note
 
-See [Web Streams Basics](/docs/adb/web-stream.md) for a quick introduction to Web Streams API.
+See [Web Streams Basics](../web-stream.md) for a quick introduction to Web Streams API.
 
 :::
 
