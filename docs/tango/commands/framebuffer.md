@@ -64,6 +64,12 @@ Apps can disable screenshot by setting `FLAG_SECURE` flag on their windows. If t
 const screenshot = await adb.framebuffer();
 ```
 
+:::info Equivalent ADB Command
+
+This command is not available in Google ADB CLI.
+
+:::
+
 ### Draw the screenshot to a canvas
 
 Assume the screenshot has RGBA8888 color format:

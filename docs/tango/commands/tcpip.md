@@ -29,8 +29,24 @@ declare class Adb {
 await adb.tcpip.setPort(5555);
 ```
 
+:::info Equivalent ADB Command
+
+```sh
+adb tcpip 5555
+```
+
+:::
+
 ## Disable ADB over WiFi
 
 ```ts transpile
 await adb.tcpip.disable();
 ```
+
+:::info Equivalent ADB Command
+
+```sh
+adb usb
+```
+
+:::

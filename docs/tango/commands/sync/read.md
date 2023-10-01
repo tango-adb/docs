@@ -30,3 +30,11 @@ await content.pipeTo(
   }),
 );
 ```
+
+:::info Equivalent ADB Command
+
+```sh
+adb pull /sdcard/Download/hello.txt
+```
+
+:::
