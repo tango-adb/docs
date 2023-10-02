@@ -1,0 +1,59 @@
+---
+sidebar_position: 4
+---
+
+# opendir/readdir
+
+List files in a directory
+
+```ts
+interface AdbSyncEntry extends AdbSyncStat {
+  mode: number;
+  size: bigint;
+  mtime: bigint;
+  get type(): LinuxFileType;
+  get permission(): number;
+
+  uid?: number;
+  gid?: number;
+  atime?: bigint;
+  ctime?: bigint;
+
+  name: string;
+}
+
+declare class AdbSync {
+  opendir(path: string): AsyncGenerator<AdbSyncEntry, void, void>;
+  readdir(path: string): Promise<AdbSyncEntry[]>;
+}
+```
+
+|                                           | Android 10 and below | Android 11 and above |
+| ----------------------------------------- | -------------------- | -------------------- |
+| Adb feature name                          | None                 | `ls_v2`              |
+| Sync command                              | `LIST`               | `LST2`               |
+| Size larger than 4GB                      | No                   | Yes                  |
+| Returns `uid`, `gid`, `atime` and `ctime` | No                   | Yes                  |
+
+`opendir` returns an async generator that yields file entries in the directory. `readdir` collects all entries and returns an array.
+
+For a large directory with hundreds of files, `readdir` may take tens of seconds to finish. `opendir` can give a better user experience by yielding entries as they are received.
+
+## Example
+
+### Use `opendir`
+
+```ts transpile
+for await (const entry of sync.opendir('/sdcard')) {
+  console.log(entry.name);
+}
+```
+
+### Use `readdir`
+
+```ts transpile
+const entries = await sync.readdir("/sdcard");
+for (const entry of entries) {
+  console.log(entry.name);
+}
+```

@@ -45,8 +45,8 @@ Not closing sync connections will cause a small memory leak.
 
 ## Supported methods
 
-- `lstat`/`stat`: Get file information
-- `isDirectory`: Check if a path is a directory
-- `opendir`/`readdir`: List files in a directory
+- [`lstat`/`stat`](./stat.md): Get file information
+- [`isDirectory`](./isDirectory.md): Check if a path is a directory
+- [`opendir`/`readdir`](./opendir.md): List files in a directory
 - [`read`](./read.md): Read file content
 - [`write`](./write.md): Write file content
