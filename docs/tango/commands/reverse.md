@@ -78,7 +78,7 @@ Some transports may not support external port forwarding. For example `AdbDaemon
 
 When `deviceAddress` is `tcp:0`, ADB daemon will choose an available port on the device. On Android 8 and later, the chosen port will be returned. Otherwise, the return value will be the same as `deviceAddress`.
 
-Example:
+### Example
 
 ```ts transpile
 const port = await adb.reverse.addExternal("tcp:0", "tcp:1234");
@@ -113,7 +113,40 @@ This method is guaranteed to work on all transports.
 
 When `deviceAddress` is `tcp:0`, ADB daemon will choose an available port on the device. On Android 8 and later, the chosen port will be returned.
 
-The `localAddress` parameter is used by the transports. In `AdbDaemonTransport`, the `localAddress` parameter can be any string that uniquely identifies the handler. But in `AdbServerTransport`, `localAddress` must be a local socket address that the transport can listen on.
+The meaning of `localAddress` depends on the transport:
+
+| Transport            | Valid values                                    | Default value                              |
+| -------------------- | ----------------------------------------------- | ------------------------------------------ |
+| `AdbDaemonTransport` | Any string that uniquely identifies the handler | A random string                            |
+| `AdbServerTransport` | Any available local socket address              | Automatically choose an available TCP port |
+
+:::danger READ ALL STREAMS!
+
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (even if you are not interested in them) to prevent this from happening.
+
+:::
+
+### Example
+
+Creates an echo server.
+
+```ts transpile
+import { encodeUtf8 } from "@yume-chan/adb";
+import { DecodeUtf8Stream, Consumable } from "@yume-chan/stream-extra";
+
+const address = await adb.reverse.add("tcp:1234", async (socket) => {
+  const writer = socket.writable.getWriter();
+  await socket.readable.pipeTo(
+    new WriteableStream({
+      async write(chunk) {
+        await writer.write(new Consumable(chunk));
+      },
+    }),
+  );
+});
+```
 
 :::info Equivalent ADB command
 
@@ -131,7 +164,7 @@ declare class AdbReverseCommand {
 
 Remove a port forwarding from the device using the socket address on device.
 
-Example:
+### Example
 
 ```ts transpile
 await adb.reverse.remove("tcp:1234");

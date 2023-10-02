@@ -94,6 +94,14 @@ The behavior of `AdbSubprocessProtocol` is described in the following table:
 
 `stdout` and `stderr` will close when the process exits.
 
+:::danger READ ALL STREAMS!
+
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all connections (even if you are not interested in them) to prevent this from happening.
+
+:::
+
 ## Start process in raw mode
 
 ```ts

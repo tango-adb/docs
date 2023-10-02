@@ -12,9 +12,11 @@ declare class AdbSync {
 }
 ```
 
-:::danger
+:::danger READ ALL STREAMS!
 
-You must read the stream to the end, otherwise all sockets to the device will be blocked.
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from the returned stream to prevent this from happening.
 
 :::
 
