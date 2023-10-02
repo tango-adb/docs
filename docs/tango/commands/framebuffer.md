@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 9
 ---
 
 # framebuffer
@@ -66,7 +66,11 @@ const screenshot = await adb.framebuffer();
 
 :::info Equivalent ADB Command
 
-This command is not available in Google ADB CLI.
+It doesn't work in the same way, but you can use the following command to take a screenshot:
+
+```sh
+adb exec-out screencap -p > screenshot.png
+```
 
 :::
 

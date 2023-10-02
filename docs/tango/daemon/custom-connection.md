@@ -10,7 +10,7 @@ Daemon connection is still dealing with exclusive device access. If you want to 
 
 :::
 
-We have seen `AdbDaemonWebUsbDevice` class in USB connection and `AdbDaemonDirectSocketsDevice` class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of `ReadableStream` and `WriteableStream` to work, that's what the `connect` method in those `Device` classes returns.
+We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.md) class in USB connection and [`AdbDaemonDirectSocketsDevice`](./tcp/create-connection.md#adbdaemondirectsocketsdevice) class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to work, that's what the `connect` method in those `Device` classes returns.
 
 :::note
 

@@ -1,0 +1,109 @@
+---
+sidebar_position: 3
+---
+
+# power
+
+Shut down or reboot the device.
+
+## Power off the device
+
+```ts
+declare class AdbPowerCommand extends AdbCommandBase {
+  powerOff(): Promise<string>;
+}
+```
+
+Example:
+
+```ts transpile
+await adb.power.powerOff();
+```
+
+:::info Equivalent ADB Command
+
+```sh
+adb shell reboot -p
+```
+
+:::
+
+## Reboot the device
+
+```ts
+declare class AdbPowerCommand extends AdbCommandBase {
+  reboot(mode?: string): Promise<string>;
+}
+```
+
+Example:
+
+```ts transpile
+await adb.power.reboot();
+```
+
+:::info Equivalent ADB Command
+
+```sh
+adb reboot
+```
+
+:::
+
+The `mode` parameter allows rebooting into different modes, including custom ones from device manufacturers.
+
+```ts transpile
+await adb.power.reboot("download");
+```
+
+:::info Equivalent ADB Command
+
+```sh
+adb reboot download
+```
+
+:::
+
+## Reboot into recovery
+
+```ts
+declare class AdbPowerCommand extends AdbCommandBase {
+  recovery(): Promise<string>;
+}
+```
+
+Example:
+
+```ts transpile
+await adb.power.recovery();
+```
+
+:::info Equivalent ADB Command
+
+```sh
+adb reboot recovery
+```
+
+:::
+
+## Reboot into bootloader
+
+```ts
+declare class AdbPowerCommand extends AdbCommandBase {
+  bootloader(): Promise<string>;
+}
+```
+
+Example:
+
+```ts transpile
+await adb.power.bootloader();
+```
+
+:::info Equivalent ADB Command
+
+```sh
+adb reboot bootloader
+```
+
+:::
