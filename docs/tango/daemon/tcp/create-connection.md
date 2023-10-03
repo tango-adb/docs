@@ -23,6 +23,11 @@ This is not tested yet.
 The following code converts Node.js's `net.Socket` to a [Direct Socket API](https://github.com/WICG/direct-sockets) `TCPSocket`:
 
 ```ts transpile
+import {
+  PushReadableStream,
+  type ReadableStream,
+  type WritableStream,
+} from "@yume-chan/stream-extra";
 import { connect, type Socket } from "node:net";
 
 export interface TCPSocketOptions {
@@ -55,27 +60,30 @@ export class TCPSocket {
       this.#socket.setNoDelay(true);
     }
     this.#socket.on("connect", () => {
+      const readable = new PushReadableStream((controller) => {
+        this.#socket.on("data", async (data) => {
+          this.#socket.pause();
+          await controller.enqueue(data);
+          this.#socket.resume();
+        });
+
+        this.#socket.on("end", () => {
+          try {
+            controller.end();
+          } catch {}
+        });
+
+        controller.abortSignal.addEventListener("abort", () => {
+          this.#socket.end();
+        });
+      });
+
       this.#opened.resolve({
         remoteAddress,
         remotePort,
         localAddress: this.#socket.localAddress!,
         localPort: this.#socket.localPort!,
-        readable: new ReadableStream({
-          pull: async (controller) => {
-            const handleData = (chunk: Uint8Array) => {
-              this.#socket.off("data", handleData);
-              this.#socket.off("end", handleEnd);
-              controller.enqueue(chunk);
-            };
-            const handleEnd = () => {
-              this.#socket.off("data", handleData);
-              this.#socket.off("end", handleEnd);
-              controller.close();
-            };
-            this.#socket.on("data", handleData);
-            this.#socket.on("end", handleEnd);
-          },
-        }),
+        readable,
         writable: new WritableStream({
           write: async (chunk) => {
             return new Promise<void>((resolve, reject) => {
@@ -171,3 +179,9 @@ const connection: ReadableWritablePair<
   Consumable<AdbPacketInit>
 > = await device.connect();
 ```
+
+:::note Next Step
+
+[Create credential store](../credential-store.md)
+
+:::

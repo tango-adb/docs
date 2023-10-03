@@ -28,63 +28,35 @@ This mode is suitable for running on end-users' devices where Google ADB is not 
 
 To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/adb` package, with a daemon connection and a credential store.
 
-<Tabs className="runtime-tabs" groupId="runtime">
-<TabItem value="web" label="Web">
 <Tabs className="runtime-tabs" groupId="direct-connection">
 <TabItem value="usb" label="USB">
-
-The [`@yume-chan/adb-daemon-usb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-usb) package provides a daemon connection that uses [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API).
-
-```sh npm2yarn
-npm i @yume-chan/adb-daemon-usb
-```
-
-</TabItem>
-<TabItem value="tcp" label="TCP">
-
-Currently there is no Web API that allows TCP connection. Looking forward to the [Direct Socket API](https://github.com/WICG/direct-sockets).
-
-</TabItem>
-</Tabs>
-
-The [`@yume-chan/adb-credential-web`](https://www.npmjs.com/package/@yume-chan/adb-credential-web) package provides a credential store that works in browsers.
-
-```sh npm2yarn
-npm i @yume-chan/adb-credential-web
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-<Tabs className="runtime-tabs" groupId="direct-connection">
-<TabItem value="usb" label="USB">
-
-The [`@yume-chan/adb-daemon-usb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-usb) package provides a daemon connection that uses [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API).
-
-The [`usb`](https://www.npmjs.com/package/usb) package provides a WebUSB implementation for Node.js.
-
-```sh npm2yarn
-npm i @yume-chan/adb-daemon-usb usb
-```
-
-We will create a credential store manually, so you don't need a package for that.
-
-</TabItem>
-<TabItem value="tcp" label="TCP">
-
-We will use the built-in `net` module to create TCP connections, and create other parts manually, so don't need any additional package.
-
-</TabItem>
-</Tabs>
-</TabItem>
-</Tabs>
-
-You can also create your own daemon connection and credential store. You will see how to do this in next steps.
 
 :::note Next Step
 
-[Connect to device](./daemon/credential-store.md)
+[Create USB connection](./daemon/usb/device-manager.md)
 
 :::
+
+</TabItem>
+<TabItem value="tcp" label="TCP">
+
+:::note Next Step
+
+[Create TCP connection](./daemon/tcp/enable.md)
+
+:::
+
+</TabItem>
+<TabItem value="custom" label="Custom">
+
+:::note Next Step
+
+[Create custom connection](./daemon/custom-connection.md)
+
+:::
+
+</TabItem>
+</Tabs>
 
 ## Google ADB Client Transport
 
@@ -92,37 +64,8 @@ In this mode, Tango talks to a Google ADB server, which can either run on the sa
 
 To use this mode, you will use the `AdbServerTransport` class from `@yume-chan/adb` package, with a server connection.
 
-<Tabs className="runtime-tabs" groupId="runtime">
-<TabItem value="web" label="Web">
+:::note Next Step
 
-Currently there is no Web API that allows TCP connection. Looking forward to the [Direct Socket API](https://github.com/WICG/direct-sockets).
+[Connect to server](./server/create-client.md)
 
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/adb-server-node-tcp) package provides a server connection based on Node.js built-in `net` module.
-
-```sh npm2yarn
-npm i @yume-chan/adb-server-node-tcp
-```
-
-Example:
-
-```ts transpile
-import { Adb, AdbServerClient } from "@yume-chan/adb";
-import { AdbServerNodeTcpConnection } from "@yume-chan/adb-server-node-tcp";
-
-const connection: AdbServerNodeTcpConnection = new AdbServerNodeTcpConnection({
-  host: "localhost",
-  port: 5037,
-});
-const client: AdbServerClient = new AdbServerClient(connection);
-const devices: Adb[] = await client.getDevices();
-
-for (const device of devices) {
-  const result = await device.subprocess.spawnAndWait("echo 'Hello, World!'");
-}
-```
-
-</TabItem>
-</Tabs>
+:::

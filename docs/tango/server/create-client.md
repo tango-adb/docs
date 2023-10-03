@@ -1,0 +1,48 @@
+---
+sidebar_position: 1
+---
+
+# Create client
+
+As mentioned in [Create USB connection](../daemon/usb/create-connection.md), a USB device can only be exclusively accessed by one process at a time. This means if multiple ADB clients are trying to connect to the same device, only one of them will succeed.
+
+Google ADB solves this problem by starting a server to manage the USB devices, and all ADB clients connect to the server instead of the device directly. The server will forward the packets from clients to the device, and forward the packets from the device to the clients.
+
+The protocol between ADB client and server is different from the protocol between ADB server and device (daemon). Tango provides a client implementation for the client-server protocol, but since the server listens on TCP port 5037, Tango requires a server connection object to handle the data communication.
+
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
+
+Currently there is no Web API that allows TCP connection. Looking forward to the [Direct Socket API](https://github.com/WICG/direct-sockets).
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/adb-server-node-tcp) package provides a server connection based on Node.js built-in `net` module.
+
+```sh npm2yarn
+npm i @yume-chan/adb-server-node-tcp
+```
+
+Example:
+
+```ts transpile
+import { Adb, AdbServerClient, AdbServerDevice } from "@yume-chan/adb";
+import { AdbServerNodeTcpConnection } from "@yume-chan/adb-server-node-tcp";
+
+const connection: AdbServerNodeTcpConnection = new AdbServerNodeTcpConnection({
+  host: "localhost",
+  port: 5037,
+});
+const client: AdbServerClient = new AdbServerClient(connection);
+const devices: AdbServerDevice[] = await client.getDevices();
+
+for (const device of devices) {
+  const transport = await client.createTransport(device);
+  const adb = new Adb(transport);
+  const result = await adb.subprocess.spawnAndWait("echo 'Hello, World!'");
+}
+```
+
+</TabItem>
+</Tabs>

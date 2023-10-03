@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 4
 ---
 
 import Tabs from "@theme/Tabs";
@@ -13,6 +13,10 @@ Directly connecting to devices requires authentication. ADB uses [RSA algorithm]
 <TabItem value="web" label="Web">
 
 `@yume-chan/adb-credential-web` package uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate ADB private keys, and uses [IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store them.
+
+```sh npm2yarn
+npm i @yume-chan/adb-credential-web
+```
 
 ```ts transpile
 import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
@@ -155,36 +159,6 @@ The authentication process is as follows:
 3. `generateKey` is called, and the generated key is used in public key authentication.
 
 See the Node.js tab for an example.
-
-</TabItem>
-</Tabs>
-
-<Tabs className="runtime-tabs" groupId="direct-connection">
-<TabItem value="usb" label="USB">
-
-:::note Next Step
-
-[Create USB connection](./usb/device-manager.md)
-
-:::
-
-</TabItem>
-<TabItem value="tcp" label="TCP">
-
-:::note Next Step
-
-[Create TCP connection](./tcp/enable.md)
-
-:::
-
-</TabItem>
-<TabItem value="custom" label="Custom">
-
-:::note Next Step
-
-[Create custom connection](./custom-connection.md)
-
-:::
 
 </TabItem>
 </Tabs>

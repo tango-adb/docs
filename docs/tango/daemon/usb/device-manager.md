@@ -7,7 +7,7 @@ import TabItem from "@theme/TabItem";
 
 # Get device manager
 
-`@yume-chan/adb-daemon-webusb` package provides an abstraction over [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations.
+[`@yume-chan/adb-daemon-usb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-usb) package provides an abstraction over [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations.
 
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
@@ -22,6 +22,12 @@ See https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how t
 
 :::
 
+```sh npm2yarn
+npm i @yume-chan/adb-daemon-usb
+```
+
+Create a device manager for browsers:
+
 ```ts transpile
 import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
 
@@ -35,7 +41,7 @@ const Manager: AdbDaemonWebUsbDeviceManager | undefined =
 
 :::
 
-You should check if `Manager` is `undefined`:
+Check if `Manager` is `undefined`:
 
 ```ts transpile
 if (!Manager) {
@@ -53,6 +59,10 @@ There are two reasons that `Manager` may be `undefined`:
 <TabItem value="node" label="Node.js">
 
 `usb` package provides a WebUSB compatible implementation for Node.js.
+
+```sh npm2yarn
+npm i @yume-chan/adb-daemon-usb usb
+```
 
 ```ts transpile
 import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";

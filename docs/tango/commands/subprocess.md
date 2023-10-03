@@ -36,14 +36,15 @@ PTY mode support was added in Android 7.
 
 ADB can transfer subprocess input/output in two protocols:
 
-|          |                  | None protocol                                 | Shell protocol                                            |
-| -------- | ---------------- | --------------------------------------------- | --------------------------------------------------------- |
-| raw mode | Write to socket  | Forwards to subprocess's stdin.               | One packet type: stdin                                    |
-|          | Read from socket | Subprocess's stdout and stderr mixed together | Three packet types: stdout, stderr, exit code             |
-| PTY mode | Write to socket  | Forwards to PTY                               | Three packet types: write to PTY, resize PTY, close stdin |
-|          | Read from socket | PTY output                                    | Two packet types: PTY output, exit code                   |
+* None protocol: Didn't have a name until Shell protocol was added in Android 7. Both `readable` and `writable` sides are continuous streams of raw bytes.
+* Shell protocol: Added in Android 7. Both `readable` and `writable` sides are using a simple packet format that identifies the type of the data.
 
-Shell protocol was added in Android 7.
+| Mode | Operation        | None protocol                                 | Shell protocol                                            |
+| ---- | ---------------- | --------------------------------------------- | --------------------------------------------------------- |
+| raw  | Write to socket  | Forwards to subprocess's stdin.               | One packet type: stdin                                    |
+|      | Read from socket | Subprocess's stdout and stderr mixed together | Three packet types: stdout, stderr, exit code             |
+| PTY  | Write to socket  | Forwards to PTY                               | Three packet types: write to PTY, resize PTY, close stdin |
+|      | Read from socket | PTY output                                    | Two packet types: PTY output, exit code                   |
 
 ### How to choose?
 
@@ -77,20 +78,20 @@ export interface AdbSubprocessOptions {
 
 The behavior of `AdbSubprocessProtocol` is described in the following table:
 
-|          |        | None protocol                     | Shell protocol                            |
-| -------- | ------ | --------------------------------- | ----------------------------------------- |
-| raw mode | stdin  | writes to stdin                   | writes to stdin                           |
-|          | stdout | read from stdout and stderr       | read from stdout                          |
-|          | stderr | empty                             | read from stderr                          |
-|          | exit   | resolve with 0 when process exits | resolve with exit code when process exits |
-|          | resize | does nothing                      | resize PTY                                |
-|          | kill   | kill process                      | kill process                              |
-| PTY mode | stdin  | writes to PTY                     | writes to PTY                             |
-|          | stdout | read from PTY                     | read from PTY                             |
-|          | stderr | empty                             | empty                                     |
-|          | exit   | resolve with 0 when process exits | resolve with exit code when process exits |
-|          | resize | does nothing                      | resize PTY                                |
-|          | kill   | kill process                      | kill process                              |
+| Mode | Field  | None protocol                     | Shell protocol                            |
+| ---- | ------ | --------------------------------- | ----------------------------------------- |
+| raw  | stdin  | writes to stdin                   | writes to stdin                           |
+|      | stdout | read from stdout and stderr       | read from stdout                          |
+|      | stderr | empty                             | read from stderr                          |
+|      | exit   | resolve with 0 when process exits | resolve with exit code when process exits |
+|      | resize | does nothing                      | resize PTY                                |
+|      | kill   | kill process                      | kill process                              |
+| PTY  | stdin  | writes to PTY                     | writes to PTY                             |
+|      | stdout | read from PTY                     | read from PTY                             |
+|      | stderr | empty                             | empty                                     |
+|      | exit   | resolve with 0 when process exits | resolve with exit code when process exits |
+|      | resize | does nothing                      | resize PTY                                |
+|      | kill   | kill process                      | kill process                              |
 
 `stdout` and `stderr` will close when the process exits.
 

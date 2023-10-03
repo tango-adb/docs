@@ -31,6 +31,6 @@ The connection might fail due to various reasons, such as:
 
 :::note Next Step
 
-[Connect to device](../connect-device.md)
+[Create credential store](../credential-store.md)
 
 :::
