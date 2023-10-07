@@ -37,7 +37,7 @@ declare class AdbSync {
 
 `opendir` returns an async generator that yields file entries in the directory. `readdir` collects all entries and returns an array.
 
-For a large directory with hundreds of files, `readdir` may take tens of seconds to finish. `opendir` can give a better user experience by yielding entries as they are received.
+For a large directory with hundreds of files, `readdir` may take tens of seconds to finish. `opendir` can provide a better user experience by yielding entries as they are received.
 
 ## Example
 

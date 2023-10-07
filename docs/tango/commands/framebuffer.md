@@ -6,6 +6,8 @@ sidebar_position: 9
 
 Framebuffer command takes a pixel-by-pixel screenshot of the device screen.
 
+Framebuffer command is actually a wrapper for `screencap` command, only uses binary output format instead of PNG. The output format has changed once in Android 9, so it's difficult for a client to directly parse it.
+
 ```ts
 interface AdbFrameBuffer {
   bpp: number;
@@ -29,18 +31,36 @@ declare class Adb {
 }
 ```
 
-The four `color_offset` and `color_length` fields are numbers in bits. For example, RGBA8888 color format is represented by:
+## Color Space
 
-| field          | value |
-| -------------- | ----- |
-| `red_offset`   | 0     |
-| `red_length`   | 8     |
-| `blue_offset`  | 16    |
-| `blue_length`  | 8     |
-| `green_offset` | 8     |
-| `green_length` | 8     |
-| `alpha_offset` | 24    |
-| `alpha_length` | 8     |
+On Android 9 and above, `colorSpace` field is present in the output. The values are:
+
+* `0`: Unknown
+* `1`: SRGB
+* `2`: Display P3
+
+## Color Format
+
+The four `color_offset` and `color_length` fields are numbers in bits. Some common color formats are presented by
+
+| field          | RGBA_8888 | RGBX_8888 | RGB_888 | RGB_565  | BGRA_8888 |
+| -------------- | --------- | --------- | ------- | ------- | --------- |
+| `bpp`          | 32        | 32        | 24      | 16      | 32        |
+| `red_offset`   | 0         | 0         | 0       | 11      | 16        |
+| `red_length`   | 8         | 8         | 8       | 5       | 8         |
+| `green_offset` | 8         | 8         | 8       | 5       | 8         |
+| `green_length` | 8         | 8         | 8       | 6       | 8         |
+| `blue_offset`  | 16        | 16        | 16      | 0       | 0         |
+| `blue_length`  | 8         | 8         | 8       | 5       | 8         |
+| `alpha_offset` | 24        | 24        | 0       | 0       | 24        |
+| `alpha_length` | 8         | 0         | 0       | 0       | 8         |
+
+:::note
+
+* I have only seen RGBA_8888 format
+* RGB_565 is actually BGR_565, but [Android source code](https://android.googlesource.com/platform/packages/modules/adb/+/bafac63cab3d32f7bf0e4cb0d8ff00e7e59a4e22/daemon/framebuffer_service.cpp#139) calls it RGB_565
+
+:::
 
 ## Errors
 
@@ -65,8 +85,6 @@ const screenshot = await adb.framebuffer();
 ```
 
 :::info Equivalent ADB Command
-
-It doesn't work in the same way, but you can use the following command to take a screenshot:
 
 ```sh
 adb exec-out screencap -p > screenshot.png

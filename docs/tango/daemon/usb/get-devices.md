@@ -22,7 +22,22 @@ Previously, we have disabled the permission system in `usb` package's WebUSB imp
 </TabItem>
 </Tabs>
 
-`AdbDaemonWebUsbDeviceManager#getDevices` method wraps that, filters out devices that are not ADB devices, and converts results to `AdbDaemonWebUsbDevice` instances.
+`USB#getDevices` returns all connected devices, including those that are not ADB devices. So `AdbDaemonWebUsbDeviceManager#getDevices` method calls `USB#getDevices`, picks ADB devices from the results, and wraps them to `AdbDaemonWebUsbDevice` instances.
+
+```ts
+interface AdbDeviceFilter {
+  classCode: number;
+  subclassCode: number;
+  protocolCode: number;
+  vendorId?: number;
+  productId?: number;
+  serialNumber?: string;
+}
+
+declare class AdbDaemonWebUsbDeviceManager {
+  getDevices(filters?: AdbDeviceFilter[]): Promise<AdbDaemonWebUsbDevice[]>;
+}
+```
 
 ```ts transpile
 import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
@@ -38,7 +53,17 @@ const device: AdbDaemonWebUsbDevice = devices[0];
 
 ## Filter connected devices
 
-By default, `getDevices` method only returns devices with ADB interface, but custom filters can be provided to select which devices will be returned. Each filter is an object with the following fields:
+By default, `AdbDaemonWebUsbDeviceManager#getDevices` method uses a filter that matches the ADB interface:
+
+```ts
+export const ADB_DEFAULT_DEVICE_FILTER = {
+  classCode: 0xff,
+  subclassCode: 0x42,
+  protocolCode: 1,
+} as const satisfies AdbDeviceFilter;
+```
+
+But it also accepts custom filters to limit which devices will be returned. Each filter is an object with the following fields:
 
 - `classCode`: (Required) The class code of the ADB interface.
 - `subclassCode`: (Required) The subclass code of the ADB interface.
@@ -47,9 +72,21 @@ By default, `getDevices` method only returns devices with ADB interface, but cus
 - `productId`: The USB product ID of the device.
 - `serialNumber`: The serial number of the device.
 
-`classCode`, `subclassCode` and `protocolCode` fields are required to instruct Tango which interface to claim. Other fields are optional, to further filter the list.
+`classCode`, `subclassCode` and `protocolCode` fields are required to ensure the device is an ADB device. They can be different from `ADB_DEFAULT_DEVICE_FILTER` if your device has a different configuration. Tango will use these fields to select the correct interface to communicate with.
 
-For example, to only return devices from a specific manufacturer:
+`venderId`, `productId` and `serialNumber` fields can be used to select a specific manufacturer, a specific model, or a specific device.
+
+:::info
+
+Some lazy manufacturers use the same `serialNumber` for all devices. So even if `serialNumber` is specified, it's still possible that multiple devices will be returned.
+
+:::
+
+To say a device matches a filter, the device must match all specified fields in the filter.
+
+To say a device matches multiple filters, the device must match at least one of them.
+
+For example, to only allow a specific manufacturer/model:
 
 ```ts transpile
 import {
@@ -61,17 +98,12 @@ const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
   {
     ...ADB_DEFAULT_DEVICE_FILTER,
     vendorId: 0x18d1,
+    productId: 0x4ee2,
   },
 ]);
 ```
 
-:::info
-
-The `ADB_DEFAULT_DEVICE_FILTER` constant has the default values of `classCode`, `subclassCode` and `protocolCode` fields for ADB interface. If your device's ADB interface has different values, you need to provide your own filter.
-
-:::
-
-When multiple filters are provided, devices matching any of them will be returned. For example, to return devices from multiple manufacturers:
+And to allow multiple manufacturers/models:
 
 ```ts transpile
 import {
@@ -83,10 +115,12 @@ const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
   {
     ...ADB_DEFAULT_DEVICE_FILTER,
     vendorId: 0x18d1,
+    productId: 0x4ee2,
   },
   {
     ...ADB_DEFAULT_DEVICE_FILTER,
     vendorId: 0x04e8,
+    productId: 0x6860,
   },
 ]);
 ```

@@ -7,24 +7,23 @@ import TabItem from "@theme/TabItem";
 
 # Get device manager
 
-[`@yume-chan/adb-daemon-usb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-usb) package provides an abstraction over [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations.
-
-<Tabs className="runtime-tabs" groupId="runtime">
-<TabItem value="web" label="Web">
-
-In supported Web browsers, you can use the native implementation.
-
-:::info
-
-Electron renderer process does have WebUSB API, but it doesn't have the same permission system as browsers.
-
-See https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to use WebUSB in Electron.
-
-:::
+[`@yume-chan/adb-daemon-usb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-usb) package provides an `AdbDaemonConnection` using [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations.
 
 ```sh npm2yarn
 npm i @yume-chan/adb-daemon-usb
 ```
+
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
+
+WebUSB API is natively supported in Chromium-based browsers.
+
+:::info Electron Support
+
+* To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API, then follow the below instructions
+* To use Tango in Electron main processes, follow the instructions for Node.js instead
+
+:::
 
 Create a device manager for browsers:
 
@@ -58,11 +57,13 @@ There are two reasons that `Manager` may be `undefined`:
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-`usb` package provides a WebUSB compatible implementation for Node.js.
+[`usb`](https://www.npmjs.com/package/usb) package provides a WebUSB compatible implementation for Node.js.
 
 ```sh npm2yarn
-npm i @yume-chan/adb-daemon-usb usb
+npm i usb
 ```
+
+Create a device manager using `WebUSB` from `usb` package:
 
 ```ts transpile
 import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
@@ -76,7 +77,12 @@ const Manager: AdbDaemonWebUsbDeviceManager = new AdbDaemonWebUsbDeviceManager(
 
 :::info
 
-Passing the `allowAllDevices: true` option disables the permission system and returns all available devices from `getDevices` methods.
+By default, `WebUSB` from `usb` package has the same permission system as browsers:
+
+* Each device must be authorized separately using `requestDevice` method and a custom `devicesFound` callback
+* `getDevices` method only returns devices that have been authorized
+
+Passing the `allowAllDevices: true` option disables the permission system and returns all connected devices from `getDevices` methods.
 
 :::
 

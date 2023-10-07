@@ -62,10 +62,10 @@ To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/a
 
 In this mode, Tango talks to a Google ADB server, which can either run on the same machine or on a remote machine. This allows Tango to work with other ADB-based tools (e.g. ADB client, Android Studio, Scrcpy, etc.).
 
-To use this mode, you will use the `AdbServerTransport` class from `@yume-chan/adb` package, with a server connection.
+To use this mode, you will use the `AdbServerClient` class from `@yume-chan/adb` package, with a server connection.
 
 :::note Next Step
 
-[Connect to server](./server/create-client.md)
+[Connect to server](./server/connection.md)
 
 :::

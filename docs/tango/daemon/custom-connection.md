@@ -14,27 +14,24 @@ We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.md) class in USB connec
 
 :::note
 
-See [Web Streams Basics](../web-stream.md) for a quick introduction to Web Streams API.
+See [Web Streams Basics](../web-stream.md) for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
 
 :::
 
 ## AdbPacket
 
-ADB protocol is based on packets, and `AdbDaemonTransports` deals with deserialized `AdbPacket` objects. Each connection can serialize and transfer those packets in different ways. For example, USB and TCP connections convert them to raw bytes and transfer through USB or TCP. But custom connections can also transfer them using JSON, protobuf, or any other formats over the Internet.
+ADB protocol is based on packets. `AdbDaemonTransport` works on deserialized `AdbPacket` objects, and a connection is responsible for transferring those packets between device and `AdbDaemonTransport`. USB and TCP connections convert them to raw bytes and send through USB or TCP, while a custom connection may transfer them using JSON, protobuf, or any other formats over TCP, WebSocket, [WebTransport](https://developer.mozilla.org/en-US/docs/Web/API/WebTransport), or any other transportation.
 
-`AdbPacket` is slightly different between the read and write sides.
+Each `AdbPacket` is an plain object with the following fields: The field names should be self-explanatory.
 
-On the `ReadableStream` side, each object only have the following data fields, so they are also called `AdbPacketData`:
+- command: A 32-bit number.
+- arg0: A 32-bit number.
+- arg1: A 32-bit number.
+- payload: A `Uint8Array`.
+- checksum: A 32-bit number calculated by summing all bytes in the `payload`.
+- magic: A 32-bit number calculated by `command ^ 0xffffffff`.
 
-- command: A number that represents the command.
-- arg0: A number that represents the first argument.
-- arg1: A number that represents the second argument.
-- payload: A `Uint8Array` that represents the payload.
-
-For the `WriteableStream` side, each object has two extra fields, which are required when writing to devices. These objects are also called `AdbPacketInit`:
-
-- checksum: A number that represents the checksum of the packet.
-- magic: A number that represents the magic of the packet.
+`AdbDaemonTransport` will give the connection `AdbPacket`s with all fields filled, but the connection can omit `checksum` and `magic` fields when passing packets to `AdbDaemonTransport`, as those are not essential for basic operations.
 
 ## Create ReadableStream
 

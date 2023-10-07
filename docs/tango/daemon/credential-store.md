@@ -7,12 +7,29 @@ import TabItem from "@theme/TabItem";
 
 # Create credential store
 
-Directly connecting to devices requires authentication. ADB uses [RSA algorithm](<https://en.wikipedia.org/wiki/RSA_(cryptosystem)>) to identify clients. Tango can use varies credential stores to support different runtimes.
+Directly connecting to devices requires authentication. The authentication process uses [RSA algorithm](<https://en.wikipedia.org/wiki/RSA_(cryptosystem)>), except it uses a custom public key format.
+
+ADB protocol has two authentication methods:
+
+1. Public key: The client sends its public key to the device. The device displays a dialog asking its user to confirm the connection. If the user confirms, the connection will be established. If the user also checks "Always allow from this computer", the device will trust the public key.
+2. Signature: The device generates a challenge and sends it to the client. The client signs the challenge with its private key and sends the signature back to the device. The device verifies if the signature is produced by one of its trusted public keys.
+
+:::info
+
+Even if the user checked "Always allow from this computer", the public key may lost trust due to various reasons, such as:
+
+1. On Android 11 or newer, the device will automatically revoke the trust if the key is not used in last 7 days. This feature can be disabled by users in the developer settings.
+2. On Android 11 or newer, the user can manually untrust individual keys in "Settings -> Developer options -> Wireless debugging -> Paired devices".
+3. On Android 10 or older, the user can manually untrust all keys in "Settings -> Developer options -> Revoke USB debugging authorizations".
+
+:::
+
+Tango supports both authentication methods, and can use varies credential stores to support different runtimes.
 
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
 
-`@yume-chan/adb-credential-web` package uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate ADB private keys, and uses [IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store them.
+[`@yume-chan/adb-credential-web`](https://www.npmjs.com/package/@yume-chan/adb-credential-web) package uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate ADB private keys, and uses [IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store them.
 
 ```sh npm2yarn
 npm i @yume-chan/adb-credential-web
@@ -123,7 +140,7 @@ const CredentialStore = new AdbNodeJsCredentialStore(
 </TabItem>
 <TabItem value="custom" label="Custom">
 
-Tango expects each private key to have two fields:
+In Tango, each private key is a plain object with the following fields:
 
 - `buffer`: A [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) (or Node.js [`Buffer`](https://nodejs.org/api/buffer.html)) containing the private key in [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8) format.
 - `name`: A `string`, the name of the key. On devices with Android 11 or newer, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `nouser@nohostname`.
@@ -144,11 +161,6 @@ You can choose to not saving the private key and generate a new one every time. 
 You must not use a fixed private key for all users. Everyone can see the private key and use it to connect to your users' devices.
 
 :::
-
-ADB protocol uses two authentication methods:
-
-1. Signature: The device generates a challenge and sends it to the client. The client signs the challenge with the private key and sends the signature back to the device. The device verifies the signature with all trusted public keys.
-2. Public key: The client sends its public key to the device. The device displays a dialog asking the user to confirm the connection. If the user confirms, the connection will be established.
 
 The authentication process is as follows:
 
