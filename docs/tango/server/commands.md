@@ -246,7 +246,7 @@ declare class AdbServerClient {
 }
 ```
 
-Creates an `AdbTransport` object for the device.
+Creates an `AdbTransport` object for the device. It's not one server command, it uses multiple server commands internally to implement the transport.
 
 The returned transport object can be used to construct an `Adb` instance:
 

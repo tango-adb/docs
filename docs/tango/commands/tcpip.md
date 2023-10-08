@@ -12,6 +12,12 @@ Toggling ADB over WiFi will restart ADB daemon, causing all existing connections
 
 :::
 
+:::info
+
+Tango requires another daemon connection to connect devices over TCP. See [create TCP connection](../daemon/tcp/create-connection.md) for more information.
+
+:::
+
 ```ts
 declare class AdbTcpIpCommand extends AdbCommandBase {
   setPort(port: number): Promise<string>;

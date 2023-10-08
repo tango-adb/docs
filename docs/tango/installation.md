@@ -69,3 +69,13 @@ To use this mode, you will use the `AdbServerClient` class from `@yume-chan/adb`
 [Connect to server](./server/connection.md)
 
 :::
+
+## Custom Transport
+
+It's also possible to create a custom transport. For example, a mock transport can be used in tests, or a proxy transport can share a device with multiple clients.
+
+:::note Next Step
+
+[Create custom transport](./custom-transport.md)
+
+:::

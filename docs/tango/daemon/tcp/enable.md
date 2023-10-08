@@ -6,7 +6,7 @@ sidebar_position: 1
 
 ADB over WiFi allows you to connect to your device wirelessly. This is useful when you want to connect to your device without using a USB cable, or if you want to connect multiple devices to the same computer.
 
-## Android 11 and newer
+## Android 11 and above
 
 Android 11 adds a new Wireless Debugging feature in Developer Options, which allows you to enable ADB over WiFi without using a USB cable.
 
@@ -30,7 +30,7 @@ start adbd
 
 ## Other devices
 
-On non-rooted devices with Android 10 or older, enabling ADB over WiFi requires first connecting the device using a USB cable.
+On non-rooted devices with Android 10 and below, enabling ADB over WiFi requires first connecting the device using a USB cable.
 
 - To enable ADB over WiFi using Google ADB, run the following command in a terminal:
 

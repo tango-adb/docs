@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Web Streams Basics
@@ -21,6 +21,8 @@ const stream: ReadableStream<number> = new ReadableStream<number>({
 });
 ```
 
+In TypeScript, the generic parameter of `ReadableStream` is the type of the data it produces.
+
 The `close` method closes the stream, which means no more data can be added to the stream.
 
 The `enqueue` method adds a value to the stream, it can be called anytime, anywhere, as long as you have a reference to the `controller` object. For example you can do this:
@@ -41,7 +43,7 @@ setTimeout(() => {
 }, 1000);
 ```
 
-However this is not very good, because if you produces data too fast, and the consumer can't keep up, the buffered data will take more and more memory. To know when should you enqueue data, you can use the `pull` method:
+However, this is not a good practice. If the `ReadableStream` produces data faster than downstream `WritableStream` can consume, the buffered data will take more and more memory. To know when should you enqueue data, you can use the `pull` method:
 
 ```ts transpile
 let value = 0;
@@ -73,6 +75,8 @@ const stream: WriteableStream<number> = new WriteableStream<number>({
   },
 });
 ```
+
+In TypeScript, the generic parameter of `WriteableStream` is the type of the data it consumes.
 
 The `write` callback can be asynchronous, and return when the data is consumed.
 

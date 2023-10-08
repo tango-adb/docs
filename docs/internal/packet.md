@@ -8,7 +8,7 @@ ADB protocol is a bi-directional, packet-oriented protocol. Each packet has a fi
 
 Because it is originally implemented in C for Linux, all multi-byte fields are in little-endian, and all strings are in UTF-8 encoding.
 
-Before Android 9, it used `char *` for string handling, so null terminators are required. Now it’s transitioning to `std::string`, which doesn't require null-terminators. But not all places has been changed, and for backward compatibility, adding null-terminators are still recommended.
+On Android 8 and below, it used `char *` for string handling, so null terminators are required. Now it’s transitioning to `std::string`, which doesn't require null-terminators. But not all places has been changed, and for backward compatibility, adding null-terminators are still recommended.
 
 Each packet contains following fields:
 

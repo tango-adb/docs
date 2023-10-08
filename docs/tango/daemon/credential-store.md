@@ -18,9 +18,9 @@ ADB protocol has two authentication methods:
 
 Even if the user checked "Always allow from this computer", the public key may lost trust due to various reasons, such as:
 
-1. On Android 11 or newer, the device will automatically revoke the trust if the key is not used in last 7 days. This feature can be disabled by users in the developer settings.
-2. On Android 11 or newer, the user can manually untrust individual keys in "Settings -> Developer options -> Wireless debugging -> Paired devices".
-3. On Android 10 or older, the user can manually untrust all keys in "Settings -> Developer options -> Revoke USB debugging authorizations".
+1. On Android 11 and above, the device will automatically revoke the trust if the key is not used in last 7 days. This feature can be disabled by users in the developer settings.
+2. On Android 11 and above, the user can manually untrust individual keys in "Settings -> Developer options -> Wireless debugging -> Paired devices".
+3. On Android 10 and below, the user can manually untrust all keys in "Settings -> Developer options -> Revoke USB debugging authorizations".
 
 :::
 
@@ -41,7 +41,7 @@ import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
 const CredentialStore: AdbWebCredentialStore = new AdbWebCredentialStore();
 ```
 
-Optionally, you can provide a name for your keys. On devices with Android 11 or newer, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `Tango@<current host name>`, e.g. `Tango@app.tangoapp.dev`.
+Optionally, you can provide a name for your keys. On Android 11 and above, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `Tango@<current host name>`, e.g. `Tango@app.tangoapp.dev`.
 
 ```ts transpile
 import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
@@ -143,7 +143,7 @@ const CredentialStore = new AdbNodeJsCredentialStore(
 In Tango, each private key is a plain object with the following fields:
 
 - `buffer`: A [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) (or Node.js [`Buffer`](https://nodejs.org/api/buffer.html)) containing the private key in [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8) format.
-- `name`: A `string`, the name of the key. On devices with Android 11 or newer, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `nouser@nohostname`.
+- `name`: A `string`, the name of the key. On Android 11 and above, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `nouser@nohostname`.
 
 To create a custom credential store implementation, you need to provide two methods:
 

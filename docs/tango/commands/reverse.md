@@ -76,19 +76,19 @@ Add an external (unmanaged) port forwarding to the device. When apps on device c
 
 Some transports may not support external port forwarding. For example `AdbDaemonTransport` can't connect to socket addresses on the host machine, so it doesn't support external port forwarding.
 
-When `deviceAddress` is `tcp:0`, ADB daemon will choose an available port on the device. On Android 8 and later, the chosen port will be returned. Otherwise, the return value will be the same as `deviceAddress`.
+When `deviceAddress` is `tcp:0`, ADB daemon will choose an available port on the device. On Android 8 and above, the chosen port will be returned. Otherwise, the return value will be the same as `deviceAddress`.
 
 ### Example
 
 ```ts transpile
-const port = await adb.reverse.addExternal("tcp:0", "tcp:1234");
+const port = await adb.reverse.addExternal("tcp:0", "tcp:localhost:1234");
 console.log(port); // tcp:38324
 ```
 
 :::info Equivalent ADB command
 
 ```sh
-adb reverse tcp:0 tcp:1234
+adb reverse tcp:0 tcp:localhost:1234
 ```
 
 :::
@@ -111,14 +111,14 @@ Add a managed port forwarding to the device. When apps on device connects to `de
 
 This method is guaranteed to work on all transports.
 
-When `deviceAddress` is `tcp:0`, ADB daemon will choose an available port on the device. On Android 8 and later, the chosen port will be returned.
+When `deviceAddress` is `tcp:0`, ADB daemon will choose an available port on the device. On Android 8 and above, the chosen port will be returned.
 
 The meaning of `localAddress` depends on the transport:
 
-| Transport            | Valid values                                    | Default value                              |
-| -------------------- | ----------------------------------------------- | ------------------------------------------ |
-| `AdbDaemonTransport` | Any string that uniquely identifies the handler | A random string                            |
-| `AdbServerTransport` | Any available local socket address              | Automatically choose an available TCP port |
+| Transport            | Valid values                                                                                 | Default value                              |
+| -------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `AdbDaemonTransport` | Any string that uniquely identifies the handler                                              | A random string                            |
+| `AdbServerTransport` | Any available TCP or Unix socket address (e.g. `tcp:0.0.0.0:1234` or `unix:/var/opt/socket`) | Automatically choose an available TCP port |
 
 :::danger READ ALL STREAMS!
 

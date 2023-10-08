@@ -27,14 +27,14 @@ declare class AdbSync {
 }
 ```
 
-|                                           | `lstat` | `lstat` on Android 8 and above | `stat`    |
-| ----------------------------------------- | ------- | ------------------------------ | --------- |
-| Android version                           | All     | 8                              | 8         |
-| ADB feature name                          | None    | `stat_v2`                      | `stat_v2` |
-| Sync command                              | `STAT`  | `LST2`                         | `STA2`    |
-| Follow symlinks                           | No      | No                             | Yes       |
-| Size larger than 4GB                      | No      | Yes                            | Yes       |
-| Returns `uid`, `gid`, `atime` and `ctime` | No      | Yes                            | Yes       |
+|                                           | `lstat` (Android 7 and below) | `lstat` (Android 8 and above) | `stat`    |
+| ----------------------------------------- | ----------------------------- | ----------------------------- | --------- |
+| Android version                           | All                           | 8                             | 8         |
+| ADB feature name                          | None                          | `stat_v2`                     | `stat_v2` |
+| Sync command                              | `STAT`                        | `LST2`                        | `STA2`    |
+| Follow symlinks                           | No                            | No                            | Yes       |
+| Size larger than 4GB                      | No                            | Yes                           | Yes       |
+| Returns `uid`, `gid`, `atime` and `ctime` | No                            | Yes                           | Yes       |
 
 `mtime`, `atime` and `ctime` are in seconds since Unix epoch.
 
@@ -42,7 +42,7 @@ declare class AdbSync {
 
 ## Errors
 
-For `lstat` on Android 8+ and `stat`, if a file system error occurs, a normal `Error` with `message` set to the error name (e.g. `ENOENT`) will be thrown.
+For `lstat` on Android 8 and above and `stat`, if a file system error occurs, a normal `Error` with `message` set to the error name (e.g. `ENOENT`) will be thrown.
 
 All error code and names are:
 

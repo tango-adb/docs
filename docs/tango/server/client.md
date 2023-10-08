@@ -84,4 +84,4 @@ See [commands](../commands/overview.md) for how to use the `Adb` instance.
 
 ## Other commands
 
-For other commands supported by `AdbServerClient`, see [commands](./commands.md).
+For other commands supported by `AdbServerClient`, see [server commands](./commands.md).

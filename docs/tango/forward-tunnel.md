@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # Forward tunnel
@@ -14,10 +14,40 @@ declare class Adb {
 }
 ```
 
+## Close socket
+
+The following methods all close the socket:
+
+- `socket.close()`
+- `socket.readable.cancel()` (When `readable` is not locked)
+- `socket.readable.getReader().cancel()` (When you have the reader)
+- `socket.writable.abort()` (When `writable` is not locked)
+- `socket.writable.getWriter().abort()` (When you have the writer)
+- `socket.writable.close()` (When `writable` is not locked)
+- `socket.writable.getWriter().close()` (When you have the writer)
+
+:::info
+
+Not closing a socket will cause a small memory leak, and depends on the other end of the socket, it may not work correctly.
+
+:::
+
 ## Example
 
 ```ts transpile
+import { WritableStream } from "@yume-chan/stream-extra";
+
 const socket = await adb.createSocket("tcp:1234");
+
+await socket.readable.pipeTo(
+  new WritableStream({
+    write(chunk) {
+      console.log(chunk);
+    },
+  }),
+);
+
+await socket.close();
 ```
 
 :::info Equivalent ADB command
