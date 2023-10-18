@@ -12,15 +12,17 @@ This is not tested yet.
 
 ## `TCPSocket`
 
+[Direct Socket API](https://github.com/WICG/direct-sockets) is a new Web API that allows Web apps to create TCP and UDP sockets. The `TCPSocket` class from this API can be used to create a TCP connection to an Android device.
+
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
 
-[Direct Socket API](https://github.com/WICG/direct-sockets) will allow Web apps to connect to Android devices over TCP.
+Currently no browser supports this API.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-The following code converts Node.js's `net.Socket` to a [Direct Socket API](https://github.com/WICG/direct-sockets) `TCPSocket`:
+The following code converts Node.js's `net.Socket` to a `TCPSocket`:
 
 ```ts transpile
 import {

@@ -6,7 +6,9 @@ sidebar_position: 3
 
 :::note
 
-Daemon connection is still dealing with exclusive device access. If you want to create a mux protocol, create a custom transport instead.
+Daemon connections defines how to connect to devices directly. It works on low-level ADB packets, and generally requires exclusive device accesses.
+
+You may also interested in [custom transports](../custom-transport.md), which works on high-level ADB sockets, and can provide shared access to a device.
 
 :::
 
