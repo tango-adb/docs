@@ -1,3 +1,6 @@
 position: 3
-label: 'Server Connection'
+label: "Server Connection"
 collapsed: false
+link:
+  type: generated-index
+  title: "Server Connection"

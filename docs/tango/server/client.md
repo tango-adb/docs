@@ -78,7 +78,7 @@ Because `AdbServerDevice` objects have a `transportId` field, it can also be use
 
 :::note Next Step
 
-See [commands](../commands/overview.md) for how to use the `Adb` instance.
+See [commands](../commands/index.md) for how to use the `Adb` instance.
 
 :::
 

@@ -13,5 +13,5 @@ Exposed as fields of `Adb` class, these are implemented by ADB daemon itself.
 * [`tcpip`](./tcpip.md): Enable/disable ADB over WiFi
 * [`getProp`](./get-prop.md): Shorthand for `getprop` executable
 * [`rm`](./rm.md): Delete files on device
-* [`sync`](./sync/overview.md): Interact with device filesystem
+* [`sync`](./sync/index.md): Interact with device filesystem
 * [`framebuffer`](./framebuffer.md): Capture device screen

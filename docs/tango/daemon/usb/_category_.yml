@@ -1,3 +1,6 @@
 position: 1
-label: 'Create USB connection'
+label: "Create USB connection"
 collapsed: false
+link:
+  type: generated-index
+  title: "Create USB connection"
