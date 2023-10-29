@@ -7,10 +7,10 @@ import TabItem from "@theme/TabItem";
 
 # Get device manager
 
-[`@yume-chan/adb-daemon-usb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-usb) package provides an `AdbDaemonConnection` using [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations.
+[`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` using [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations.
 
 ```sh npm2yarn
-npm i @yume-chan/adb-daemon-usb
+npm i @yume-chan/adb-daemon-webusb
 ```
 
 <Tabs className="runtime-tabs" groupId="runtime">

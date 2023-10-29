@@ -174,7 +174,7 @@ module.exports = {
     onBrokenMarkdownLinks: "warn",
     favicon: "img/logo.svg",
     organizationName: "tango-adb",
-    projectName: "docs", // Usually your repo name.
+    projectName: "docs",
     themes: [
         [
             require.resolve("@easyops-cn/docusaurus-search-local"),
@@ -188,7 +188,7 @@ module.exports = {
         navbar: {
             title: "Unofficial ADB Book",
             logo: {
-                alt: "Site Logo",
+                alt: "Tango Logo",
                 src: "img/logo.svg",
             },
             items: [
@@ -214,7 +214,7 @@ module.exports = {
         footer: {
             style: "dark",
             links: [],
-            copyright: `Copyright © 2021-${new Date().getFullYear()} Simon Chan. Built with Docusaurus.`,
+            copyright: `Copyright © 2021-${new Date().getFullYear()} Tango ADB. Built with Docusaurus.`,
         },
         prism: {
             theme: lightTheme,
