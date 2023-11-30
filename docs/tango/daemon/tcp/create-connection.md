@@ -4,12 +4,6 @@ sidebar_position: 2
 
 # Create connection
 
-:::danger
-
-This is not tested yet.
-
-:::
-
 ## `TCPSocket`
 
 [Direct Socket API](https://github.com/WICG/direct-sockets) is a new Web API that allows Web apps to create TCP and UDP sockets. The `TCPSocket` class from this API can be used to create a TCP connection to an Android device.
@@ -25,15 +19,17 @@ Currently no browser supports this API.
 The following code converts Node.js's `net.Socket` to a `TCPSocket`:
 
 ```ts transpile
+import { PromiseResolver } from "@yume-chan/async";
 import {
   PushReadableStream,
+  WritableStream,
   type ReadableStream,
-  type WritableStream,
 } from "@yume-chan/stream-extra";
 import { connect, type Socket } from "node:net";
 
 export interface TCPSocketOptions {
   noDelay?: boolean;
+  unref?: boolean;
 }
 
 export interface TCPSocketOpenInfo {
@@ -50,19 +46,26 @@ export interface TCPSocketOpenInfo {
 export class TCPSocket {
   #socket: Socket;
   #opened = new PromiseResolver<TCPSocketOpenInfo>();
+  get opened(): Promise<TCPSocketOpenInfo> {
+    return this.#opened.promise;
+  }
 
   constructor(
     remoteAddress: string,
     remotePort: number,
-    options?: TCPSocketOptions,
+    options?: TCPSocketOptions
   ) {
     this.#socket = connect(remotePort, remoteAddress);
 
     if (options?.noDelay) {
       this.#socket.setNoDelay(true);
     }
+    if (options?.unref) {
+      this.#socket.unref();
+    }
+
     this.#socket.on("connect", () => {
-      const readable = new PushReadableStream((controller) => {
+      const readable = new PushReadableStream<Uint8Array>((controller) => {
         this.#socket.on("data", async (data) => {
           this.#socket.pause();
           await controller.enqueue(data);
@@ -71,8 +74,8 @@ export class TCPSocket {
 
         this.#socket.on("end", () => {
           try {
-            controller.end();
-          } catch {}
+            controller.close();
+          } catch { }
         });
 
         controller.abortSignal.addEventListener("abort", () => {
@@ -120,7 +123,6 @@ The following code implements an `AdbDaemonDevice` using a `TCPSocket`:
 ```ts transpile
 import type { AdbDaemonDevice } from "@yume-chan/adb";
 import { AdbPacket, AdbPacketSerializeStream } from "@yume-chan/adb";
-import type { ReadableStream, WritableStream } from "@yume-chan/stream-extra";
 import {
   StructDeserializeStream,
   UnwrapConsumableStream,
@@ -128,29 +130,42 @@ import {
   WrapWritableStream,
 } from "@yume-chan/stream-extra";
 
-class AdbDaemonDirectSocketsDevice implements AdbDaemonDevice {
+export interface AdbDaemonDirectSocketDeviceOptions {
+  host: string;
+  port?: number;
+  name?: string;
+  unref?: boolean;
+}
+
+export class AdbDaemonDirectSocketsDevice implements AdbDaemonDevice {
   static isSupported(): boolean {
-    return typeof globalThis.TCPSocket !== "undefined";
+    return true;
   }
+
+  #options: AdbDaemonDirectSocketDeviceOptions;
 
   readonly serial: string;
 
-  readonly host: string;
+  get host(): string {
+    return this.#options.host;
+  }
 
   readonly port: number;
 
-  name: string | undefined;
+  get name(): string | undefined {
+    return this.#options.name;
+  }
 
-  constructor(host: string, port = 5555, name?: string) {
-    this.host = host;
-    this.port = port;
-    this.serial = `${host}:${port}`;
-    this.name = name;
+  constructor(options: AdbDaemonDirectSocketDeviceOptions) {
+    this.#options = options;
+    this.port = options.port ?? 5555;
+    this.serial = `${this.host}:${this.port}`;
   }
 
   async connect() {
     const socket = new TCPSocket(this.host, this.port, {
       noDelay: true,
+      unref: this.#options.unref,
     });
     const { readable, writable } = await socket.opened;
 
@@ -172,8 +187,10 @@ The following code creates a connection:
 
 ```ts transpile
 const device: AdbDaemonDirectSocketsDevice = new AdbDaemonDirectSocketsDevice(
-  "192.168.0.100",
-  5555,
+  {
+    host: "192.168.50.30",
+    port: 5555,
+  }
 );
 
 const connection: ReadableWritablePair<
