@@ -1,7 +1,6 @@
 import remarkPluginNpm2yarn from "@docusaurus/remark-plugin-npm2yarn";
 import { themes } from "prism-react-renderer";
 import { fileURLToPath } from "url";
-import plantuml from "./scripts/plantuml.js";
 import ts2js from "./scripts/ts2js.js";
 
 function resolve(path) {
@@ -192,6 +191,7 @@ export default {
   organizationName: "tango-adb",
   projectName: "docs",
   themes: [
+    "@docusaurus/theme-mermaid",
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       /** @type {Record<string, unknown>} */ (
@@ -249,7 +249,6 @@ export default {
           // Please change this to your repo.
           editUrl: "https://github.com/tango-adb/docs/edit/main/",
           remarkPlugins: [
-            plantuml,
             ts2js,
             [remarkPluginNpm2yarn, { sync: true }],
           ],

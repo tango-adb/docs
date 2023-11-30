@@ -99,15 +99,12 @@ device::ro.product.name=venus;ro.product.model=M2011K2C;ro.product.device=venus;
 
 ## Sequence Diagram
 
-```uml
-@startuml
-
-participant Client
-participant Daemon
-
-Client -> Daemon: CNXN (host::)
-...Optional Authentication...
-Daemon -> Client: CNXN (device::)
-
-@enduml
+```mermaid
+sequenceDiagram
+    Client ->> Daemon: CNXN (host::)
+    opt Authentication
+        Daemon ->> Client: AUTH (token)
+        Client ->> Daemon: AUTH (signature)
+    end
+    Daemon ->> Client: CNXN (device::)
 ```
