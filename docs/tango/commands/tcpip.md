@@ -35,7 +35,7 @@ declare class Adb {
 await adb.tcpip.setPort(5555);
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb tcpip 5555
@@ -49,7 +49,7 @@ adb tcpip 5555
 await adb.tcpip.disable();
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb usb

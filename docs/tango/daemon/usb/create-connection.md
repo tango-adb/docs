@@ -29,7 +29,7 @@ The connection might fail due to various reasons, such as:
 2. Another `USBDevice` instance already has the exclusive access to the interface. Such as another instance of your app, or another app that uses Tango or WebUSB.
 3. The device is disconnected between `requestDevice` and `connect`.
 
-:::note Next Step
+:::note[Next Step]
 
 [Create credential store](../credential-store.md)
 

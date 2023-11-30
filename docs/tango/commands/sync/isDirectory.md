@@ -22,7 +22,7 @@ If a file system error (e.g. target not exist) occurs, this method will return `
 const isDirectory = await sync.isDirectory('/sdcard');
 ```
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 Although not exactly the same:
 

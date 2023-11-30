@@ -26,7 +26,7 @@ adb server version (39) doesn't match this client (41); killing...
 
 Tango doesn't check the version number, although not thoroughly tested, most of the commands should work on any version of ADB server.
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb version
@@ -46,7 +46,7 @@ declare class AdbServerClient {
 
 Stops the server.
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb kill-server
@@ -71,7 +71,7 @@ Some interesting features:
 - `libusb`: The server is using `libusb` to communicate with devices.
 - `delayed_ack` The server supports Delayed Acknowledgment for lower latency. Delayed Acknowledgment is a low-level ADB protocol feature, so not controlled by Tango.
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb host-features
@@ -105,7 +105,7 @@ Some lazy manufacturers use the same `serial` for all devices. It's possible tha
 
 `transportId` uniquely identifies a connection between server and device, but isn't tied to the device. It will change when the device is disconnected and reconnected.
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb devices -l
@@ -158,7 +158,7 @@ For example, if [Shell protocol](../commands/subprocess.md#none-protocol-vs-shel
 
 Usually you don't need to call this method directly, the `AdbServerClient#createTransport` method uses it to create a `AdbTransport` object.
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb features
@@ -187,7 +187,7 @@ The socket can be used to run an ADB command, or connect to a socket on device.
 
 Usually you don't need to call this method directly, the `AdbServerClient#createTransport` method uses it to implement `AdbTransport`.
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 There is no equivalent ADB command.
 
@@ -219,7 +219,7 @@ Options:
 - `unref`: If the underlying connection is using Node.js `net` module, then `unref` the socket so the process can exit even if the connection is still alive.
 - `signal`: Stops the wait when the signal is aborted.
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb wait-for[-TRANSPORT]-STATE

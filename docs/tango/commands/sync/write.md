@@ -55,7 +55,7 @@ await sync.write({
 });
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 echo "Hello, world!" > hello.txt
@@ -86,7 +86,7 @@ await sync.write({
 });
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb shell ln -s /sdcard/Download/target.txt /sdcard/Download/hello.txt

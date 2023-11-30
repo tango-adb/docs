@@ -50,7 +50,7 @@ await socket.readable.pipeTo(
 await socket.close();
 ```
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 It doesn't work in the same way, but you can use the following command to register a forward tunnel and connect to it:
 

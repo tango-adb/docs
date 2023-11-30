@@ -41,7 +41,7 @@ import { Adb } from "@yume-chan/adb";
 const adb: Adb = new Adb(transport);
 ```
 
-:::note Next Step
+:::note[Next Step]
 
 See [commands](../commands/index.md) for how to use the `Adb` instance.
 

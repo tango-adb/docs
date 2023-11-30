@@ -76,7 +76,7 @@ const stat = await sync.stat("/sdcard/Download");
 console.log(stat);
 ```
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 ```sh
 adb shell stat /sdcard/Download

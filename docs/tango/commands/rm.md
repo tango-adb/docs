@@ -31,7 +31,7 @@ Note that the `--force` option also disables the error message when the target d
 await adb.rm("/sdcard/Download/foo.txt");
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb shell rm /sdcard/Download/foo.txt </dev/null
@@ -45,7 +45,7 @@ adb shell rm /sdcard/Download/foo.txt </dev/null
 await adb.rm("/sdcard/Download/foo", { recursive: true });
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb shell rm -r /sdcard/Download/foo </dev/null
@@ -59,7 +59,7 @@ adb shell rm -r /sdcard/Download/foo </dev/null
 await adb.rm(["/sdcard/Download/foo.txt", "/sdcard/Download/bar.txt"]);
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb shell rm -r /sdcard/Download/foo.txt /sdcard/Download/bar.txt </dev/null

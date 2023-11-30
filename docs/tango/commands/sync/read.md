@@ -12,7 +12,7 @@ declare class AdbSync {
 }
 ```
 
-:::danger READ ALL STREAMS!
+:::danger[READ ALL STREAMS!]
 
 ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
 
@@ -33,7 +33,7 @@ await content.pipeTo(
 );
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb pull /sdcard/Download/hello.txt

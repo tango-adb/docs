@@ -84,7 +84,7 @@ Apps can disable screenshot by setting `FLAG_SECURE` flag on their windows. If t
 const screenshot = await adb.framebuffer();
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb exec-out screencap -p > screenshot.png

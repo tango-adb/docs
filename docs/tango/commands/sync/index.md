@@ -21,7 +21,7 @@ const sync: AdbSync = await adb.sync();
 2. Calling another command while a command is still running will wait for the previous command to finish.
 3. Multiple sync connections to the same device can be created to run multiple commands at the same time.
 
-:::danger READ ALL STREAMS!
+:::danger[READ ALL STREAMS!]
 
 ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
 

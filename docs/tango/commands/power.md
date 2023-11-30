@@ -20,7 +20,7 @@ Example:
 await adb.power.powerOff();
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb shell reboot -p
@@ -42,7 +42,7 @@ Example:
 await adb.power.reboot();
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb reboot
@@ -56,7 +56,7 @@ The `mode` parameter allows rebooting into different modes, including custom one
 await adb.power.reboot("download");
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb reboot download
@@ -78,7 +78,7 @@ Example:
 await adb.power.recovery();
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb reboot recovery
@@ -100,7 +100,7 @@ Example:
 await adb.power.bootloader();
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb reboot bootloader

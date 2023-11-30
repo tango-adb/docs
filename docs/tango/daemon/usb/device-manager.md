@@ -18,7 +18,7 @@ npm i @yume-chan/adb-daemon-webusb
 
 WebUSB API is natively supported in Chromium-based browsers.
 
-:::info Electron Support
+:::info[Electron Support]
 
 * To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API, then follow the below instructions
 * To use Tango in Electron main processes, follow the instructions for Node.js instead

@@ -95,7 +95,7 @@ The behavior of `AdbSubprocessProtocol` is described in the following table:
 
 `stdout` and `stderr` will close when the process exits.
 
-:::danger READ ALL STREAMS!
+:::danger[READ ALL STREAMS!]
 
 ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
 
@@ -129,7 +129,7 @@ await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
 );
 ```
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 ```sh
 adb exec-out ls -l

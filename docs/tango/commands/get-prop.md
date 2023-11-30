@@ -22,7 +22,7 @@ It will trim the last newline character from the output.
 const version = await adb.getProp("ro.build.version.release");
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb shell getprop ro.build.version.release
@@ -36,7 +36,7 @@ adb shell getprop ro.build.version.release
 const port = await this.adb.getProp("service.adb.tcp.port");
 ```
 
-:::info Equivalent ADB Command
+:::info[Equivalent ADB Command]
 
 ```sh
 adb shell getprop service.adb.tcp.port

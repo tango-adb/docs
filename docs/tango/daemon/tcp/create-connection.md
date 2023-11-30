@@ -9,16 +9,13 @@ sidebar_position: 2
 [Direct Socket API](https://github.com/WICG/direct-sockets) is a new Web API that allows Web apps to create TCP and UDP sockets. The `TCPSocket` class from this API can be used to create a TCP connection to an Android device.
 
 <Tabs className="runtime-tabs" groupId="runtime">
-<TabItem value="web" label="Web">
+    <TabItem value="web" label="Web">
+        Currently no browser supports this API.
+    </TabItem>
+    <TabItem value="node" label="Node.js">
+        The following code converts Node.js's `net.Socket` to a `TCPSocket`:
 
-Currently no browser supports this API.
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-The following code converts Node.js's `net.Socket` to a `TCPSocket`:
-
-```ts transpile
+        ```ts transpile
 import { PromiseResolver } from "@yume-chan/async";
 import {
   PushReadableStream,
@@ -111,9 +108,8 @@ export class TCPSocket {
     });
   }
 }
-```
-
-</TabItem>
+        ```
+    </TabItem>
 </Tabs>
 
 ## `AdbDaemonDirectSocketsDevice`
@@ -199,7 +195,7 @@ const connection: ReadableWritablePair<
 > = await device.connect();
 ```
 
-:::note Next Step
+:::note[Next Step]
 
 [Create credential store](../credential-store.md)
 

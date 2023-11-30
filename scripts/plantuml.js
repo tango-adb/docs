@@ -1,6 +1,6 @@
-const encoder = require("plantuml-encoder");
-const svgToDataUri = require("mini-svg-data-uri");
-const visit = require("unist-util-visit");
+import encoder from "plantuml-encoder";
+import svgToDataUri from "mini-svg-data-uri";
+import { visit } from "unist-util-visit";
 
 async function umlToSvgDataUri(uml) {
     const encoded = encoder.encode(uml);
@@ -11,7 +11,7 @@ async function umlToSvgDataUri(uml) {
     return svgToDataUri(svg);
 }
 
-module.exports = () => {
+export default () => {
     return async (syntaxTree) => {
         const matches = [];
         visit(syntaxTree, "code", (node) => {

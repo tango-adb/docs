@@ -56,7 +56,7 @@ The returned `AdbForwardListener` objects contain the following fields:
 - `localName`: Socket address on device
 - `remoteName`: Socket address on host
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 ```sh
 adb reverse --list
@@ -85,7 +85,7 @@ const port = await adb.reverse.addExternal("tcp:0", "tcp:localhost:1234");
 console.log(port); // tcp:38324
 ```
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 ```sh
 adb reverse tcp:0 tcp:localhost:1234
@@ -120,7 +120,7 @@ The meaning of `localAddress` depends on the transport:
 | `AdbDaemonTransport` | Any string that uniquely identifies the handler                                              | A random string                            |
 | `AdbServerTransport` | Any available TCP or Unix socket address (e.g. `tcp:0.0.0.0:1234` or `unix:/var/opt/socket`) | Automatically choose an available TCP port |
 
-:::danger READ ALL STREAMS!
+:::danger[READ ALL STREAMS!]
 
 ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
 
@@ -148,7 +148,7 @@ const address = await adb.reverse.add("tcp:1234", async (socket) => {
 });
 ```
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 There is no equivalent ADB command.
 
@@ -170,7 +170,7 @@ Remove a port forwarding from the device using the socket address on device.
 await adb.reverse.remove("tcp:1234");
 ```
 
-:::info Equivalent ADB command
+:::info[Equivalent ADB command]
 
 ```sh
 adb reverse --remove tcp:1234

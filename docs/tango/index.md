@@ -5,10 +5,10 @@ slug: /
 
 # Quick Start
 
-<!--
+{/*
 cspell: ignore struct
 cspell: ignore webusb
--->
+*/}
 
 Tango is separated into many packages. Generally, you need at least three things:
 
@@ -31,7 +31,7 @@ To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/a
 <Tabs className="runtime-tabs" groupId="direct-connection">
 <TabItem value="usb" label="USB">
 
-:::note Next Step
+:::note[Next Step]
 
 [Create USB connection](./daemon/usb/device-manager.md)
 
@@ -40,7 +40,7 @@ To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/a
 </TabItem>
 <TabItem value="tcp" label="TCP">
 
-:::note Next Step
+:::note[Next Step]
 
 [Create TCP connection](./daemon/tcp/enable.md)
 
@@ -49,7 +49,7 @@ To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/a
 </TabItem>
 <TabItem value="custom" label="Custom">
 
-:::note Next Step
+:::note[Next Step]
 
 [Create custom connection](./daemon/custom-connection.md)
 
@@ -64,7 +64,7 @@ In this mode, Tango talks to a Google ADB server, which can either run on the sa
 
 To use this mode, you will use the `AdbServerClient` class from `@yume-chan/adb` package, with a server connection.
 
-:::note Next Step
+:::note[Next Step]
 
 [Connect to server](./server/connection.md)
 
@@ -74,7 +74,7 @@ To use this mode, you will use the `AdbServerClient` class from `@yume-chan/adb`
 
 It's also possible to create a custom transport. For example, a mock transport can be used in tests, or a proxy transport can share a device with multiple clients.
 
-:::note Next Step
+:::note[Next Step]
 
 [Create custom transport](./custom-transport.md)
 
