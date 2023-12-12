@@ -1,0 +1,31 @@
+---
+sidebar_position: 5
+---
+
+# Monitor devices
+
+`@yume-chan/adb-daemon-webusb` package also provides a `AdbDaemonWebUsbDeviceWatcher` class that wraps WebUSB API to monitor device additions and removals.
+
+Similar to [`AdbDaemonWebUsbDeviceManager`](./device-manager.md), it requires a WebUSB implementation. See that page for how to get one on each supported runtime.
+
+```ts transpile
+import { AdbDaemonWebUsbDeviceWatcher } from "@yume-chan/adb-daemon-webusb";
+
+function handleDeviceChange(addedDeviceSerial?: string) {
+  if (addDeviceSerial) {
+    // A device with serial `addedDeviceSerial` is added
+  } else {
+    // A device is removed
+  }
+}
+
+const watcher = new AdbDaemonWebUsbDeviceWatcher(
+  handleDeviceChange,
+  navigator.usb,
+);
+
+// Stop watching devices
+watcher.dispose();
+```
+
+Generally, the handler should reload the device list using [`AdbDaemonWebUsbDeviceManager#getDevices`](./get-devices.md) and update the UI.

@@ -4,14 +4,16 @@ sidebar_position: 4
 
 # Create options
 
-Scrcpy protocol changes over time, and are usually not backward compatible. In Tango's implementation, the options actually have two proposals:
+Scrcpy protocol changes over time, and are usually not backward compatible. In Tango's implementation, the options actually have two proposes:
 
-* It defines which server options are available
-* It normalize the behavior between different server versions
+- It defines which server options are available
+- It normalize the behavior between different server versions
 
 It's important to use the correct options class for the server version you're using. Using an incorrect version almost always results in a error.
 
-## Available versions
+## `@yume-chan/scrcpy` versions
+
+These types contains all the options available in the corresponding Scrcpy version.
 
 | Version   | Type                |
 | --------- | ------------------- |
@@ -25,3 +27,17 @@ It's important to use the correct options class for the server version you're us
 | 1.25      | `ScrcpyOptions1_25` |
 | 2.0       | `ScrcpyOptions2_0`  |
 | 2.1       | `ScrcpyOptions2_1`  |
+| 2.2~2.3.1 | `ScrcpyOptions2_2`  |
+
+Parsing `--list-cameras` and `--list-camera-sizes` in version 2.2 are not supported yet.
+
+## `@yume-chan/adb-scrcpy` versions
+
+There are extra options classes in `@yume-chan/adb-scrcpy` package, which contains settings for how to start and connect to the server.
+
+| Version   | Type                   |
+| --------- | ---------------------- |
+| 1.16~1.21 | `AdbScrcpyOptions1_16` |
+| 1.22~1.25 | `AdbScrcpyOptions1_22` |
+| 2.0       | `AdbScrcpyOptions2_0`  |
+| 2.1~2.3.1 | `AdbScrcpyOptions2_1`  |

@@ -31,6 +31,6 @@ The connection might fail due to various reasons, such as:
 
 :::note[Next Step]
 
-[Create credential store](../credential-store.md)
+[Create credential store](../credential-store.mdx)
 
 :::

@@ -8,38 +8,17 @@ The server file needs to be copied to the device and executed on it. It will lis
 
 The default path of the server file on device is `/data/local/tmp/scrcpy-server.jar`. Before version 2.3, the path of Scrcpy server binary is hard-coded in the server itself. So you must push it to this exact path, otherwise the clean up steps won't delete the server file.
 
-<Tabs className="runtime-tabs">
-<TabItem label="Tango" value="tango">
+:::info[Equivalent ADB command]
 
-It uses [`AdbSync#write`](../tango/commands/sync/write.md) method to write a file stream to the device.
-
-```ts transpile
-import type { Adb } from "@yume-chan/adb";
-import { ReadableStream } from "@yume-chan/stream-extra";
-
-declare const adb: Adb;
-declare const server: ArrayBuffer;
-
-const sync = await adb.sync();
-try {
-  await sync.write({
-    filename: "/data/local/tmp/scrcpy-server.jar",
-    file: new ReadableStream({
-      start(controller) {
-        controller.enqueue(new Consumable(new Uint8Array(server)));
-        controller.close();
-      },
-    }),
-  });
-} finally {
-  await sync.dispose();
-}
+```bash
+adb push scrcpy-server.jar /data/local/tmp/scrcpy-server.jar
 ```
 
-</TabItem>
-<TabItem label="Tango Scrcpy" value="client">
+:::
 
-`@yume-chan/adb-scrcpy` package provides a `pushServer` function as a shortcut for the Tango `AdbSync#write` call.
+## Using `pushServer`
+
+`@yume-chan/adb-scrcpy` package provides a `pushServer` function as a shortcut for the Tango [`AdbSync#write`](../tango/commands/sync/write.md) call.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -75,14 +54,76 @@ await AdbScrcpyClient.pushServer(
 );
 ```
 
-</TabItem>
-<TabItem label="Shell" value="shell">
+If the server binary is downloaded using `fetch`, it's also possible to use the response stream directly. In theory, this is more efficient because the downloading and pushing is run in parallel. However, in practice, because how small the server binary is, it doesn't make much difference. If the cache is not properly configured, this will download the server binary every time, so it might be even slower.
 
-This shows the equivalent ADB command:
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import {
+  WrapReadableStream,
+  WrapConsumableStream,
+} from "@yume-chan/stream-extra";
 
-```bash
-adb push scrcpy-server.jar /data/local/tmp/scrcpy-server.jar
+declare const adb: Adb;
+declare const url: URL;
+
+const response = await fetch(url);
+
+await AdbScrcpyClient.pushServer(
+  adb,
+  new WrapReadableStream(response.body).pipeThrough(new WrapConsumableStream()),
+);
 ```
 
-</TabItem>
-</Tabs>
+## Using `AdbSync#write`
+
+The above code is a shortcut for the following code:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const server: ArrayBuffer;
+
+const sync = await adb.sync();
+try {
+  await sync.write({
+    filename: "/data/local/tmp/scrcpy-server.jar",
+    file: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Consumable(new Uint8Array(server)));
+        controller.close();
+      },
+    }),
+  });
+} finally {
+  await sync.dispose();
+}
+```
+
+Or using `fetch`:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import {
+  WrapReadableStream,
+  WrapConsumableStream,
+} from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const url: URL;
+
+const response = await fetch(url);
+
+const sync = await adb.sync();
+try {
+  await sync.write({
+    filename: "/data/local/tmp/scrcpy-server.jar",
+    file: new WrapReadableStream(response.body).pipeThrough(
+      new WrapConsumableStream(),
+    ),
+  });
+} finally {
+  await sync.dispose();
+}
+```
