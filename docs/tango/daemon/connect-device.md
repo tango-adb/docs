@@ -2,9 +2,6 @@
 sidebar_position: 5
 ---
 
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
-
 # Handshake and authenticate
 
 ## Authenticate with device
@@ -23,7 +20,7 @@ const transport: AdbDaemonTransport = await AdbDaemonTransport.authenticate({
 
 :::info
 
-The `serial` field is for bookkeeping purpose. It can be any string if you don't need it.
+The `serial` field is not used by Tango, but it helps you to identify the device.
 
 :::
 

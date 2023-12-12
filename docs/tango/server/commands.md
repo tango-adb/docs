@@ -99,7 +99,7 @@ Gets all connected devices.
 
 :::info
 
-Some lazy manufacturers use the same `serial` for all devices. It's possible that multiple devices with the same `serial` will be returned.
+Some lazy manufacturers use the same `serial` for all devices. It's possible that multiple devices with the same `serial` will be returned. So it's recommended to use `transportId` to identify devices.
 
 :::
 

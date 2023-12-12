@@ -68,7 +68,7 @@ As mentioned before, the main function of `AdbTransport` is the `connect` method
 
 Other fields:
 
-- `serial`: The serial number of the device. `Adb` class doesn't use it, but it's useful for logging.
+- `serial`: The serial number of the device. It's not used by Tango, but it helps you to identify the device.
 - `maxPayloadSize`: The maximum payload size of the device. `AdbSync#write` will split data into multiple packets if it's larger than this value. If you don't know this value, use 4KB.
 - `banner`: ADB banner returned from the device. It contains the list of ADB features the device supports, which is important for many command to choose the correct behavior.
 - `disconnected`: A promise that resolves when the transport is disconnected.

@@ -1,0 +1,27 @@
+---
+sidebar_position: 4
+---
+
+# Create options
+
+Scrcpy protocol changes over time, and are usually not backward compatible. In Tango's implementation, the options actually have two proposals:
+
+* It defines which server options are available
+* It normalize the behavior between different server versions
+
+It's important to use the correct options class for the server version you're using. Using an incorrect version almost always results in a error.
+
+## Available versions
+
+| Version   | Type                |
+| --------- | ------------------- |
+| 1.16      | `ScrcpyOptions1_16` |
+| 1.17      | `ScrcpyOptions1_17` |
+| 1.18~1.20 | `ScrcpyOptions1_18` |
+| 1.21      | `ScrcpyOptions1_21` |
+| 1.22      | `ScrcpyOptions1_22` |
+| 1.23      | `ScrcpyOptions1_23` |
+| 1.24      | `ScrcpyOptions1_24` |
+| 1.25      | `ScrcpyOptions1_25` |
+| 2.0       | `ScrcpyOptions2_0`  |
+| 2.1       | `ScrcpyOptions2_1`  |

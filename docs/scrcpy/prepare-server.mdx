@@ -1,0 +1,140 @@
+---
+sidebar_position: 2
+---
+
+# Prepare the server binary
+
+Scrcpy server is a Java application that runs on Android devices. Tango uses the unmodified, official Scrcpy server binary, so you don't need to build it yourself.
+
+You can download the server binary from [official GitHub releases](https://github.com/Genymobile/scrcpy/releases) and copy into your project, use `@yume-chan/fetch-scrcpy-server` package to automate the process, or build the server yourself.
+
+## Embed manually downloaded or built server
+
+Depends on your runtime, bundler and framework, you may need to consume `server.bin` differently.
+
+For frontend meta frameworks, usually there are two ways to include a binary file:
+
+1. Put it in `public` folder, and reference it using a fixed URL
+2. Import it from a JavaScript source file and let the bundler handle it
+
+We recommend the second approach, because it's more flexible, less error-prone, and has better cache control.
+
+Assume you have downloaded the server binary to `src/server.bin`, and you want to embed it into your app.
+
+<Tabs className="runtime-tabs" groupId="bundler">
+    <TabItem label="Webpack 5" value="webpack-5">
+
+```ts transpile
+const url = new URL("./server.bin", import.meta.url);
+const server: ArrayBuffer = await fetch(url)
+    .then((res) => res.arrayBuffer())
+```
+
+    </TabItem>
+    <TabItem label="Vite" value="vite">
+
+```ts transpile
+const url = new URL("./server.bin", import.meta.url);
+const server: ArrayBuffer = await fetch(url)
+    .then((res) => res.arrayBuffer())
+```
+
+    </TabItem>
+    <TabItem label="Node.js" value="node">
+
+```ts transpile
+import fs from "fs/promises";
+
+const url = new URL("./server.bin", import.meta.url);
+const server: Buffer = fs.readFile(url)
+```
+
+    </TabItem>
+</Tabs>
+
+## Use `@yume-chan/fetch-scrcpy-server`
+
+```sh npm2yarn
+npm i -D @yume-chan/fetch-scrcpy-server
+```
+
+Usage:
+
+```sh
+npx fetch-scrcpy-server <version>
+```
+
+For example:
+
+```sh
+npx fetch-scrcpy-server 2.1
+```
+
+The server binary is written to `server.bin` and the version is written to `version.js` in this package's root (in your `node_modules`).
+
+Importing this package will give you two variables:
+
+* `BIN`: A URL to the server binary. It can be used in `fetch` or `fs.readFile` similar to the manual approach.
+* `VERSION`: A string containing the downloaded server version. It's required when starting the server.
+
+<Tabs className="runtime-tabs" groupId="bundler">
+    <TabItem label="Webpack 5" value="webpack-5">
+
+```ts transpile
+import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
+
+console.log(VERSION); // 2.1
+const server: ArrayBuffer = await fetch(BIN)
+    .then((res) => res.arrayBuffer())
+```
+
+    </TabItem>
+    <TabItem label="Vite" value="vite">
+
+```ts transpile
+import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
+
+console.log(VERSION); // 2.1
+const server: ArrayBuffer = await fetch(BIN)
+    .then((res) => res.arrayBuffer())
+```
+
+    </TabItem>
+    <TabItem label="Node.js" value="node">
+
+```ts transpile
+import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
+
+console.log(VERSION); // 2.1
+const server: Buffer = fs.readFile(BIN)
+```
+
+    </TabItem>
+</Tabs>
+
+### Run the script automatically
+
+After installing the package, you can add it to your NPM scripts, so every time you run `npm install`, the script will be executed automatically.
+
+```json
+{
+    "scripts": {
+        "postinstall": "fetch-scrcpy-server 2.1"
+    }
+}
+```
+
+## Build the server
+
+The easiest way to modify and build the server is to use [Android Studio](https://developer.android.com/studio).
+
+1. Clone Scrcpy
+    ```sh
+    git clone https://github.com/Genymobile/scrcpy.git
+    ```
+
+2. Open the root folder in Android Studio
+3. (Optional) Change `Build Variant` to `release` from `Build` -> `Select Build Variant` menu item
+4. Select `Build` -> `Make Project` menu item
+
+The server binary will be written to `server/build/outputs/apk/debug/server-debug.apk` (`debug` variant) or `server/build/outputs/apk/release/server-release-unsigned.apk` (`release` variant).

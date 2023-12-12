@@ -218,6 +218,12 @@ export default {
         },
         {
           type: "doc",
+          docId: "scrcpy/index",
+          position: "left",
+          label: "Scrcpy",
+        },
+        {
+          type: "doc",
           docId: "internal/index",
           position: "left",
           label: "ADB",
