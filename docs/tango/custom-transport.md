@@ -16,7 +16,7 @@ Each ADB socket is basically a pair of `ReadableStream<Uint8Array>` and `Writabl
 
 :::note
 
-See [Web Streams Basics](./web-stream.md) for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+See [Web Streams Basics](./web-stream.mdx) for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
 
 :::
 

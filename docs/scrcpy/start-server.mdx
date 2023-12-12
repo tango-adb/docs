@@ -1,0 +1,34 @@
+---
+sidebar_position: 5
+---
+
+# Start server
+
+The server is a `jar` file, so it's not directly executable. On Android, `app_process` is the program to start the system server, all the apps, and standalone Java applications:
+
+## Start using adb
+
+```bash
+adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1
+```
+
+## Start using Tango
+
+It uses [Subprocess#spawn](../tango/commands/subprocess.md#start-process-in-raw-mode) to start a process on device:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const process = await adb.subprocess.spawn(
+  "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1",
+);
+await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
+  new WritableStream<string>({
+    write(chunk) {
+      console.log(chunk);
+    },
+  }),
+);
+```

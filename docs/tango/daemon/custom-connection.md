@@ -12,11 +12,11 @@ You may also interested in [custom transports](../custom-transport.md), which wo
 
 :::
 
-We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.md) class in USB connection and [`AdbDaemonDirectSocketsDevice`](./tcp/create-connection.md#adbdaemondirectsocketsdevice) class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of [`ReadableStream<AdbPacket>`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream<Consumable<AdbPacket>>`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to work, that's what the `connect` method in those `Device` classes returns.
+We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.md) class in USB connection and [`AdbDaemonDirectSocketsDevice`](./tcp/create-connection.mdx#adbdaemondirectsocketsdevice) class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of [`ReadableStream<AdbPacket>`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream<Consumable<AdbPacket>>`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to work, that's what the `connect` method in those `Device` classes returns.
 
 :::note
 
-See [Web Streams Basics](../web-stream.md) for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+See [Web Streams Basics](../web-stream.mdx) for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
 
 :::
 
@@ -37,7 +37,7 @@ Each `AdbPacket` is an plain object with the following fields: The field names s
 
 ## Create ReadableStream
 
-As mentioned in [Web Streams Basics](../web-stream.md), it's very simple to convert pull or push style data sources into `ReadableStream`s.
+As mentioned in [Web Streams Basics](../web-stream.mdx), it's very simple to convert pull or push style data sources into `ReadableStream`s.
 
 For pull style data sources, simply use the `ReadableStream`:
 
