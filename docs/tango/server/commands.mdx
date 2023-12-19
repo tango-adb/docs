@@ -154,7 +154,7 @@ declare class AdbServerClient {
 
 Gets the ADB features supported by the device. It's required for Tango to coordinate the behavior of ADB commands with the device.
 
-For example, if [Shell protocol](../commands/subprocess.md#none-protocol-vs-shell-protocol) is not supported by the device, using `AdbSubprocessShellProtocol` will immediately throw an error.
+For example, if [Shell protocol](../commands/subprocess.mdx#none-protocol-vs-shell-protocol) is not supported by the device, using `AdbSubprocessShellProtocol` will immediately throw an error.
 
 Usually you don't need to call this method directly, the `AdbServerClient#createTransport` method uses it to create a `AdbTransport` object.
 

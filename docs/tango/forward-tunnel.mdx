@@ -6,9 +6,17 @@ sidebar_position: 8
 
 Forward tunnel allows you to connect to a socket address on the device from Tango.
 
-Unlike in Google ADB CLI, forward tunnel in Tango doesn't require registering the tunnel using a local address, and can be created directly.
+Unlike in Google ADB CLI, forward tunnel in Tango doesn't require associating the tunnel to a local address and connecting to that address. Instead, only the device address is needed.
 
 ```ts
+interface AdbSocket {
+  readonly readable: ReadableStream<Uint8Array>;
+  readonly writable: WritableStream<Consumable<Uint8Array>>;
+  readonly service: string;
+  readonly closed: Promise<void>;
+  close(): Promise<void>;
+}
+
 declare class Adb {
   createSocket(address: string): Promise<AdbSocket>;
 }
@@ -16,15 +24,13 @@ declare class Adb {
 
 ## Close socket
 
-The following methods all close the socket:
+Call the `close` method on the socket to close it.
 
-- `socket.close()`
-- `socket.readable.cancel()` (When `readable` is not locked)
-- `socket.readable.getReader().cancel()` (When you have the reader)
-- `socket.writable.abort()` (When `writable` is not locked)
-- `socket.writable.getWriter().abort()` (When you have the writer)
-- `socket.writable.close()` (When `writable` is not locked)
-- `socket.writable.getWriter().close()` (When you have the writer)
+If there are still unread data in the `readable` stream, the data can still and must be read. Not reading them will cause the whole connection to be blocked. Also, the `closed` promise will not be resolved until all data has been read.
+
+If the remaining data is not needed, `stream.cancel()` (or `stream.getReader().cancel()` if using a reader) can be called to discard them.
+
+The `closed` promise will be resolved after the device has acknowledged the close.
 
 :::info
 

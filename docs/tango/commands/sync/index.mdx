@@ -27,6 +27,8 @@ ADB is a multiplexing protocol (multiple logic streams are transferred over one 
 
 You must continuously read from all sync connections to prevent this from happening.
 
+For example, you can't create another sync connection or call other methods on `Adb` when `opendir` is still running. Upcoming data for `opendir` will block other operations.
+
 :::
 
 ## Close sync connection
@@ -48,5 +50,5 @@ Not closing sync connections will cause a small memory leak.
 - [`lstat`/`stat`](./stat.md): Get file information
 - [`isDirectory`](./isDirectory.md): Check if a path is a directory
 - [`opendir`/`readdir`](./opendir.md): List files in a directory
-- [`read`](./read.md): Read file content
+- [`read`](./read.mdx): Read file content
 - [`write`](./write.md): Write file content

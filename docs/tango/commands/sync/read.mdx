@@ -16,7 +16,9 @@ declare class AdbSync {
 
 ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
 
-You must continuously read from the returned stream to prevent this from happening.
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
 
 :::
 

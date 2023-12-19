@@ -36,8 +36,8 @@ PTY mode support was added in Android 7.
 
 ADB can transfer subprocess input/output in two protocols:
 
-* None protocol: Didn't have a name until Shell protocol was added in Android 7. Both `readable` and `writable` sides are continuous streams of raw bytes.
-* Shell protocol: Added in Android 7. Both `readable` and `writable` sides are using a simple packet format that identifies the type of the data.
+- None protocol: Didn't have a name until Shell protocol was added in Android 7. Both `readable` and `writable` sides are continuous streams of raw bytes.
+- Shell protocol: Added in Android 7. Both `readable` and `writable` sides are using a simple packet format that identifies the type of the data.
 
 | Mode | Operation        | None protocol                                 | Shell protocol                                            |
 | ---- | ---------------- | --------------------------------------------- | --------------------------------------------------------- |
@@ -82,24 +82,28 @@ The behavior of `AdbSubprocessProtocol` is described in the following table:
 | ---- | ------ | --------------------------------- | ----------------------------------------- |
 | raw  | stdin  | writes to stdin                   | writes to stdin                           |
 |      | stdout | read from stdout and stderr       | read from stdout                          |
-|      | stderr | empty                             | read from stderr                          |
+|      | stderr | not used                          | read from stderr                          |
 |      | exit   | resolve with 0 when process exits | resolve with exit code when process exits |
 |      | resize | does nothing                      | resize PTY                                |
 |      | kill   | kill process                      | kill process                              |
 | PTY  | stdin  | writes to PTY                     | writes to PTY                             |
 |      | stdout | read from PTY                     | read from PTY                             |
-|      | stderr | empty                             | empty                                     |
+|      | stderr | not used                          | not used                                  |
 |      | exit   | resolve with 0 when process exits | resolve with exit code when process exits |
 |      | resize | does nothing                      | resize PTY                                |
 |      | kill   | kill process                      | kill process                              |
 
 `stdout` and `stderr` will close when the process exits.
 
+If `stderr` is marked as **not used**, reading from it won't produce any data, but it will still close when the process exits.
+
 :::danger[READ ALL STREAMS!]
 
 ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
 
-You must continuously read from all connections (even if you are not interested in them) to prevent this from happening.
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
 
 :::
 
@@ -205,3 +209,16 @@ terminal.onData((data) => {
 
 terminal.open(document.getElementById("terminal"));
 ```
+
+## Stop process
+
+Use the `kill` method to stop the process. This sends a `SIGHUP` signal to the process.
+
+```ts transpile
+const process = await adb.subprocess.spawn("logcat");
+await process.kill();
+```
+
+If there are still unread data in the `stdout` or `stderr` streams, they can still and must be read. Not reading them will cause the whole connection to be blocked.
+
+When using Shell protocol, `kill` will immediately close the underlying ADB socket, even before exit code can be received. This will cause the `exit` promise to be rejected with an error. ADB doesn't expose any API to manually sending signals to the process, nor to get its process ID so that `adb shell kill` can be used.
