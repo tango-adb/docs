@@ -4,11 +4,9 @@ sidebar_position: 4
 
 # Custom transport
 
-Tango also supports custom transports. For example, a mock transport can be used in tests, or a proxy transport can share a device with multiple clients.
+The main job of a transport is to create ADB sockets. `AdbDaemonTransport` creates ADB sockets using low-level ADB packets, `AdbServerTransport` creates ADB sockets by sending commands to an ADB server. ADB sockets are what the ADB commands work on.
 
-Unlike [custom daemon connections](./daemon/custom-connection.mdx), custom transports don't care about ADB protocol. Custom transports works on high-level ADB sockets
-
-After handshake, the whole job of ADB protocol is managing and multiplexing ADB sockets. Similarly, ADB server's core function is creating sockets to ADB daemon and forwarding socket data. So, `Adb` class is designed to work with ADB sockets.
+While there might not be any other transports that can directly create ADB sockets, it's still useful to create custom transports for other purposes. For example, a mock transport that returns fixed data can be used in tests, or a WebSocket transport can wrap a built-in transport for accessing devices over the Internet.
 
 ## ADB Socket
 
@@ -33,9 +31,21 @@ interface AdbSocket {
 }
 ```
 
-After calling `close`, `readable` shouldn't produce any more data, and `writable` should throw an error when trying to write.
+### `service`
 
-Close `readable` should close `writable` as well, and vice versa.
+`service` is sent to the device when creating the socket. It's like the URL in an HTTP request, and the device will decide how to handle the request based on the service.
+
+### `readable`
+
+`readable` contains the data sent from the device. It's a `ReadableStream<Uint8Array>`, which means it's a stream of `Uint8Array`s. ADB socket is a stream protocol, so chunks can be split or combined arbitrarily.
+
+The consumer can call `readable.cancel()` to signal the lost of interest in the data. The producer must throw away all incoming data after `readable.cancel()` is called. Calling `readable.cancel()` doesn't close the socket, and `writable` can still be used to send data to the device.
+
+### `writable`
+
+`writable` is used to send data to the device. The `Consumable` pattern is used to allow the producer to know when the data is consumed, and the buffer can be reused. The transport must only mark the `Consumable` as consumed when the data is actually sent to the device, or has been copied to another buffer for sending.
+
+Similar to `readable.cancel()`, `writable.close()` does not close the socket. The implementer can ignore the call. The `WritableStream` itself will prevent further writes.
 
 ## ADB Transport
 

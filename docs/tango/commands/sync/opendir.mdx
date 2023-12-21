@@ -49,6 +49,16 @@ for await (const entry of sync.opendir('/sdcard')) {
 }
 ```
 
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all sync connections to prevent this from happening.
+
+For example, you can't create another sync connection or call other methods on `Adb` when `opendir` is still running. Upcoming data for `opendir` will block other operations.
+
+:::
+
 ### Use `readdir`
 
 ```ts transpile

@@ -4,9 +4,11 @@ sidebar_position: 9
 
 # framebuffer
 
-Framebuffer command takes a pixel-by-pixel screenshot of the device screen.
+Framebuffer command takes a high-quality, uncompressed screenshot of the device screen.
 
-Framebuffer command is actually a wrapper for `screencap` command, only uses binary output format instead of PNG. The output format has changed once in Android 9, so it's difficult for a client to directly parse it.
+Framebuffer command is actually a wrapper for `screencap` executable, only uses binary output format instead of PNG. `screencap` changed its binary output format in Android 9, so it's difficult for a client to directly parse it without knowing the Android version first. Because `framebuffer` command is implemented in ADB daemon and shipped with `screencap` on the device, it always knows the correct format.
+
+Because the binary format contains raw RGB values, it's easier to parse than PNG. However, it requires much more bandwidth to transfer. If the client can decode PNG, it's recommended to use `screencap` command instead.
 
 ```ts
 interface AdbFrameBuffer {
@@ -36,7 +38,7 @@ declare class Adb {
 On Android 9 and above, `colorSpace` field is present in the output. The values are:
 
 * `0`: Unknown
-* `1`: SRGB
+* `1`: sRGB
 * `2`: Display P3
 
 ## Color Format

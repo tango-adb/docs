@@ -5,11 +5,6 @@ slug: /
 
 # Quick Start
 
-{/*
-cspell: ignore struct
-cspell: ignore webusb
-*/}
-
 Tango is separated into many packages. Generally, you need at least three things:
 
 1. [`@yume-chan/adb`](https://www.npmjs.com/package/@yume-chan/adb): The core package
@@ -22,11 +17,11 @@ npm i @yume-chan/adb @yume-chan/stream-extra
 
 ## Direct Connection Transport
 
-In this mode, Google ADB is not required for Tango to work (for USB connections, Google ADB must not be running). Tango communicates with Android devices directly.
+In this mode, Tango holds an exclusive, direct connection to the Android device. Google ADB is not required, nor compatible with this mode.
 
 This mode is suitable for running on end-users' devices where Google ADB is not installed, or on mobile devices where Google ADB is not available.
 
-To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/adb` package, with a daemon connection and a credential store.
+`AdbDaemonTransport` class from `@yume-chan/adb` package provides this mode. Because the API for connecting to devices varies by platform and connection type, `AdbDaemonTransport` accepts a custom connection object.
 
 <Tabs className="runtime-tabs" groupId="direct-connection">
 <TabItem value="usb" label="USB">
@@ -60,9 +55,9 @@ To use this mode, you will use the `AdbDaemonTransport` class from `@yume-chan/a
 
 ## Google ADB Client Transport
 
-In this mode, Tango talks to a Google ADB server, which can either run on the same machine or on a remote machine. This allows Tango to work with other ADB-based tools (e.g. ADB client, Android Studio, Scrcpy, etc.).
+In this mode, Tango talks to a Google ADB server, which can either run on the same machine or on a remote machine. Google ADB server manages the connection to devices, so multiple clients (including Tango) can share the same device.
 
-To use this mode, you will use the `AdbServerClient` class from `@yume-chan/adb` package, with a server connection.
+`AdbServerClient` class from `@yume-chan/adb` package provides this mode. Similar to `AdbDaemonTransport`, `AdbServerClient` accepts a custom connector for connecting to the server on different environments.
 
 :::note[Next Step]
 
@@ -72,7 +67,7 @@ To use this mode, you will use the `AdbServerClient` class from `@yume-chan/adb`
 
 ## Custom Transport
 
-It's also possible to create a custom transport. For example, a mock transport can be used in tests, or a proxy transport can share a device with multiple clients.
+Tango also supports custom transports. For example, a mock transport can be used in tests, or a WebSocket transport to access devices on a server over the Internet.
 
 :::note[Next Step]
 
