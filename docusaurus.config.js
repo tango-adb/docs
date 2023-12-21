@@ -262,6 +262,9 @@ export default {
         theme: {
           customCss: resolve("./src/css/custom.css"),
         },
+        gtag: {
+          trackingID: 'GTM-WLPBQBK4'
+        }
       },
     ],
   ],
