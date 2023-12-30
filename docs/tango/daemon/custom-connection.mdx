@@ -12,7 +12,7 @@ You may also interested in [custom transports](../custom-transport.mdx), which w
 
 :::
 
-We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.md) class in USB connection and [`AdbDaemonDirectSocketsDevice`](./tcp/create-connection.mdx#adbdaemondirectsocketsdevice) class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of [`ReadableStream<AdbPacket>`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream<Consumable<AdbPacket>>`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to work, that's what the `connect` method in those `Device` classes returns.
+We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.mdx) class in USB connection and [`AdbDaemonDirectSocketsDevice`](./tcp/create-connection.mdx#adbdaemondirectsocketsdevice) class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of [`ReadableStream<AdbPacket>`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream<Consumable<AdbPacket>>`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to work, that's what the `connect` method in those `Device` classes returns.
 
 :::note
 

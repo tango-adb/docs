@@ -7,7 +7,7 @@ sidebar_position: 0
 
 [ADB (Android Debugging Bridge)](https://developer.android.com/studio/command-line/adb) is the protocol for communicating with Android devices.
 
-This is an unofficial book about it.
+This section documents some internal mechanics in Google ADB.
 
 ## Links
 

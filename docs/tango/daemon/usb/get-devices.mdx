@@ -7,22 +7,26 @@ import TabItem from "@theme/TabItem";
 
 # Get all connected devices
 
-## Get devices
-
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
 
-WebUSB's [`USB#getDevices`](https://developer.mozilla.org/en-US/docs/Web/API/USB/getDevices) method returns all devices that are currently connected and have been granted permission to access by the user.
+After the user has granted permission to access the device, the next time the user visits the page, the Web app can access the device directly without asking for permission again.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-Previously, we have disabled the permission system in `usb` package's WebUSB implementation, so the [`USB#getDevices`](https://developer.mozilla.org/en-US/docs/Web/API/USB/getDevices) method returns all devices that are currently connected.
+Previously, we have disabled the permission system in `usb` package's WebUSB implementation, so it will return all devices that are currently connected.
 
 </TabItem>
 </Tabs>
 
-`USB#getDevices` returns all connected devices, including those that are not ADB devices. So `AdbDaemonWebUsbDeviceManager#getDevices` method calls `USB#getDevices`, picks ADB devices from the results, and wraps them to `AdbDaemonWebUsbDevice` instances.
+The app can get all connected devices by calling `AdbDaemonWebUsbDeviceManager#getDevices` method. It can then connect to multiple devices at the same time, or let the user choose one device to connect to.
+
+## Get devices
+
+`AdbDaemonWebUsbDeviceManager#getDevices` method calls WebUSB's `USB#getDevices` method to get all connected devices.
+
+But since `USB#getDevices` returns all connected devices, including those that are not ADB devices, `AdbDaemonWebUsbDeviceManager#getDevices` accepts a `filters` option (same as `AdbDaemonWebUsbDeviceManager#requestDevice`) to filter out incompatible devices.
 
 ```ts
 interface AdbDeviceFilter {
@@ -39,6 +43,18 @@ declare class AdbDaemonWebUsbDeviceManager {
 }
 ```
 
+The `filters` option is optional and defaults to `ADB_DEFAULT_DEVICE_FILTER`, which picks common ADB devices:
+
+```ts
+export const ADB_DEFAULT_DEVICE_FILTER = {
+  classCode: 0xff,
+  subclassCode: 0x42,
+  protocolCode: 1,
+} as const satisfies AdbDeviceFilter;
+```
+
+So in many cases, you can just call `AdbDaemonWebUsbDeviceManager#getDevices` without any arguments:
+
 ```ts transpile
 import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
 
@@ -53,17 +69,7 @@ const device: AdbDaemonWebUsbDevice = devices[0];
 
 ## Filter connected devices
 
-By default, `AdbDaemonWebUsbDeviceManager#getDevices` method uses a filter that matches the ADB interface:
-
-```ts
-export const ADB_DEFAULT_DEVICE_FILTER = {
-  classCode: 0xff,
-  subclassCode: 0x42,
-  protocolCode: 1,
-} as const satisfies AdbDeviceFilter;
-```
-
-But it also accepts custom filters to limit which devices will be returned. Each filter is an object with the following fields:
+To limit which devices will be returned, you can specify multiple custom filters. Each filter is an object with the following fields:
 
 - `classCode`: (Required) The class code of the ADB interface.
 - `subclassCode`: (Required) The subclass code of the ADB interface.
@@ -82,11 +88,7 @@ Some lazy manufacturers use the same `serialNumber` for all devices. So even if 
 
 :::
 
-To say a device matches a filter, the device must match all specified fields in the filter.
-
-To say a device matches multiple filters, the device must match at least one of them.
-
-For example, to only allow a specific manufacturer/model:
+If a filter has multiple fields, the device must match all fields to be returned. For example, this filter only allows a specific manufacturer/model:
 
 ```ts transpile
 import {
@@ -103,7 +105,7 @@ const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
 ]);
 ```
 
-And to allow multiple manufacturers/models:
+If multiple filters are specified, any device matching at least one filter will be returned. So, to allow multiple manufacturers/models:
 
 ```ts transpile
 import {

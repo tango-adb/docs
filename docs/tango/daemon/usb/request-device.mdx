@@ -1,0 +1,207 @@
+---
+sidebar_position: 2
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Request device permission
+
+:::note
+
+This page only applies to browsers. For Node.js, you can skip to the [next step](./get-devices.mdx).
+
+:::
+
+## Request permission in WebUSB
+
+In Web browsers, each website needs to request the permission to access each device separately using WebUSB's [`USB#requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice) method.
+
+`USB#requestDevice` method requires [user activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation), which means it can only be called in response to a mouse click or keyboard press event.
+
+After calling `USB#requestDevice`, the browser shows a list of connected devices to the user. The user can select one (and only one) device from the list, or cancel the picker without selecting any device.
+
+It will return an `USBDevice` instance representing the selected device, or throws an `DOMException` with `name` set to `NotFoundError` if the user cancelled the picker.
+
+```ts transpile
+document.getElementById("button").addEventListener("click", () => {
+  try {
+    const device: USBDevice = await navigator.usb.requestDevice({
+      filters: [
+        {
+          classCode: 0xff,
+          subclassCode: 0x42,
+          protocolCode: 1,
+        },
+      ],
+    });
+    alert(`Selected device: ${device.serialNumber}`);
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "NotFoundError") {
+      alert("No device selected");
+      return;
+    }
+
+    throw e;
+  }
+});
+```
+
+The permission will be persisted by the browser, so from next time, the website can access that device without calling `requestDevice` again. The user can revoke the permission in "Settings -> Site Permissions -> USB devices" at any time.
+
+## Android USB mode affects permissions
+
+In USB specification, one device can have multiple **interfaces**. Each interface represents a self-contained feature. For example, a USB headset can have one interface for audio input and one interface for audio output.
+
+One device can also have multiple **configurations**. Each configuration is a set of interfaces. It can turn on or off some features by switching between configurations.
+
+Android devices have multiple interfaces, like MTP mode for file transfer, ADB mode for debugging, and so on. And each interface can be turned on or off in its system UI. However, Android devices doesn't use multiple USB configurations.
+
+This might partially because Windows doesn't support switching USB configurations unless a custom driver is installed. So, when switching USB modes, Android devices will disconnect and reconnect to the computer, and tell the computer that it's a different device with different interfaces.
+
+:::note
+
+In contrast, Apple mobile devices (iPods, iPhones and iPads) use multiple USB configurations. In the default configuration, they only have one interface for transferring files using MTP, Only when iTunes and its special driver is installed, they can switch to another configuration with an extra interface for syncing with iTunes.
+
+:::
+
+As a result, in Web browsers, each USB modes of an Android device has separate permissions. After switching to a new USB mode, the website needs to request permission again.
+
+## Request permission in Tango
+
+Tango represents each device as an `AdbDaemonWebUsbDevice` instance, which includes the `USBDevice` instance and some additional information.
+
+You can manually construct an `AdbDaemonWebUsbDevice` instance from a `USBDevice` instance, but it's easier to use the `AdbDaemonWebUsbDeviceManager#requestDevice` method that does it for you.
+
+```ts
+declare class AdbDaemonWebUsbDeviceManager {
+  requestDevice(): Promise<AdbDaemonWebUsbDevice | undefined>;
+}
+```
+
+Same as `USB#requestDevice`, it requires user activation. However, it returns `undefined` instead of throwing an error if the user cancelled the picker.
+
+```ts transpile
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+document.getElementById("button").addEventListener("click", () => {
+  const device: AdbDaemonWebUsbDevice | undefined =
+    await Manager.requestDevice();
+  if (!device) {
+    alert("No device selected");
+    return;
+  }
+});
+```
+
+## Filter devices in the picker
+
+By default, `USB#requestDevice` method shows all connected devices in the picker. To limit which devices will appear in the picker, it accepts one list of inclusive filters and one list of exclusive filters.
+
+:::note
+
+Support for exclusive filters was added in Chrome 105. It will be ignored in older browsers.
+
+:::
+
+`AdbDaemonWebUsbDeviceManager#requestDevice` also has an `options` parameter:
+
+```ts
+interface AdbDeviceFilter {
+  classCode: number;
+  subclassCode: number;
+  protocolCode: number;
+  vendorId?: number;
+  productId?: number;
+  serialNumber?: string;
+}
+
+namespace AdbDaemonWebUsbDeviceManager {
+  interface RequestDeviceOptions {
+    filters?: AdbDeviceFilter[] | undefined;
+    exclusionFilters?: USBDeviceFilter[] | undefined;
+  }
+}
+
+declare class AdbDaemonWebUsbDeviceManager {
+  requestDevice(
+    options?: AdbDaemonWebUsbDeviceManager.RequestDeviceOptions
+  ): Promise<AdbDaemonWebUsbDevice | undefined>;
+}
+```
+
+If `filters` is omitted, it will use `ADB_DEFAULT_DEVICE_FILTER` which matches the ADB interface.
+
+```ts
+export const ADB_DEFAULT_DEVICE_FILTER = {
+  classCode: 0xff,
+  subclassCode: 0x42,
+  protocolCode: 1,
+} as const satisfies AdbDeviceFilter;
+```
+
+Each filter is an object with the following fields:
+
+- `classCode`: (Required) The class code of the ADB interface.
+- `subclassCode`: (Required) The subclass code of the ADB interface.
+- `protocolCode`: (Required) The protocol code of the ADB interface.
+- `vendorId`: The USB vendor ID of the device.
+- `productId`: The USB product ID of the device.
+- `serialNumber`: The serial number of the device.
+
+`classCode`, `subclassCode` and `protocolCode` fields are required to ensure the device is an ADB device. They can be different from `ADB_DEFAULT_DEVICE_FILTER` if your device has a different configuration. Tango will use these fields to select the correct interface to communicate with.
+
+`venderId`, `productId` and `serialNumber` fields can be used to select a specific manufacturer, a specific model, or a specific device.
+
+If a filter has multiple fields, the device must match all fields to be included or excluded. For example, this filter only allows a specific manufacturer/model:
+
+```ts transpile
+import {
+  AdbDaemonWebUsbDevice,
+  ADB_DEFAULT_DEVICE_FILTER,
+} from "@yume-chan/adb-daemon-webusb";
+
+const device: AdbDaemonWebUsbDevice | undefined = await Manager.requestDevice({
+  filters: [
+    {
+      ...ADB_DEFAULT_DEVICE_FILTER,
+      vendorId: 0x18d1,
+      productId: 0x4ee2,
+    },
+  ],
+});
+```
+
+If multiple filters are specified, any device matching at least one filter will be returned. So, to allow multiple manufacturers/models:
+
+```ts transpile
+import {
+  AdbDaemonWebUsbDevice,
+  ADB_DEFAULT_DEVICE_FILTER,
+} from "@yume-chan/adb-daemon-webusb";
+
+const device: AdbDaemonWebUsbDevice | undefined = await Manager.requestDevice({
+  filters: [
+    {
+      ...ADB_DEFAULT_DEVICE_FILTER,
+      vendorId: 0x18d1,
+      productId: 0x4ee2,
+    },
+    {
+      ...ADB_DEFAULT_DEVICE_FILTER,
+      vendorId: 0x04e8,
+      productId: 0x6860,
+    },
+  ],
+});
+```
+
+## Drop permission
+
+If a device is connected and the permission to access it was granted, but you don't want to access it anymore, you can drop the permission.
+
+```ts transpile
+device.raw.forget();
+```
+
+Because there is no way to retrieve permission-granted but disconnected devices (unless you got the `device` before it was disconnected), it's also not possible to drop permissions for them. (See https://github.com/WICG/webusb/issues/166)

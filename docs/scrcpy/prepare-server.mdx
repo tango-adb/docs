@@ -2,6 +2,9 @@
 sidebar_position: 2
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # Prepare the server binary
 
 Scrcpy server is a Java application that runs on Android devices. Tango uses the unmodified, official Scrcpy server binary, so you don't need to build it yourself.
@@ -26,8 +29,7 @@ Assume you have downloaded the server binary to `src/server.bin`, and you want t
 
 ```ts transpile
 const url = new URL("./server.bin", import.meta.url);
-const server: ArrayBuffer = await fetch(url)
-    .then((res) => res.arrayBuffer())
+const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
 ```
 
     </TabItem>
@@ -35,8 +37,7 @@ const server: ArrayBuffer = await fetch(url)
 
 ```ts transpile
 const url = new URL("./server.bin", import.meta.url);
-const server: ArrayBuffer = await fetch(url)
-    .then((res) => res.arrayBuffer())
+const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
 ```
 
     </TabItem>
@@ -46,10 +47,11 @@ const server: ArrayBuffer = await fetch(url)
 import fs from "fs/promises";
 
 const url = new URL("./server.bin", import.meta.url);
-const server: Buffer = fs.readFile(url)
+const server: Buffer = fs.readFile(url);
 ```
 
     </TabItem>
+
 </Tabs>
 
 ## Use `@yume-chan/fetch-scrcpy-server`
@@ -74,8 +76,8 @@ The server binary is written to `server.bin` and the version is written to `vers
 
 Importing this package will give you two variables:
 
-* `BIN`: A URL to the server binary. It can be used in `fetch` or `fs.readFile` similar to the manual approach.
-* `VERSION`: A string containing the downloaded server version. It's required when starting the server.
+- `BIN`: A URL to the server binary. It can be used in `fetch` or `fs.readFile` similar to the manual approach.
+- `VERSION`: A string containing the downloaded server version. It's required when starting the server.
 
 <Tabs className="runtime-tabs" groupId="bundler">
     <TabItem label="Webpack 5" value="webpack-5">
@@ -84,8 +86,7 @@ Importing this package will give you two variables:
 import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
 
 console.log(VERSION); // 2.1
-const server: ArrayBuffer = await fetch(BIN)
-    .then((res) => res.arrayBuffer())
+const server: ArrayBuffer = await fetch(BIN).then((res) => res.arrayBuffer());
 ```
 
     </TabItem>
@@ -95,8 +96,7 @@ const server: ArrayBuffer = await fetch(BIN)
 import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
 
 console.log(VERSION); // 2.1
-const server: ArrayBuffer = await fetch(BIN)
-    .then((res) => res.arrayBuffer())
+const server: ArrayBuffer = await fetch(BIN).then((res) => res.arrayBuffer());
 ```
 
     </TabItem>
@@ -106,10 +106,11 @@ const server: ArrayBuffer = await fetch(BIN)
 import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
 
 console.log(VERSION); // 2.1
-const server: Buffer = fs.readFile(BIN)
+const server: Buffer = fs.readFile(BIN);
 ```
 
     </TabItem>
+
 </Tabs>
 
 ### Run the script automatically
@@ -118,9 +119,9 @@ After installing the package, you can add it to your NPM scripts, so every time 
 
 ```json
 {
-    "scripts": {
-        "postinstall": "fetch-scrcpy-server 2.1"
-    }
+  "scripts": {
+    "postinstall": "fetch-scrcpy-server 2.1"
+  }
 }
 ```
 
@@ -129,9 +130,10 @@ After installing the package, you can add it to your NPM scripts, so every time 
 The easiest way to modify and build the server is to use [Android Studio](https://developer.android.com/studio).
 
 1. Clone Scrcpy
-    ```sh
-    git clone https://github.com/Genymobile/scrcpy.git
-    ```
+
+   ```sh
+   git clone https://github.com/Genymobile/scrcpy.git
+   ```
 
 2. Open the root folder in Android Studio
 3. (Optional) Change `Build Variant` to `release` from `Build` -> `Select Build Variant` menu item

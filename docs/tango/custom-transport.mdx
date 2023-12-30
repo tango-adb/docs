@@ -82,7 +82,7 @@ Other fields:
 - `maxPayloadSize`: The maximum payload size of the device. `AdbSync#write` will split data into multiple packets if it's larger than this value. If you don't know this value, use 4KB.
 - `banner`: ADB banner returned from the device. It contains the list of ADB features the device supports, which is important for many command to choose the correct behavior.
 - `disconnected`: A promise that resolves when the transport is disconnected.
-- `addReverseTunnel`, `removeReverseTunnel`, `clearReverseTunnels`: These methods are used to manage reverse tunnels. When a reverse tunnel is created, Tango sends the correct command to ADB daemon via `connect` method, but also calls `addReverseTunnel` method. The transport should register the reverse tunnel, so when ADB daemon creates a socket to the tunnel address, the `handler` method will be invoked. If the transport doesn't support reverse tunnel, it should throw an error from `addReverseTunnel` method. See [Reverse Tunnel](./commands/reverse.mdx) for more details.
+- `addReverseTunnel`, `removeReverseTunnel`, `clearReverseTunnels`: These methods are used to manage reverse tunnels. When a reverse tunnel is created, Tango sends the correct command to ADB daemon via `connect` method, but also calls `addReverseTunnel` method. The transport should register the reverse tunnel, so when ADB daemon creates a socket to the tunnel address, the `handler` method will be invoked. If the transport doesn't support reverse tunnel, it should throw an error from `addReverseTunnel` method. See [Reverse Tunnel](../api/reverse.mdx) for more details.
 - `close`: Close the transport. It should close all sockets created by `connect` method, and resolve `disconnected` promise.
 
 ## Example

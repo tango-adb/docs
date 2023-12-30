@@ -3,9 +3,16 @@ sidebar_position: 1
 slug: /
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # Quick Start
 
-Tango is separated into many packages. Generally, you need at least three things:
+Tango is a TypeScript re-implementation of [Android Debug Bridge](https://developer.android.com/studio/command-line/adb) (ADB) client. It works in both Node.js and Web browser by using different packages.
+
+## Installation
+
+Tango is split into multiple packages to handle different runtimes. You need to install at least two packages to use Tango
 
 1. [`@yume-chan/adb`](https://www.npmjs.com/package/@yume-chan/adb): The core package
 2. [`@yume-chan/stream-extra`](https://www.npmjs.com/package/@yume-chan/stream-extra): Polyfill for [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API) and utilities for streams
@@ -24,7 +31,7 @@ This mode is suitable for running on end-users' devices where Google ADB is not 
 `AdbDaemonTransport` class from `@yume-chan/adb` package provides this mode. Because the API for connecting to devices varies by platform and connection type, `AdbDaemonTransport` accepts a custom connection object.
 
 <Tabs className="runtime-tabs" groupId="direct-connection">
-<TabItem value="usb" label="USB">
+    <TabItem value="usb" label="USB">
 
 :::note[Next Step]
 
@@ -32,8 +39,8 @@ This mode is suitable for running on end-users' devices where Google ADB is not 
 
 :::
 
-</TabItem>
-<TabItem value="tcp" label="TCP">
+    </TabItem>
+    <TabItem value="tcp" label="TCP">
 
 :::note[Next Step]
 
@@ -41,7 +48,8 @@ This mode is suitable for running on end-users' devices where Google ADB is not 
 
 :::
 
-</TabItem>
+    </TabItem>
+
 <TabItem value="custom" label="Custom">
 
 :::note[Next Step]

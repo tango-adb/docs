@@ -181,8 +181,8 @@ export default {
     mermaid: true,
   },
 
-  title: "Unofficial ADB Book",
-  tagline: "Deep-dive into ADB",
+  title: "Tango ADB",
+  tagline: "Documentation for Tango ADB",
   url: "https://tango-adb.github.io",
   baseUrl: "/docs/",
   onBrokenLinks: "throw",
@@ -204,7 +204,7 @@ export default {
   ],
   themeConfig: {
     navbar: {
-      title: "Unofficial ADB Book",
+      title: "Tango ADB",
       logo: {
         alt: "Tango Logo",
         src: "img/logo.svg",
@@ -214,7 +214,13 @@ export default {
           type: "doc",
           docId: "tango/index",
           position: "left",
-          label: "Tango",
+          label: "Guide",
+        },
+        {
+          type: "doc",
+          docId: "api/index",
+          position: "left",
+          label: "API",
         },
         {
           type: "doc",
@@ -237,7 +243,38 @@ export default {
     },
     footer: {
       style: "dark",
-      links: [],
+      links: [
+        {
+          title: "Links",
+          items: [
+            {
+              label: "Tango Web App",
+              href: "https://app.tangoapp.dev",
+            },
+            {
+              label: "OpenCollective",
+              href: "https://opencollective.com/ya-webadb",
+            },
+          ],
+        },
+        {
+          title: "Community",
+          items: [
+            {
+              label: "GitHub",
+              href: "https://github.com/yume-chan/ya-webadb",
+            },
+            {
+              label: "Reddit",
+              href: "https://www.reddit.com/r/tango_adb",
+            },
+            {
+              label: "Discord",
+              href: "https://discord.gg/26k3ttC2PN",
+            },
+          ],
+        },
+      ],
       copyright: `Copyright © 2021-${new Date().getFullYear()} Tango ADB. Built with Docusaurus.`,
     },
     prism: {
@@ -254,17 +291,15 @@ export default {
           routeBasePath: "/",
           // Please change this to your repo.
           editUrl: "https://github.com/tango-adb/docs/edit/main/",
-          remarkPlugins: [
-            ts2js,
-            [remarkPluginNpm2yarn, { sync: true }],
-          ],
+          remarkPlugins: [ts2js, [remarkPluginNpm2yarn, { sync: true }]],
+          showLastUpdateTime: true,
         },
         theme: {
           customCss: resolve("./src/css/custom.css"),
         },
         gtag: {
-          trackingID: 'GTM-WLPBQBK4'
-        }
+          trackingID: "GTM-WLPBQBK4",
+        },
       },
     ],
   ],
