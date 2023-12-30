@@ -40,6 +40,6 @@ On non-rooted devices with Android 10 and below, enabling ADB over WiFi requires
 
   `5555` is the port ADB daemon will listen at, and can be freely changed.
 
-- To enable ADB over WiFI using Tango, use the [`tcpip` command](../../../api/tcpip.md).
+- To enable ADB over WiFI using Tango, use the [`tcpip` command](../../api/tcpip.mdx).
 
 When device is restarted, ADB over WiFi will be disabled. To re-enable it, connect the device using a USB cable and follow the steps above again.
