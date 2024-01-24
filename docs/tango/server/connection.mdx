@@ -28,9 +28,9 @@ Example:
 
 ```ts transpile
 import { Adb, AdbServerClient, AdbServerDevice } from "@yume-chan/adb";
-import { AdbServerNodeTcpConnection } from "@yume-chan/adb-server-node-tcp";
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
 
-const connection: AdbServerNodeTcpConnection = new AdbServerNodeTcpConnection({
+const connection: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
   host: "localhost",
   port: 5037,
 });
