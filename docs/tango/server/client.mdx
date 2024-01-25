@@ -4,12 +4,12 @@ sidebar_position: 2
 
 # Create client
 
-With a server connection, we can create a client:
+With a server connector, we can create a client:
 
 ```ts transpile
 import { AdbServerClient } from "@yume-chan/adb";
 
-const client: AdbServerClient = new AdbServerClient(connection);
+const client: AdbServerClient = new AdbServerClient(connector);
 ```
 
 This step doesn't send or receive any packets, it only initializes some internal states.
