@@ -183,8 +183,8 @@ export default {
 
   title: "Tango ADB",
   tagline: "Documentation for Tango ADB",
-  url: "https://tango-adb.github.io",
-  baseUrl: "/docs/",
+  url: "https://docs.tangoapp.dev",
+  baseUrl: "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
   favicon: "img/logo.svg",
