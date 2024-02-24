@@ -47,7 +47,7 @@ const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
 import fs from "fs/promises";
 
 const url = new URL("./server.bin", import.meta.url);
-const server: Buffer = fs.readFile(url);
+const server: Buffer = await fs.readFile(url);
 ```
 
     </TabItem>
@@ -72,7 +72,19 @@ For example:
 npx fetch-scrcpy-server 2.1
 ```
 
-The server binary is written to `server.bin` and the version is written to `version.js` in this package's root (in your `node_modules`).
+:::info[Note for Scrcpy 2.2]
+
+Usually the version number is `[major].[minor].[revision]`, but for Scrcpy 2.2, due to a packaging error, the server expects the version number to be `v2.2` (with a `v` prefix).
+
+To download Scrcpy 2.2 server, use:
+
+```sh
+npx fetch-scrcpy-server v2.2
+```
+
+:::
+
+The server binary is written to `server.bin` and the version is written to `version.js` in this package's root (usually in your `node_modules`).
 
 Importing this package will give you two variables:
 
@@ -103,10 +115,11 @@ const server: ArrayBuffer = await fetch(BIN).then((res) => res.arrayBuffer());
     <TabItem label="Node.js" value="node">
 
 ```ts transpile
+import fs from "fs/promises";
 import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
 
 console.log(VERSION); // 2.1
-const server: Buffer = fs.readFile(BIN);
+const server: Buffer = await fs.readFile(BIN);
 ```
 
     </TabItem>
