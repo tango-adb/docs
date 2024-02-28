@@ -25,6 +25,15 @@ WebUSB API is natively supported in Chromium-based browsers.
 
 :::
 
+:::info[Secure Context Required]
+
+WebUSB API requires a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts). Basically it means the page must be served over HTTPS or `localhost`.
+
+* If you have a domain name, you can easily get a free SSL certificate from [Let's Encrypt](https://letsencrypt.org/).
+* If you only have an IP address, you can create a self-signed certificate and trust it in every device that will access your server (or ignore the warning every time).
+
+:::
+
 Create a device manager for browsers:
 
 ```ts transpile

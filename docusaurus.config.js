@@ -236,7 +236,7 @@ export default {
         },
         {
           href: "https://github.com/yume-chan/ya-webadb",
-          label: "GitHub",
+          label: 'Source code',
           position: "right",
         },
       ],
