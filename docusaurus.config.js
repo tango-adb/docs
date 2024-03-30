@@ -181,8 +181,8 @@ export default {
     mermaid: true,
   },
 
-  title: "Tango ADB",
-  tagline: "Documentation for Tango ADB",
+  title: "Tango ADB Development Guide",
+  tagline: "Documentation for Tango ADB library",
   url: "https://docs.tangoapp.dev",
   baseUrl: "/",
   onBrokenLinks: "throw",
