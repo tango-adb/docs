@@ -1,6 +1,3 @@
 position: 2
 label: 'Direct Connection'
 collapsed: false
-link:
-  type: generated-index
-  title: 'Direct Connection'

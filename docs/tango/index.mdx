@@ -8,64 +8,59 @@ import TabItem from "@theme/TabItem";
 
 # Quick Start
 
-Tango is a TypeScript re-implementation of [Android Debug Bridge](https://developer.android.com/studio/command-line/adb) (ADB) client. It works in both Node.js and Web browser by using different packages.
+Tango is a TypeScript re-implementation of ADB ([Android Debug Bridge](https://developer.android.com/studio/command-line/adb)) client.
+
+## Pre-requisites
+
+Tango runs on both Node.js and Web browsers. It requires the following features:
+
+* [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API). `ReadableStream`, `WritableStream` and `TransformStream` must be available on `globalThis`. If not, a polyfill like [`web-streams-polyfill`](https://www.npmjs.com/package/web-streams-polyfill) can be used.
+* BigInt. This can't be polyfilled.
+* Promise
+
+Recent versions of Node.js and Web browsers should have all these features.
 
 ## Installation
 
-Tango is split into multiple packages to handle different runtimes. You need to install at least two packages to use Tango
+Tango is split into multiple packages to handle different runtimes. First, install the two core packages:
 
-1. [`@yume-chan/adb`](https://www.npmjs.com/package/@yume-chan/adb): The core package
-2. [`@yume-chan/stream-extra`](https://www.npmjs.com/package/@yume-chan/stream-extra): Polyfill for [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API) and utilities for streams
-3. A transport object to communicate with devices
+1. [`@yume-chan/adb`](https://www.npmjs.com/package/@yume-chan/adb): The platform-independent ADB client implementation
+2. [`@yume-chan/stream-extra`](https://www.npmjs.com/package/@yume-chan/stream-extra): Type definitions and utilities for [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
 
 ```sh npm2yarn
 npm i @yume-chan/adb @yume-chan/stream-extra
 ```
 
+Depending on the runtime and connection type, additional packages are required to communicate with devices (see below).
+
 ## Direct Connection Transport
 
-In this mode, Tango holds an exclusive, direct connection to the Android device. Google ADB is not required, nor compatible with this mode.
+ADB Daemon is a program running on Android devices (when Developer Options are enabled) that handles ADB commands.
 
-This mode is suitable for running on end-users' devices where Google ADB is not installed, or on mobile devices where Google ADB is not available.
+In this mode, Tango connects to the ADB daemon directly. This means it can run on devices without Google ADB (not installed, or not available, for example on mobile devices).
 
-`AdbDaemonTransport` class from `@yume-chan/adb` package provides this mode. Because the API for connecting to devices varies by platform and connection type, `AdbDaemonTransport` accepts a custom connection object.
+Direct connection mode supports three connection methods:
 
-<Tabs className="runtime-tabs" groupId="direct-connection">
-    <TabItem value="usb" label="USB">
+* USB connection: requires a Web browser with WebUSB support (currently, only Chromium-based ones), or Node.js with `usb` package. Note that only one program (or Tango instance) can connect to a device at a time, so it's not compatible with Google ADB server.
+* ADB over Wi-Fi: uses TCP sockets, thus not available in Web browsers. In Node.js, it can be implemented using the built-in `net` module. Note that this refers to the old `adb tcpip` mode, not the new Wireless Debugging/`adb pair` mode added in Android 11.
 
-:::note[Next Step]
-
-[Create USB connection](./daemon/usb/device-manager.md)
-
-:::
-
-    </TabItem>
-    <TabItem value="tcp" label="TCP">
+* In addition, Tango also accepts custom connection implementations. For example, a WebSocket connection can forward TCP connections from a Node.js server to a Web browser.
 
 :::note[Next Step]
 
-[Create TCP connection](./daemon/tcp/enable.mdx)
+[Create Direct Connection](./daemon/index.mdx)
 
 :::
-
-    </TabItem>
-
-<TabItem value="custom" label="Custom">
-
-:::note[Next Step]
-
-[Create custom connection](./daemon/custom-connection.mdx)
-
-:::
-
-</TabItem>
-</Tabs>
 
 ## Google ADB Client Transport
 
-In this mode, Tango talks to a Google ADB server, which can either run on the same machine or on a remote machine. Google ADB server manages the connection to devices, so multiple clients (including Tango) can share the same device.
+Google ADB server is a program running on PC that manages devices and allows sharing a device with multiple clients.
 
-`AdbServerClient` class from `@yume-chan/adb` package provides this mode. Similar to `AdbDaemonTransport`, `AdbServerClient` accepts a custom connector for connecting to the server on different environments.
+In this mode, Tango talks to a Google ADB server, which can either run on the same machine or on a remote machine.
+
+Google ADB server is traditionally the only way to connect to the ADB daemon running on Android devices, so this mode is compatible with other programs that use ADB, such as Android Studio.
+
+Because Google ADB server listens on a TCP socket, this mode is only available in Node.js. In Web browsers, a custom connector is required to forward TCP sockets from backend server.
 
 :::note[Next Step]
 
@@ -75,7 +70,9 @@ In this mode, Tango talks to a Google ADB server, which can either run on the sa
 
 ## Custom Transport
 
-Tango also supports custom transports. For example, a mock transport can be used in tests, or a WebSocket transport to access devices on a server over the Internet.
+ADB protocol is a stream multiplexing protocol, where each ADB command is a logical stream, called ADB socket. The goal of both the Direct Connection Transport and Google ADB Client Transport is to manage ADB sockets.
+
+Tango also supports custom transports that works directly on ADB socket level. For example, a mock transport can be used in tests, or a WebSocket transport to access devices on a server over the Internet.
 
 :::note[Next Step]
 

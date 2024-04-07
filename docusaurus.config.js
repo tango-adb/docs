@@ -185,6 +185,7 @@ export default {
   tagline: "Documentation for Tango ADB library",
   url: "https://docs.tangoapp.dev",
   baseUrl: "/",
+  trailingSlash: true,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
   favicon: "img/logo.svg",

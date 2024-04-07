@@ -1,0 +1,19 @@
+# Direct Connection
+
+In Direct Connection Mode, Tango connects to the ADB daemon running on Android devices directly. This is the lowest-level connection mode, Tango controls all the steps, including authentication, message encoding and decoding, and connection management.
+
+The `AdbDaemonTransport` class from `@yume-chan/adb` implements this mode.
+
+To support different runtime and connection method, `AdbDaemonTransport` accepts an `AdbDaemonConnection` object for communicating with the device, and an `AdbCredentialStore` object for managing client certificates.
+
+Here are the basic steps to establish a connection in Direct Connection Mode:
+
+1. Create an `AdbDaemonConnection` object for the runtime and connection method you want to use.
+2. Create an `AdnCredentialStore` object for the runtime.
+3. Pass the connection and credential store to `AdbDaemonTransport` to authenticate and initialize the connection.
+4. Use the `AdbDaemonTransport` object to create an `Adb` instance.
+5. Use the `Adb` instance to send commands to the device.
+
+import DocCardList from '@theme/DocCardList';
+
+<DocCardList />

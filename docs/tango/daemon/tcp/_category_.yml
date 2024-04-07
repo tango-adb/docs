@@ -1,6 +1,6 @@
 position: 2
-label: 'Create TCP connection'
+label: 'TCP connection'
 collapsed: false
 link:
   type: generated-index
-  title: 'Create TCP connection'
+  title: 'TCP connection'
