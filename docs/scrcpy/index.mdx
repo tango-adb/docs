@@ -6,43 +6,25 @@ sidebar_position: 1
 
 [Scrcpy](https://github.com/Genymobile/scrcpy) is an open-source tool to mirror Android screen to desktop, and control it from desktop. It has two parts:
 
-* A client written in C++: It uses SDL for cross-platform display and input, and FFMpeg for video encoding.
-* A server written in Java: It runs on Android devices, and uses Android system APIs to capture screen and inject input events. The server is started by client using ADB, thus having much more privileges than a regular app.
+* A client written in C: It uses SDL for cross-platform display and input, and FFMpeg for video encoding.
+* A server written in Java: It runs on Android devices, and uses Android system APIs to capture screen and inject input events. The server is started by client using ADB, thus having much more privileges than regular apps.
 
-Tango provides a TypeScript implementation of the client, so that it can run in browsers and Node.js. It's fully compatible with the original Scrcpy server, so latest features and bug fixes are available immediately.
+Tango provides a TypeScript implementation of the client API, so that it can run in browsers and Node.js. It's fully compatible with the original Scrcpy server, so latest features and bug fixes are available immediately. It doesn't provide any UI components, so you need to create your own UI.
 
-The implementation are separated into multiple packages:
+## Standalone Usage
 
-## `@yume-chan/scrcpy`
+The core library `@yume-chan/scrcpy` provides low-level APIs to serialize and deserialize Scrcpy protocol messages. It doesn't use any Web or Node.js APIs, so it can be used in any JavaScript environment.
 
-The core implementation of Scrcpy protocol. This package alone can't start the server, nor render the video and audio. It only provides low-level APIs to serialize and deserialize Scrcpy protocol messages.
+```sh npm2yarn
+npm install @yume-chan/scrcpy
+```
 
-It doesn't use any Web or Node.js APIs, so it can be used in any JavaScript environment.
+It can be used standalone if you can communicate with Scrcpy server using other means.
 
-## `@yume-chan/adb-scrcpy`
+## Use with Tango
 
-Combining `@yume-chan/scrcpy` and [Tango ADB](../tango/index.mdx), this package provides high-level APIs to start the server, establish the connection, and control the device.
+The `@yume-chan/adb-scrcpy` package combines `@yume-chan/scrcpy` with `@yume-chan/adb` to provides high-level APIs to start the server, establish the connection, and control the device. It also doesn't use any Web or Node.js APIs, nor providing any UI components.
 
-It also doesn't use any Web or Node.js APIs, nor providing any UI components. You can create your own UI in your favorite framework using the APIs provided by this package.
-
-## `@yume-chan/fetch-scrcpy-server`
-
-A script to download Scrcpy server binary from official GitHub releases.
-
-This package can be integrated into your NPM scripts to help you prepare the server binary.
-
-## `@yume-chan/scrcpy-decoder-tinyh264`
-
-Decode and render H.264 streams in Web browsers using TinyH264, the (now deprecated and removed) Android H.264 software decoder.
-
-The video stream will be decoded into YUV frames on CPU, then converted to RGB using a WebGL shader (using GPU). It's slow, and only supports H.264 main profile at level 4, but works on most browsers.
-
-## `@yume-chan/scrcpy-decoder-webcodecs`
-
-Decode and render H.264 streams in Web browsers using [WebCodecs API](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API), the new Web standard for hardware-accelerated video decoding.
-
-It's fast, uses less hardware resources, and supports more H.264 profiles and levels. However, it's only available in recent versions of Chrome and Safari.
-
-## `@yume-chan/pcm-player`
-
-Play raw PCM audio in Web browsers using Web Audio API. It can help you play the audio stream from Scrcpy server.
+```sh npm2yarn
+npm install @yume-chan/scrcpy @yume-chan/adb-scrcpy
+```

@@ -1,28 +1,32 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-# Prepare the server binary
+# Prepare Server
 
 Scrcpy server is a Java application that runs on Android devices. Tango uses the unmodified, official Scrcpy server binary, so you don't need to build it yourself.
 
-You can download the server binary from [official GitHub releases](https://github.com/Genymobile/scrcpy/releases) and copy into your project, use `@yume-chan/fetch-scrcpy-server` package to automate the process, or build the server yourself.
+Tango doesn't include the server binary in the package, so the first step is to download the server binary.
 
-## Embed manually downloaded or built server
+## Download from official releases
+
+You can download the official server binary from [Scrcpy GitHub releases](https://github.com/Genymobile/scrcpy/releases) and copy into your project.
+
+### Import the server binary
 
 Depends on your runtime, bundler and framework, you may need to consume `server.bin` differently.
 
 For frontend meta frameworks, usually there are two ways to include a binary file:
 
-1. Put it in `public` folder, and reference it using a fixed URL
-2. Import it from a JavaScript source file and let the bundler handle it
+1. Put it in `public` folder, and reference it using a fixed URL (e.g. `https://your-domain.com/server.bin`)
+2. Import it in a JavaScript source file and let the bundler handle it
 
 We recommend the second approach, because it's more flexible, less error-prone, and has better cache control.
 
-Assume you have downloaded the server binary to `src/server.bin`, and you want to embed it into your app.
+Assume you have downloaded the server binary to `src/server.bin`, and you want to embed it into your app:
 
 <Tabs className="runtime-tabs" groupId="bundler">
     <TabItem label="Webpack 5" value="webpack-5">
@@ -56,6 +60,8 @@ const server: Buffer = await fs.readFile(url);
 
 ## Use `@yume-chan/fetch-scrcpy-server`
 
+`@yume-chan/fetch-scrcpy-server` package provides a script to download the server binary and write the version string automatically.
+
 ```sh npm2yarn
 npm i -D @yume-chan/fetch-scrcpy-server
 ```
@@ -74,7 +80,7 @@ npx fetch-scrcpy-server 2.1
 
 :::info[Note for Scrcpy 2.2]
 
-Usually the version number is `[major].[minor].[revision]`, but for Scrcpy 2.2, due to a packaging error, the server expects the version number to be `v2.2` (with a `v` prefix).
+Usually the version number is `[major].[minor].[revision]`, but for Scrcpy 2.2, due to a packaging error (from Scrcpy side), the server expects the version number to be `v2.2` (with a `v` prefixed).
 
 To download Scrcpy 2.2 server, use:
 

@@ -1,20 +1,87 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 # Start server
 
 The server is a `jar` file, so it's not directly executable. On Android, `app_process` is the program to start the system server, all the apps, and standalone Java applications:
 
-## Start using adb
+:::info[Equivalent ADB command]
 
 ```bash
 adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1
 ```
 
-## Start using Tango
+:::
 
-It uses [Subprocess#spawn](../api/subprocess.mdx#start-process-in-raw-mode) to start a process on device:
+## With `@yume-chan/scrcpy`
+
+`@yume-chan/scrcpy` only provides APIs to serialize and deserialize Scrcpy protocol messages. It doesn't provide any APIs to interact with the device.
+
+## With `@yume-chan/adb-scrcpy`
+
+Use the `AdbScrcpyClient.start()` method with an option class to start the server. It automatically sets up port forwarding, launches the server, and connects to it.
+
+```ts transpile
+import {
+    AdbScrcpyClient,
+    AdbScrcpyOptions2_1,
+    DEFAULT_SERVER_PATH,
+    ScrcpyOptions2_1,
+} from "@yume-chan/scrcpy";
+import SCRCPY_SERVER_VERSION from "@yume-chan/scrcpy/bin/version.js";
+
+const client: AdbScrcpyClient = await AdbScrcpyClient.start(
+    adb,
+    DEFAULT_SERVER_PATH,
+    // If server binary was downloaded manually, must provide the correct version
+    SCRCPY_SERVER_VERSION,
+    new AdbScrcpyOptions2_1(
+        ScrcpyOptions2_1({
+            // options
+        })
+    )
+);
+
+const stdout: ReadableStream<string> = client.stdout;
+
+// `undefined` if `video: false` option was given
+if (client.videoSteam) {
+    const { metadata: videoMetadata, stream: videoPacketStream } =
+        await client.videoStream;
+}
+
+// `undefined` if `audio: false` option was given
+if (client.audioStream) {
+    const metadata = await client.audioStream;
+    switch (metadata.type) {
+        case "disabled":
+            // Audio not supported by device
+            break;
+        case "errored":
+            // Other error when initializing audio
+            break;
+        case "success":
+            // Audio packets in the codec specified in options
+            const audioPacketStream: ReadableStream<ScrcpyMediaStreamPacket> =
+                metadata.stream;
+            break;
+    }
+}
+
+// `undefined` if `control: false` option was given
+const controlMessageWriter: ScrcpyControlMessageWriter | undefined =
+    client.controlMessageWriter;
+const deviceMessageStream: ReadableStream<ScrcpyDeviceMessage> | undefined =
+    client.deviceMessageStream;
+
+// to stop the server
+client.close();
+```
+
+## With Tango
+
+[Subprocess#spawn](../api/subprocess.mdx#start-process-in-raw-mode) can start a process on device:
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";

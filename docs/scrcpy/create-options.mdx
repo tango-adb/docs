@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Create options
@@ -11,33 +11,43 @@ Scrcpy protocol changes over time, and are usually not backward compatible. In T
 
 It's important to use the correct options class for the server version you're using. Using an incorrect version almost always results in a error.
 
-## `@yume-chan/scrcpy` versions
+## With `@yume-chan/scrcpy`
 
-These types contains all the options available in the corresponding Scrcpy version.
+Each time a new option is added to the server, or a breaking change is made, a new options class is created. The class name is `ScrcpyOptionsX_XX`, where `X` is the major version and `XX` is the minor version. For example, `ScrcpyOptions2_1` is the options class for server version 2.1.
 
-| Version   | Type                |
-| --------- | ------------------- |
-| 1.16      | `ScrcpyOptions1_16` |
-| 1.17      | `ScrcpyOptions1_17` |
-| 1.18~1.20 | `ScrcpyOptions1_18` |
-| 1.21      | `ScrcpyOptions1_21` |
-| 1.22      | `ScrcpyOptions1_22` |
-| 1.23      | `ScrcpyOptions1_23` |
-| 1.24      | `ScrcpyOptions1_24` |
-| 1.25      | `ScrcpyOptions1_25` |
-| 2.0       | `ScrcpyOptions2_0`  |
-| 2.1       | `ScrcpyOptions2_1`  |
-| 2.2~2.3.1 | `ScrcpyOptions2_2`  |
+Some Scrcpy versions contain only bug fixes or client-side changes, so they don't have a corresponding options class. In this case, you can use the options class of the previous version.
 
-Parsing `--list-cameras` and `--list-camera-sizes` in version 2.2 are not supported yet.
+All options classes take an object for server options:
 
-## `@yume-chan/adb-scrcpy` versions
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
 
-There are extra options classes in `@yume-chan/adb-scrcpy` package, which contains settings for how to start and connect to the server.
+const options = new ScrcpyOptions2_2({
+    videoSource: "camera",
+});
+```
 
-| Version   | Type                   |
-| --------- | ---------------------- |
-| 1.16~1.21 | `AdbScrcpyOptions1_16` |
-| 1.22~1.25 | `AdbScrcpyOptions1_22` |
-| 2.0       | `AdbScrcpyOptions2_0`  |
-| 2.1~2.3.1 | `AdbScrcpyOptions2_1`  |
+Check the TypeScript definition files for available server options in each version. All server options are optional. The default value can be found in `ScrcpyOptionsX_XX.DEFAULTS` or `options.defaults` fields.
+
+## With `@yume-chan/adb-scrcpy`
+
+`@yume-chan/adb-scrcpy` needs to do some additional behavior normalizations, so it has its own options classes. The naming convention is the same as `@yume-chan/scrcpy`, but with a `Adb` prefix. For example, `AdbScrcpyOptions2_1` is the options class for server version 2.1.
+
+It's more rare for protocol changes to affect `AdbScrcpyOptionsX_XX`, thus there are fewer `AdbScrcpyOptionsX_XX` classes than `ScrcpyOptionsX_XX` classes, and the versions in them are not always the same.
+
+`AdbScrcpyOptionsX_XX` wraps a `ScrcpyOptionsX_XX` instance, and provides additional methods to interact with the device:
+
+```ts transpile
+import { AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new AdbScrcpyOptions2_1(
+    new ScrcpyOptions2_2({
+        videoSource: "camera",
+    })
+);
+```
+
+## Versions
+
+Check the [versions](./versions.mdx) page to see which options class to use for each server version.

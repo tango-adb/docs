@@ -1,8 +1,8 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-# Push server file
+# Push Server
 
 The server file needs to be copied to the device and executed on it. It will listen on a UNIX domain socket and wait for connections from the client.
 
@@ -16,7 +16,11 @@ adb push scrcpy-server.jar /data/local/tmp/scrcpy-server.jar
 
 :::
 
-## Using `pushServer`
+## With `@yume-chan/scrcpy`
+
+`@yume-chan/scrcpy` only provides APIs to serialize and deserialize Scrcpy protocol messages. It doesn't provide any APIs to interact with the device.
+
+## With `@yume-chan/adb-scrcpy`
 
 `@yume-chan/adb-scrcpy` package provides a `pushServer` function as a shortcut for the Tango [`AdbSync#write`](../api/sync/write.md) call.
 
@@ -74,7 +78,7 @@ await AdbScrcpyClient.pushServer(
 );
 ```
 
-## Using `AdbSync#write`
+## With Tango
 
 The above code is a shortcut for the following code:
 
