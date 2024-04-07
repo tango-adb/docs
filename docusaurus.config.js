@@ -301,6 +301,10 @@ export default {
         gtag: {
           trackingID: "GTM-WLPBQBK4",
         },
+        sitemap: {
+          lastmod: 'datetime',
+          changefreq: 'daily'
+        }
       },
     ],
   ],
