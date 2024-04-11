@@ -15,7 +15,7 @@ Generally, the latest version should be used, as they contain bug fixes and new 
 - (5/10): 5 out of 10 features in this version are supported
 - ✅: Supported
 - ⛔: Not supported
-- (**Breaking**): A breaking change. Some new options contain breaking changes, but the old client can still work if the new options are not used, so they are NOT marked as breaking.
+- (**Breaking**): A breaking change. Some new options are not marked as breaking changes even if they contain protocol changes, as the old client can still work with the new server when the new options are not used.
 
 ## v2.4 (0/2)
 
@@ -78,7 +78,7 @@ Generally, the latest version should be used, as they contain bug fixes and new 
 - ✅ Option to disable screen capture (only mirror audio) (`--no-video`)
 - ✅ Capture microphone (`--audio-source=mic`)
 
-## v2.0 (15/16)
+## v2.0 (14/15)
 
 [Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v2.0)
 
@@ -88,7 +88,7 @@ Generally, the latest version should be used, as they contain bug fixes and new 
 
 ### New options
 
-- Unique ID for each instance (`--scid`)
+- ✅ Unique ID for each instance (`--scid`)
 - New video codecs
   - ✅ `--video-codec=h265`
   - ⛔ `--video-codec=av1`
@@ -185,7 +185,7 @@ Generally, the latest version should be used, as they contain bug fixes and new 
 ### Protocol changes
 
 - ✅ (**Breaking**) New server argument format
-- ⛔ (**Breaking**) Response for set clipboard request
+- ⛔ (**Breaking**) Response for set clipboard request (tracked in [#632](https://github.com/yume-chan/ya-webadb/issues/632))
 
 ## v1.18 (5/5)
 
