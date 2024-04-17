@@ -91,3 +91,27 @@ await sync.write({
 ```sh
 adb shell ln -s /sdcard/Download/target.txt /sdcard/Download/hello.txt
 ```
+
+### (Web) upload a user-selected file
+
+```ts transpile
+import { WrapConsumableStream, type ReadableStream } from "@yume-chan/stream-extra";
+
+const input = document.createElement("input");
+input.type = "file";
+input.accept = "*/*";
+input.onchange = async () => {
+  const file = input.files[0];
+  if (!file) {
+    return;
+  }
+
+  await sync.write({
+    filename: `/sdcard/Download/${file.name}`,
+    file: (file.stream() as never as ReadableStream<Uint8Array>).pipeThrough(new WrapConsumableStream()),
+  });
+};
+input.click();
+```
+
+Because Tango has its own Web Streams API typings, which is not compatible with the ones in TypeScript `lib.dom.d.ts`, a forced cast is needed.
