@@ -195,25 +195,3 @@ const stream = new PushReadableStream<number>(async (controller) => {
   controller.close();
 });
 ```
-
-### Consumable streams
-
-When data is piped through multiple `TransformStream`s, the initial `ReadableStream` won't wait for the data to reach the final `WritableStream`. The `pull` callback will be called as soon as the data is consumed by the first `TransformStream`.
-
-`@yume-chan/stream-extra` package provides a `Consumable<T>` wrapper class, so your producer can know when the data is truly consumed.
-
-```ts transpile
-import { Consumable } from "@yume-chan/stream-extra";
-
-const stream = new ReadableStream<Consumable<number>>({
-  async pull(controller) {
-    const consumable = new Consumable<number>(1);
-    controller.enqueue(consumable);
-    await consumable.consumed;
-  },
-});
-```
-
-A consumable transform stream can chain the consumed events between the input and output chunks.
-
-This is useful when you want to reuse the same data object to reduce memory allocation.

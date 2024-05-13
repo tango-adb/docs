@@ -93,6 +93,8 @@ The behavior of `AdbSubprocessProtocol` is described in the following table:
 |      | resize | does nothing                      | resize PTY                                |
 |      | kill   | kill process                      | kill process                              |
 
+`stdin` uses the [Consumable](../tango/comsumable.mdx) pattern.
+
 `stdout` and `stderr` will close when the process exits.
 
 If `stderr` is marked as **not used**, reading from it won't produce any data, but it will still close when the process exits.
