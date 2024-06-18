@@ -24,56 +24,69 @@ Use the `AdbScrcpyClient.start()` method with an option class to start the serve
 
 ```ts transpile
 import {
-    AdbScrcpyClient,
-    AdbScrcpyOptions2_1,
-    DEFAULT_SERVER_PATH,
-    ScrcpyOptions2_1,
+  AdbScrcpyClient,
+  AdbScrcpyOptions2_1,
+  DEFAULT_SERVER_PATH,
+  ScrcpyOptions2_1,
 } from "@yume-chan/scrcpy";
 import SCRCPY_SERVER_VERSION from "@yume-chan/scrcpy/bin/version.js";
 
+const options = new AdbScrcpyOptions2_1(
+  ScrcpyOptions2_1({
+    // options
+  })
+);
+
 const client: AdbScrcpyClient = await AdbScrcpyClient.start(
-    adb,
-    DEFAULT_SERVER_PATH,
-    // If server binary was downloaded manually, must provide the correct version
-    SCRCPY_SERVER_VERSION,
-    new AdbScrcpyOptions2_1(
-        ScrcpyOptions2_1({
-            // options
-        })
-    )
+  adb,
+  DEFAULT_SERVER_PATH,
+  // If server binary was downloaded manually, must provide the correct version
+  SCRCPY_SERVER_VERSION,
+  options
 );
 
 const stdout: ReadableStream<string> = client.stdout;
 
 // `undefined` if `video: false` option was given
 if (client.videoSteam) {
-    const { metadata: videoMetadata, stream: videoPacketStream } =
-        await client.videoStream;
+  const { metadata: videoMetadata, stream: videoPacketStream } =
+    await client.videoStream;
 }
 
 // `undefined` if `audio: false` option was given
 if (client.audioStream) {
-    const metadata = await client.audioStream;
-    switch (metadata.type) {
-        case "disabled":
-            // Audio not supported by device
-            break;
-        case "errored":
-            // Other error when initializing audio
-            break;
-        case "success":
-            // Audio packets in the codec specified in options
-            const audioPacketStream: ReadableStream<ScrcpyMediaStreamPacket> =
-                metadata.stream;
-            break;
-    }
+  const metadata = await client.audioStream;
+  switch (metadata.type) {
+    case "disabled":
+      // Audio not supported by device
+      break;
+    case "errored":
+      // Other error when initializing audio
+      break;
+    case "success":
+      // Audio packets in the codec specified in options
+      const audioPacketStream: ReadableStream<ScrcpyMediaStreamPacket> =
+        metadata.stream;
+      break;
+  }
 }
 
 // `undefined` if `control: false` option was given
-const controlMessageWriter: ScrcpyControlMessageWriter | undefined =
-    client.controlMessageWriter;
-const deviceMessageStream: ReadableStream<ScrcpyDeviceMessage> | undefined =
-    client.deviceMessageStream;
+const controller: ScrcpyControlMessageWriter | undefined = client.controller;
+const clipboardStream: ReadableStream<string> = options.clipboard;
+
+clipboardStream
+  .pipeTo(
+    new WritableStream<string>({
+      write(chunk) {
+        // Handle device clipboard change
+        console.log(chunk);
+      },
+    })
+  )
+  .catch((error) => {
+    console.error(error);
+  });
 
 // to stop the server
 client.close();
@@ -89,13 +102,13 @@ import type { Adb } from "@yume-chan/adb";
 declare const adb: Adb;
 
 const process = await adb.subprocess.spawn(
-  "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1",
+  "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1"
 );
 await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
   new WritableStream<string>({
     write(chunk) {
       console.log(chunk);
     },
-  }),
+  })
 );
 ```

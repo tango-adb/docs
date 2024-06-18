@@ -131,7 +131,7 @@ type AdbServerDeviceSelector =
 - `{ transportId: bigint }`: Selects the device with the specified transport ID. (Same as Google ADB's `-t` option)
 - `{ serial: string }`: Selects the device with the specified serial number. If there are multiple devices with the same serial number, an error will be thrown. (Same as Google ADB's `-s` option)
 - `{ usb: true }`: Selects the only USB device. If there are multiple USB devices, an error will be thrown. (Same as Google ADB's `-d` option)
-- `{ tcp: true }`: Selects the only TCP (ADB over WiFi or emulator) device. If there are multiple TCP devices, an error will be thrown. (Same as Google ADB's `-e` option)
+- `{ tcp: true }`: Selects the only TCP (ADB over Wi-Fi or emulator) device. If there are multiple TCP devices, an error will be thrown. (Same as Google ADB's `-e` option)
 - `undefined`: Selects the only device. If there are multiple devices, an error will be thrown. (Same as no options for Google ADB)
 
 :::info

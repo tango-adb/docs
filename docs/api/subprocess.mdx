@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # subprocess
@@ -56,7 +56,7 @@ ADB can transfer subprocess input/output in two protocols:
 
 ```ts
 export interface AdbSubprocessProtocol {
-  readonly stdin: WritableStream<Consumable<Uint8Array>>;
+  readonly stdin: WritableStream<MaybeConsumable<Uint8Array>>;
   readonly stdout: ReadableStream<Uint8Array>;
   readonly stderr: ReadableStream<Uint8Array>;
   readonly exit: Promise<number>;
@@ -93,7 +93,7 @@ The behavior of `AdbSubprocessProtocol` is described in the following table:
 |      | resize | does nothing                      | resize PTY                                |
 |      | kill   | kill process                      | kill process                              |
 
-`stdin` uses the [Consumable](../tango/comsumable.mdx) pattern.
+`stdin` uses the [Consumable](../tango/consumable.mdx) pattern.
 
 `stdout` and `stderr` will close when the process exits.
 
@@ -189,7 +189,6 @@ Example:
 ```ts transpile
 import { Terminal } from "xterm";
 import { encodeUtf8 } from "@yume-chan/adb";
-import { Consumable } from "@yume-chan/stream-extra";
 
 const terminal: Terminal = new Terminal();
 
@@ -205,8 +204,7 @@ process.stdout.pipeTo(
 const writer = process.stdin.getWriter();
 terminal.onData((data) => {
   const buffer = encodeUtf8(data);
-  const consumable = new Consumable(buffer);
-  writer.write(consumable);
+  writer.write(buffer);
 });
 
 terminal.open(document.getElementById("terminal"));

@@ -1,14 +1,14 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 # tcpip
 
-Enable/disable ADB over WiFi.
+Enable/disable ADB over Wi-Fi.
 
 :::info
 
-Toggling ADB over WiFi will restart ADB daemon, causing all existing connections to be closed.
+Toggling ADB over Wi-Fi will restart ADB daemon, causing all existing connections to be closed.
 
 :::
 
@@ -29,7 +29,7 @@ declare class Adb {
 }
 ```
 
-## Enable ADB over WiFi
+## Enable ADB over Wi-Fi
 
 ```ts transpile
 await adb.tcpip.setPort(5555);
@@ -43,7 +43,7 @@ adb tcpip 5555
 
 :::
 
-## Disable ADB over WiFi
+## Disable ADB over Wi-Fi
 
 ```ts transpile
 await adb.tcpip.disable();

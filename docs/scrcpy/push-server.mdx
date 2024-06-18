@@ -36,10 +36,10 @@ await AdbScrcpyClient.pushServer(
   adb,
   new ReadableStream({
     start(controller) {
-      controller.enqueue(new Consumable(new Uint8Array(server)));
+      controller.enqueue(new Uint8Array(server));
       controller.close();
     },
-  }),
+  })
 );
 ```
 
@@ -50,11 +50,11 @@ await AdbScrcpyClient.pushServer(
   adb,
   new ReadableStream({
     start(controller) {
-      controller.enqueue(new Consumable(new Uint8Array(server)));
+      controller.enqueue(new Uint8Array(server));
       controller.close();
     },
   }),
-  "/data/local/tmp/scrcpy-server.jar",
+  "/data/local/tmp/scrcpy-server.jar"
 );
 ```
 
@@ -62,10 +62,7 @@ If the server binary is downloaded using `fetch`, it's also possible to use the 
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
-import {
-  WrapReadableStream,
-  WrapConsumableStream,
-} from "@yume-chan/stream-extra";
+import type { ReadableStream } from "@yume-chan/stream-extra";
 
 declare const adb: Adb;
 declare const url: URL;
@@ -74,7 +71,8 @@ const response = await fetch(url);
 
 await AdbScrcpyClient.pushServer(
   adb,
-  new WrapReadableStream(response.body).pipeThrough(new WrapConsumableStream()),
+  // The `ReadableStream` type in TypeScript `lib.dom.d.ts` is not compatible with Tango's Web Streams API typings
+  response.body as never as ReadableStream<Uint8Array>
 );
 ```
 
@@ -95,7 +93,7 @@ try {
     filename: "/data/local/tmp/scrcpy-server.jar",
     file: new ReadableStream({
       start(controller) {
-        controller.enqueue(new Consumable(new Uint8Array(server)));
+        controller.enqueue(new Uint8Array(server));
         controller.close();
       },
     }),
@@ -109,10 +107,7 @@ Or using `fetch`:
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
-import {
-  WrapReadableStream,
-  WrapConsumableStream,
-} from "@yume-chan/stream-extra";
+import type { ReadableStream } from "@yume-chan/stream-extra";
 
 declare const adb: Adb;
 declare const url: URL;
@@ -123,9 +118,8 @@ const sync = await adb.sync();
 try {
   await sync.write({
     filename: "/data/local/tmp/scrcpy-server.jar",
-    file: new WrapReadableStream(response.body).pipeThrough(
-      new WrapConsumableStream(),
-    ),
+    // The `ReadableStream` type in TypeScript `lib.dom.d.ts` is not compatible with Tango's Web Streams API typings
+    file: response.body as never as ReadableStream<Uint8Array>,
   });
 } finally {
   await sync.dispose();

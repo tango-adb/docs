@@ -13,7 +13,7 @@ If the file already exists, it will be overwritten.
 ```ts
 interface AdbSyncWriteOptions {
   filename: string;
-  file: ReadableStream<Consumable<Uint8Array>>;
+  file: ReadableStream<MaybeConsumable<Uint8Array>>;
   type?: LinuxFileType;
   permission?: number;
   mtime?: number;
@@ -28,11 +28,11 @@ declare class AdbSync {
 ## Options
 
 - `filename`: Path to the file on the device filesystem
-- `file`: File content. It uses the [Consumable](../../tango/comsumable.mdx) pattern.
+- `file`: File content. It uses the [Consumable](../../tango/consumable.mdx) pattern.
 - `type`: File type, defaults to `LinuxFileType.File`. Can't be `LinuxFileType.Directory`.
 - `permission`: File permission, defaults to `0o644`
 - `mtime`: File modification time, defaults to current time.
-- `dryRun`: If `true`, the file will not be written to the device filesystem. This is useful for testing.
+- `dryRun`: If `true`, the file will not be written to the device filesystem. This was added for debugging and benchmarking purposes.
 
 ## Example
 
@@ -40,11 +40,10 @@ declare class AdbSync {
 
 ```ts transpile
 import { encodeUtf8 } from "@yume-chan/adb";
-import { Consumable } from "@yume-chan/stream-extra";
 
 const file = new ReadableStream({
   start(controller) {
-    controller.enqueue(new Consumable(encodeUtf8("Hello, world!")));
+    controller.enqueue(encodeUtf8("Hello, world!"));
     controller.close();
   },
 });
@@ -70,15 +69,12 @@ To write a symbolic link, write the target path as content and set type to `Linu
 
 ```ts transpile
 import { encodeUtf8 } from "@yume-chan/adb";
-import { Consumable } from "@yume-chan/stream-extra";
 
 await sync.write({
   filename: "/sdcard/Download/hello.txt",
   file: new ReadableStream({
     start(controller) {
-      controller.enqueue(
-        new Consumable(encodeUtf8("/sdcard/Download/target.txt")),
-      );
+      controller.enqueue(encodeUtf8("/sdcard/Download/target.txt"));
       controller.close();
     },
   }),
@@ -97,7 +93,7 @@ adb shell ln -s /sdcard/Download/target.txt /sdcard/Download/hello.txt
 ### (Web) upload a user-selected file
 
 ```ts transpile
-import { WrapConsumableStream, type ReadableStream } from "@yume-chan/stream-extra";
+import { type ReadableStream } from "@yume-chan/stream-extra";
 
 const input = document.createElement("input");
 input.type = "file";
@@ -111,7 +107,7 @@ input.onchange = async () => {
   await sync.write({
     filename: `/sdcard/Download/${file.name}`,
     // The `ReadableStream` type in TypeScript `lib.dom.d.ts` is not compatible with Tango's Web Streams API typings
-    file: (file.stream() as never as ReadableStream<Uint8Array>).pipeThrough(new WrapConsumableStream()),
+    file: file.stream() as never as ReadableStream<Uint8Array>,
   });
 };
 input.click();
