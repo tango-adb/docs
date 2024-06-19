@@ -90,10 +90,11 @@ async function transformNode(node) {
     const jsCode = await tsToJs(tsCode);
 
     if (tsCode === jsCode) {
+        node.meta = 'showLineNumbers'
         return node;
     }
 
-    let [, jsHighlight, tsHighlight] = (node.meta ?? "").split("|");
+    let [, jsHighlight, tsHighlight] = (node.meta ?? "").split(" ");
 
     if (!tsHighlight && jsHighlight) {
         tsHighlight = jsHighlight;

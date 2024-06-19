@@ -17,6 +17,16 @@
   --ifm-code-font-size: 95%;
 }
 
+:root {
+  --docusaurus-highlighted-code-line-bg: #0000001a;
+}
+
+/* If you have a different syntax highlighting theme for dark mode. */
+[data-theme='dark'] {
+  /* Color which works with dark mode syntax highlighting theme */
+  --docusaurus-highlighted-code-line-bg: #42424259;
+}
+
 .docusaurus-highlight-code-line {
   background-color: rgb(72, 77, 91);
   display: block;

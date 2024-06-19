@@ -117,15 +117,17 @@ adb devices -l
 
 ### Device selector
 
-All device commands uses the `AdbServerDeviceSelector` type to select the target device.
+All device commands uses the `AdbServerClient.DeviceSelector` type to select the target device.
 
 ```ts
-type AdbServerDeviceSelector =
-  | { transportId: bigint }
-  | { serial: string }
-  | { usb: true }
-  | { tcp: true }
-  | undefined;
+namespace AdbServerClient {
+  type DeviceSelector =
+    | { transportId: bigint }
+    | { serial: string }
+    | { usb: true }
+    | { tcp: true }
+    | undefined;
+}
 ```
 
 - `{ transportId: bigint }`: Selects the device with the specified transport ID. (Same as Google ADB's `-t` option)
@@ -136,7 +138,9 @@ type AdbServerDeviceSelector =
 
 :::info
 
-If an `AdbServerDeviceSelector` object has multiple fields, only one of them will be used, based on the order above.
+If an `AdbServerClient.DeviceSelector` object has multiple fields, only one of them will be used, based on the order above.
+
+Because `AdbServerClient.Device` has a `transportId` field, it can also be used as a `AdbServerClient.DeviceSelector`.
 
 :::
 
@@ -147,7 +151,7 @@ In all fields, only `transportId` is guaranteed to be unique, so it's recommende
 ```ts
 declare class AdbServerClient {
   getDeviceFeatures(
-    selector: AdbServerDeviceSelector,
+    selector: AdbServerClient.DeviceSelector
   ): Promise<{ transportId: bigint; features: AdbFeature[] }>;
 }
 ```
@@ -175,8 +179,8 @@ interface AdbServerSocket extends AdbSocket {
 
 declare class AdbServerClient {
   connectDevice(
-    device: AdbServerDeviceSelector,
-    service: string,
+    device: AdbServerClient.DeviceSelector,
+    service: string
   ): Promise<AdbServerSocket>;
 }
 ```
@@ -203,9 +207,9 @@ interface AdbServerConnectionOptions {
 
 declare class AdbServerClient {
   waitFor(
-    device: AdbServerDeviceSelector,
+    device: AdbServerClient.DeviceSelector,
     state: "device" | "disconnect",
-    options?: AdbServerConnectionOptions,
+    options?: AdbServerConnectionOptions
   ): Promise<void>;
 }
 ```
@@ -242,7 +246,7 @@ adb wait-for-usb-disconnect
 declare class AdbServerTransport implements AdbTransport {}
 
 declare class AdbServerClient {
-  createTransport(device: AdbServerDeviceSelector): Promise<AdbServerTransport>;
+  createTransport(device: AdbServerClient.DeviceSelector): Promise<AdbServerTransport>;
 }
 ```
 

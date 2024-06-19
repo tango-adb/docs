@@ -1,19 +1,86 @@
 # Direct Connection
 
+```mermaid
+flowchart LR
+    subgraph PC
+    CA["JavaScript Client"] <--> Tango
+    end
+    subgraph Devices
+    Tango <-->|USB| A["Device A"]
+    Tango <-->|TCP| B["Device B"]
+    end
+    subgraph PC
+    S["Google ADB Server"] x-.-x|USB| A
+    O["Other Tango Instance"] x-.-x|USB| A
+    end
+```
+
 In Direct Connection Mode, Tango connects to the ADB daemon running on Android devices directly. This is the lowest-level connection mode, Tango controls all the steps, including authentication, message encoding and decoding, and connection management.
 
 The `AdbDaemonTransport` class from `@yume-chan/adb` implements this mode.
 
 To support different runtime and connection method, `AdbDaemonTransport` accepts an `AdbDaemonConnection` object for communicating with the device, and an `AdbCredentialStore` object for managing client certificates.
 
-Here are the basic steps to establish a connection in Direct Connection Mode:
+Here are the overall steps to create a direct connection:
 
-1. Create an `AdbDaemonConnection` object for the runtime and connection method you want to use.
-2. Create an `AdnCredentialStore` object for the runtime.
-3. Pass the connection and credential store to `AdbDaemonTransport` to authenticate and initialize the connection.
-4. Use the `AdbDaemonTransport` object to create an `Adb` instance.
-5. Use the `Adb` instance to send commands to the device.
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant T as AdbDaemonTransport
 
-import DocCardList from '@theme/DocCardList';
+    create participant Conn as AdbDaemonConnection
+    C->>Conn: Create
 
-<DocCardList />
+    create participant Cred as AdbCredentialStore
+    C->>Cred: Create
+
+    C->>+T: Start handshake
+
+    T->>+Conn: Send handshake
+    Conn->>T: Return authentication parameters
+
+    T->>+Cred: Get or create client certificate
+    Cred->>-T: Return client certificate
+
+    T->>Conn: Send authentication packets
+    Conn->>-T: Return authentication result
+
+    T->>-C: Return authenticated connection
+    C->>C: Create Adb instance
+```
+
+There are two built-in `AdbDaemonConnection` implementations, and you can also create other custom connections to meet your requirements.
+
+## USB Connection
+
+USB connection is the most common way to connect to Android devices.
+
+[`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` using [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations, including the native implementation in Web browsers, and the [`usb`](https://www.npmjs.com/package/usb) package in Node.js.
+
+:::note[Next Step]
+
+[Create USB connection](./usb/device-manager.mdx)
+
+:::
+
+## TCP Connection
+
+ADB over Wi-Fi (a.k.a TCP/IP mode) allows you to connect to Android devices without a USB cable. It can also connect to Google Android Emulators running on the same machine.
+
+There is no Web API for TCP connection, so it's not available in Web browsers. In Node.js, it can be implemented using the built-in `net` module.
+
+:::note[Next Step]
+
+[Create TCP connection](./tcp/enable.mdx)
+
+:::
+
+## Custom Connection
+
+In addition to the built-in connection methods, Tango also accepts custom connection implementations. For example, a WebSocket connection can forward TCP connections from a Node.js server to a Web browser.
+
+:::note[Next Step]
+
+[Create custom connection](./custom-connection.mdx)
+
+:::

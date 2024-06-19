@@ -11,11 +11,13 @@ Once a connection and a credential store is ready, use `AdbDaemonTransport.authe
 ```ts transpile
 import { AdbDaemonTransport } from "@yume-chan/adb";
 
+// highlight-start
 const transport: AdbDaemonTransport = await AdbDaemonTransport.authenticate({
   serial: device.serial,
   connection,
   credentialStore: CredentialStore,
 });
+// highlight-end
 ```
 
 :::info
@@ -35,7 +37,9 @@ This step only initialize some internal states, but does not actually send any p
 ```ts transpile
 import { Adb } from "@yume-chan/adb";
 
+// highlight-start
 const adb: Adb = new Adb(transport);
+// highlight-end
 ```
 
 :::note[Next Step]

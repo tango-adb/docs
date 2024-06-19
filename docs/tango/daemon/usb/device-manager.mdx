@@ -39,8 +39,10 @@ Create a device manager for browsers:
 ```ts transpile
 import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
 
+// highlight-start
 const Manager: AdbDaemonWebUsbDeviceManager | undefined =
   AdbDaemonWebUsbDeviceManager.BROWSER;
+// highlight-end
 ```
 
 :::info
@@ -67,6 +69,8 @@ There are two reasons that `Manager` may be `undefined`:
 <TabItem value="node" label="Node.js">
 
 [`usb`](https://www.npmjs.com/package/usb) package provides a WebUSB compatible implementation for Node.js.
+
+It uses the libusb library to access USB devices, which should work perfectly on Linux and macOS, but may have some issues on Windows.
 
 ```sh npm2yarn
 npm i usb

@@ -35,6 +35,21 @@ Depending on the runtime and connection type, additional packages are required t
 
 ## Direct Connection Transport
 
+```mermaid
+flowchart LR
+    subgraph PC
+    CA["JavaScript Client"] <--> Tango
+    end
+    subgraph Devices
+    Tango <-->|USB| A["Device A"]
+    Tango <-->|TCP| B["Device B"]
+    end
+    subgraph PC
+    S["Google ADB Server"] x-.-x|USB| A
+    O["Other Tango Instance"] x-.-x|USB| A
+    end
+```
+
 ADB Daemon is a program running on Android devices (when Developer Options are enabled) that handles ADB commands.
 
 In this mode, Tango connects to the ADB daemon directly. This means it can run on devices without Google ADB (not installed, or not available, for example on mobile devices).
@@ -53,6 +68,20 @@ Direct connection mode supports three connection methods:
 :::
 
 ## Google ADB Client Transport
+
+```mermaid
+flowchart LR
+    subgraph PC
+    CA["JavaScript Client A"] <--> TA["Tango Instance A"]
+    CB["JavaScript Client B"] <--> TB["Tango Instance B"]
+    TA & TB <-->|TCP| S["Google ADB Server"]
+    CC["Other Native Client"] <-->|TCP| S
+    end
+    subgraph Devices
+    S <-->|USB| A["Device A"]
+    S <-->|TCP| B["Device B"]
+    end
+```
 
 Google ADB server is a program running on PC that manages devices and allows sharing a device with multiple clients.
 

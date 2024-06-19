@@ -9,48 +9,24 @@ cspell: ignore libusb
 cspell: ignore nodaemon
 */}
 
-This part describes the architecture of native ADB and Web ADB, and why there are designed in this way.
+Google ADB has three components: Client, Server, and Daemon.
 
-## Native ADB
-
-Native ADB has three components:
-
-<div className="flow-chart">
-
+```mermaid
+flowchart LR
+    subgraph PA ["PC A"]
+    CA["Client A"] <--> S["Server A"]
+    CB["Client B"] <--> S
+    end
+    subgraph PB ["PC B"]
+    CC["Client C"] <--> S
+    end
+    subgraph DA ["Device A"]
+    S <-->|USB| DDA["Daemon A"]
+    end
+    subgraph DB ["Device B"]
+    S <-->|TCP| DDB["Daemon B"]
+    end
 ```
-┌───────────────────────────────┐  ┌──────────────┐
-│                               │  │              │
-│ ┌───────────┐     ┌────────┐  │  │ ┌──────────┐ │
-│ │           ├─────►        ├──┼──┼─►          │ │
-│ │ Client A  │     │        │  │  │ │ Daemon A │ │
-│ │           ◄─────┤        ◄──┼──┼─┤          │ │
-│ └───────────┘     │        │  │  │ └──────────┘ │
-│                   │        │  │  │              │
-│ ┌───────────┐     │ Server │  │  │   Device A   │
-│ │           ├─────►        │  │  │              │  ┌──────────────┐
-│ │ Client B  │     │        │  │  └──────────────┘  │              │
-│ │           ◄─────┤        │  │                    │ ┌──────────┐ │
-│ └───────────┘     │        ├──┼────────────────────┼─►          │ │
-│                   │        │  │                    │ │ Daemon B │ │
-│                   │        ◄──┼────────────────────┼─┤          │ │
-│  Computer A       └──▲──┬──┘  │                    │ └──────────┘ │
-│                      │  │     │                    │              │
-└──────────────────────┼──┼─────┘                    │   Device B   │
-                       │  │                          │              │
-┌───────────────┐      │  │                          └──────────────┘
-│               │      │  │
-│ ┌───────────┐ │      │  │
-│ │           ├─┼──────┘  │
-│ │ Client C  │ │         │
-│ │           ◄─┼─────────┘
-│ └───────────┘ │
-│               │
-│  Computer B   │
-│               │
-└───────────────┘
-```
-
-</div>
 
 ### Client
 
@@ -81,34 +57,3 @@ Historically, because most device only has one USB port, **daemons** can only ha
 ### Protocol
 
 All packets between **client-server** and **server-daemon** are in the ADB packet format, but as mentioned before, **client-server** packets contain an extra "host prefix". ADB packet format will be described in [packet](./packet.md) chapter, while "host prefix" will be described in [stream](./stream.md) chapter.
-
-## Web ADB
-
-Web ADB reuses native ADB daemons, but there is no **client**/**server**: One application, one connection, to one device.
-
-<div className="flow-chart">
-
-```
-┌──────────────────────────────────┐  ┌──────────────┐
-│                                  │  │              │
-│ ┌──────────┐    ┌─────────────┐  │  │ ┌──────────┐ │
-│ │          ├────►             ├──┼──┼─►          │ │
-│ │  Core A  │    │  Backend A  │  │  │ │ Daemon A │ │
-│ │          ◄────┤             ◄──┼──┼─┤          │ │
-│ └──────────┘    └─────────────┘  │  │ └──────────┘ │
-│                                  │  │              │
-│                                  │  │   Device A   │
-│                                  │  │              │  ┌──────────────┐
-│                                  │  └──────────────┘  │              │
-│ ┌──────────┐    ┌─────────────┐  │                    │ ┌──────────┐ │
-│ │          ├────►             ├──┼────────────────────┼─►          │ │
-│ │  Core B  │    │  Backend B  │  │                    │ │ Daemon B │ │
-│ │          ◄────┤             ◄──┼────────────────────┼─┤          │ │
-│ └──────────┘    └─────────────┘  │                    │ └──────────┘ │
-│                                  │                    │              │
-│        JavaScript Runtime        │                    │   Device B   │
-│                                  │                    │              │
-└──────────────────────────────────┘                    └──────────────┘
-```
-
-</div>

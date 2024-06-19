@@ -16,26 +16,31 @@ This step doesn't send or receive any packets, it only initializes some internal
 
 ## Get devices
 
-Use the `AdbServerClient#getDevices` method to get all connected devices:
+Use the `AdbServerClient#getDevices` method to get all connected devices, including those that are not authenticated yet.
+
+The return value is an array of `AdbServerClient.Device` objects, which contains the device's serial number, product name, model name, and device name, as well as the transport ID used to create a transport later.
 
 ```ts
-interface AdbServerDevice {
-  serial: string;
-  product?: string | undefined;
-  model?: string | undefined;
-  device?: string | undefined;
-  transportId: bigint;
+namespace AdbServerClient {
+  interface Device {
+    serial: string;
+    authenticating: boolean;
+    product?: string;
+    model?: string;
+    device?: string;
+    transportId: bigint;
+  }
 }
 
 declare class AdbServerClient {
-  getDevices(): Promise<AdbServerDevice[]>;
+  getDevices(): Promise<AdbServerClient.Device[]>;
 }
 ```
 
 ```ts transpile
-import type { AdbServerDevice } from "@yume-chan/adb";
+import type { AdbServerClient } from "@yume-chan/adb";
 
-const devices: AdbServerDevice[] = await client.getDevices();
+const devices: AdbServerClient.Device[] = await client.getDevices();
 if (devices.length === 0) {
   alert("No device connected");
   return;
@@ -46,20 +51,24 @@ const device = devices[0];
 
 ## Create transport
 
-Then use the `AdbServerClient#createTransport` method to create a transport and an `Adb` instance:
+Then use the `AdbServerClient#createTransport` method to create a transport and an `Adb` instance. The device must have already been authenticated.
+
+Devices can be selected by either their transport ID, serial number, or connection type. Because `AdbServerClient.Device` has a `transportId` field, it can also be used as a `AdbServerClient.DeviceSelector`.
 
 ```ts
-type AdbServerDeviceSelector =
-  | { transportId: bigint }
-  | { serial: string }
-  | { usb: true }
-  | { tcp: true }
-  | undefined;
+namespace AdbServerClient {
+  type DeviceSelector =
+    | { transportId: bigint }
+    | { serial: string }
+    | { usb: true }
+    | { tcp: true }
+    | undefined;
+}
 
 declare class AdbServerTransport implements AdbTransport {}
 
 declare class AdbServerClient {
-  createTransport(device: AdbServerDeviceSelector): Promise<AdbServerTransport>;
+  createTransport(device: AdbServerClient.DeviceSelector): Promise<AdbServerTransport>;
 }
 ```
 
@@ -69,12 +78,6 @@ import { Adb } from "@yume-chan/adb";
 const transport: AdbServerTransport = await client.createTransport(device);
 const adb: Adb = new Adb(transport);
 ```
-
-:::info
-
-Because `AdbServerDevice` objects have a `transportId` field, it can also be used as a `AdbServerDeviceSelector`:
-
-:::
 
 :::note[Next Step]
 

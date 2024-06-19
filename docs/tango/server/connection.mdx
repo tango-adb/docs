@@ -4,11 +4,56 @@ sidebar_position: 1
 
 # Create connection
 
+```mermaid
+flowchart LR
+    subgraph PC
+    CA["JavaScript Client A"] <--> TA["Tango Instance A"]
+    CB["JavaScript Client B"] <--> TB["Tango Instance B"]
+    TA & TB <-->|TCP| S["Google ADB Server"]
+    CC["Other Native Client"] <-->|TCP| S
+    end
+    subgraph Devices
+    S <-->|USB| A["Device A"]
+    S <-->|TCP| B["Device B"]
+    end
+```
+
 As mentioned in [Create USB connection](../daemon/usb/create-connection.md), a USB device can only be exclusively accessed by one process at a time. This means if multiple ADB clients are trying to connect to the same device, only one of them will succeed.
 
 Google ADB solves this problem by starting a server (also called "host") to manage the USB devices, and all ADB clients connect to the server instead of the device directly. The server will forward the packets from clients to the device, and forward the packets from the device to the clients.
 
 The protocol between ADB client and server is different from the protocol between ADB server and device (daemon). Tango provides a client implementation for the client-server protocol, but since the server usually listens on a TCP port, Tango requires a server connector object to handle the data communication.
+
+Here are the overall steps to create a server connection:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as AdbServerClient
+
+    create participant Conn as AdbServerClient.ServerConnector
+    C->>Conn: Create
+
+    participant G as ADB Server
+    participant D as Device
+
+    C->>+A: Get device list
+    A->>+Conn: Send command
+    Conn->>+G: Forward command
+
+    G->>-Conn: Return response
+    Conn->>-A: Forward response
+    A->>-C: Return device list
+
+    C->>+A: Connect to device
+    A->>+Conn: Send command
+    Conn->>+G: Forward command
+    G->>+D: Forward command
+    D->>-G: Return response
+    G->>-Conn: Forward response
+    Conn->>-A: Forward response
+    A->>-C: Return device instance
+```
 
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
@@ -18,7 +63,7 @@ Currently there is no Web API that allows TCP connection. Looking forward to the
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/adb-server-node-tcp) package provides a server connection based on Node.js built-in `net` module.
+The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/adb-server-node-tcp) package provides a server connector based on Node.js built-in `net` module.
 
 ```sh npm2yarn
 npm i @yume-chan/adb-server-node-tcp

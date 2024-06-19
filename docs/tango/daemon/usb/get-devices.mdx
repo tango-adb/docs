@@ -58,7 +58,9 @@ So in many cases, you can just call `AdbDaemonWebUsbDeviceManager#getDevices` wi
 ```ts transpile
 import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
 
+// highlight-start
 const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices();
+// highlight-end
 if (!devices.length) {
   alert("No device connected");
   return;
@@ -97,11 +99,13 @@ import {
 } from "@yume-chan/adb-daemon-webusb";
 
 const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
+  // highlight-start
   {
     ...ADB_DEFAULT_DEVICE_FILTER,
     vendorId: 0x18d1,
     productId: 0x4ee2,
   },
+  // highlight-end
 ]);
 ```
 
@@ -114,6 +118,7 @@ import {
 } from "@yume-chan/adb-daemon-webusb";
 
 const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
+  // highlight-start
   {
     ...ADB_DEFAULT_DEVICE_FILTER,
     vendorId: 0x18d1,
@@ -124,5 +129,6 @@ const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
     vendorId: 0x04e8,
     productId: 0x6860,
   },
+  // highlight-end
 ]);
 ```
