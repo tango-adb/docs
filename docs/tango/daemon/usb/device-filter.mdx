@@ -1,0 +1,104 @@
+---
+sidebar_position: 2
+---
+
+# Device Filter
+
+WebUSB [`requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice#filters) method requires a `filters` option to select which devices to show in the picker.
+
+Tango extended the filter concept to select which USB interface is used for communication with the ADB daemon.
+
+## Filters in WebUSB API
+
+WebUSB defines a `USBDeviceFilter` interface to be used in [`requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice#filters) method. It has the following fields:
+
+```ts
+interface USBDeviceFilter {
+  vendorId?: number | undefined;
+  productId?: number | undefined;
+  classCode?: number | undefined;
+  subclassCode?: number | undefined;
+  protocolCode?: number | undefined;
+  serialNumber?: string | undefined;
+}
+```
+
+Some fields must be specified in pairs to be valid:
+
+- When `productId` is specified, `vendorId` must also be specified.
+- When `protocolCode` is specified, `subclassCode` must also be specified.
+- When `subclassCode` is specified, `classCode` must also be specified.
+
+If a filter has multiple fields, the device must match all fields to be included. For example, this filter only allows a specific manufacturer and model pair:
+
+```ts
+const device: USBDevice = await navigator.usb.requestDevice({
+  // highlight-start
+  filters: [
+    {
+      vendorId: 0x18d1,
+      productId: 0x4ee2,
+    },
+  ],
+  // highlight-end
+});
+```
+
+`filters` is an array, so multiple filters can be specified. If any filter matches, the device will be included. For example, to allow multiple manufacturers/models:
+
+```ts
+const device: USBDevice = await navigator.usb.requestDevice({
+  // highlight-start
+  filters: [
+    {
+      vendorId: 0x18d1,
+      productId: 0x4ee2,
+    },
+    {
+      vendorId: 0x04e8,
+      productId: 0x6860,
+    },
+  ],
+  // highlight-end
+});
+```
+
+## Filters in Tango
+
+Because we need to know which interface to use for communication with ADB daemon, the `classCode`, `subclassCode`, and `protocolCode` fields are required. Usually they are `0xFF`, `0x42`, and `0x01` respectively, but can be different if your device has a different configuration.
+
+```ts
+interface AdbDeviceFilter {
+  classCode: number;
+  subclassCode: number;
+  protocolCode: number;
+  vendorId?: number | undefined;
+  productId?: number | undefined;
+  serialNumber?: string | undefined;
+}
+```
+
+The `ADB_DEFAULT_DEVICE_FILTER` constant contains the above default values. It can be merged into your filter object:
+
+```ts transpile
+import {
+  type AdbDeviceFilter,
+  ADB_DEFAULT_DEVICE_FILTER,
+} from "@yume-chan/adb-daemon-webusb";
+
+const filters: AdbDeviceFilter[] = [
+  // highlight-start
+  {
+    ...ADB_DEFAULT_DEVICE_FILTER,
+    vendorId: 0x18d1,
+    productId: 0x4ee2,
+  },
+  // highlight-end
+];
+```
+
+## Upcoming changes
+
+In next version, `ADB_DEFAULT_DEVICE_FILTER` will be automatically merged into the specified filters, so you don't need to do it manually.
+
+Empty filter array will also be treated as `[ADB_DEFAULT_DEVICE_FILTER]`, so `undefined`, `[]`, `[{}]` and `[ADB_DEFAULT_INTERFACE_FILTER]` will all have the same effect.

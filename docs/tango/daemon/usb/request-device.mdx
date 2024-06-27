@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 import Tabs from "@theme/Tabs";
@@ -51,7 +51,7 @@ document.getElementById("button").addEventListener("click", () => {
 
 The permission will be persisted by the browser, so from next time, the website can access that device without calling `requestDevice` again. The user can revoke the permission in "Settings -> Site Permissions -> USB devices" at any time.
 
-## Android USB mode affects permissions
+### Android USB mode affects permissions
 
 In USB specification, one device can have multiple **interfaces**. Each interface represents a self-contained feature. For example, a USB headset can have one interface for audio input and one interface for audio output.
 
@@ -100,24 +100,14 @@ document.getElementById("button").addEventListener("click", () => {
 
 ## Filter devices in the picker
 
-By default, `USB#requestDevice` method shows all connected devices in the picker. To limit which devices will appear in the picker, it accepts one list of inclusive filters and one list of exclusive filters.
-
-:::note
-
-Support for exclusive filters was added in Chrome 105. It will be ignored in older browsers.
-
-:::
-
-`AdbDaemonWebUsbDeviceManager#requestDevice` also has an `options` parameter:
-
 ```ts
 interface AdbDeviceFilter {
   classCode: number;
   subclassCode: number;
   protocolCode: number;
-  vendorId?: number;
-  productId?: number;
-  serialNumber?: string;
+  vendorId?: number | undefined;
+  productId?: number | undefined;
+  serialNumber?: string | undefined;
 }
 
 namespace AdbDaemonWebUsbDeviceManager {
@@ -134,30 +124,34 @@ declare class AdbDaemonWebUsbDeviceManager {
 }
 ```
 
-If `filters` is omitted, it will use `ADB_DEFAULT_DEVICE_FILTER` which matches the ADB interface.
+:::note
 
-```ts
-export const ADB_DEFAULT_DEVICE_FILTER = {
-  classCode: 0xff,
-  subclassCode: 0x42,
-  protocolCode: 1,
-} as const satisfies AdbDeviceFilter;
-```
+See [Device filter](./device-filter.mdx) for more information about how does the filter work and how to define a filter.
 
-Each filter is an object with the following fields:
+:::
 
-- `classCode`: (Required) The class code of the ADB interface.
-- `subclassCode`: (Required) The subclass code of the ADB interface.
-- `protocolCode`: (Required) The protocol code of the ADB interface.
-- `vendorId`: The USB vendor ID of the device.
-- `productId`: The USB product ID of the device.
-- `serialNumber`: The serial number of the device.
+### `filters`
 
-`classCode`, `subclassCode` and `protocolCode` fields are required to ensure the device is an ADB device. They can be different from `ADB_DEFAULT_DEVICE_FILTER` if your device has a different configuration. Tango will use these fields to select the correct interface to communicate with.
+The `filters` option defaults to `[ADB_DEFAULT_DEVICE_FILTER]`, which matches the ADB interface. If you want to filter devices by vendor ID, product ID, or serial number, you can specify a custom filter array.
 
-`venderId`, `productId` and `serialNumber` fields can be used to select a specific manufacturer, a specific model, or a specific device.
+`filters` can be `undefined`, but it can't be an empty array. If you want to allow all devices, use `undefined` or `[ADB_DEFAULT_DEVICE_FILTER]`.
 
-If a filter has multiple fields, the device must match all fields to be included or excluded. For example, this filter only allows a specific manufacturer/model:
+### `exclusionFilters`
+
+It's also possible to exclude some devices from the picker by passing an `exclusionFilters` option. It works in reverse: if a device matches any filter in `exclusionFilters`, it will be excluded from the picker.
+
+It can be used to exclude devices that are already paired, or exclude certain devices that's not compatible.
+
+:::info
+
+Support for exclusive filters was added in Chrome 105. It will be ignored in older versions.
+
+:::
+
+### Examples
+
+To select a specific manufacturer and model:
+
 
 ```ts transpile
 import {
@@ -178,7 +172,7 @@ const device: AdbDaemonWebUsbDevice | undefined = await Manager.requestDevice({
 });
 ```
 
-If multiple filters are specified, any device matching at least one filter will be returned. So, to allow multiple manufacturers/models:
+To allow multiple manufacturers/models:
 
 ```ts transpile
 import {

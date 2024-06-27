@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 import Tabs from "@theme/Tabs";
@@ -20,22 +20,18 @@ Previously, we have disabled the permission system in `usb` package's WebUSB imp
 </TabItem>
 </Tabs>
 
-The app can get all connected devices by calling `AdbDaemonWebUsbDeviceManager#getDevices` method. It can then connect to multiple devices at the same time, or let the user choose one device to connect to.
+WebUSB `USB#getDevices` method can be used to get all connected devices (that the user has granted permission to access). However, it might return non-ADB devices as well.
 
-## Get devices
-
-`AdbDaemonWebUsbDeviceManager#getDevices` method calls WebUSB's `USB#getDevices` method to get all connected devices.
-
-But since `USB#getDevices` returns all connected devices, including those that are not ADB devices, `AdbDaemonWebUsbDeviceManager#getDevices` accepts a `filters` option (same as `AdbDaemonWebUsbDeviceManager#requestDevice`) to filter out incompatible devices.
+To only get ADB devices, the `AdbDaemonWebUsbDeviceManager#getDevices` method also accepts a `filters` option, to only return devices that match the specified criteria.
 
 ```ts
 interface AdbDeviceFilter {
   classCode: number;
   subclassCode: number;
   protocolCode: number;
-  vendorId?: number;
-  productId?: number;
-  serialNumber?: string;
+  vendorId?: number | undefined;
+  productId?: number | undefined;
+  serialNumber?: string | undefined;
 }
 
 declare class AdbDaemonWebUsbDeviceManager {
@@ -43,17 +39,7 @@ declare class AdbDaemonWebUsbDeviceManager {
 }
 ```
 
-The `filters` option is optional and defaults to `ADB_DEFAULT_DEVICE_FILTER`, which picks common ADB devices:
-
-```ts
-export const ADB_DEFAULT_DEVICE_FILTER = {
-  classCode: 0xff,
-  subclassCode: 0x42,
-  protocolCode: 1,
-} as const satisfies AdbDeviceFilter;
-```
-
-So in many cases, you can just call `AdbDaemonWebUsbDeviceManager#getDevices` without any arguments:
+The `filters` option defaults to `[ADB_DEFAULT_DEVICE_FILTER]`, which matches the ADB interface. In most cases, you can just call `AdbDaemonWebUsbDeviceManager#getDevices` without any arguments:
 
 ```ts transpile
 import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
@@ -69,20 +55,11 @@ if (!devices.length) {
 const device: AdbDaemonWebUsbDevice = devices[0];
 ```
 
-## Filter connected devices
+:::note
 
-To limit which devices will be returned, you can specify multiple custom filters. Each filter is an object with the following fields:
+See [Device filter](./device-filter.mdx) for more information about how does the filter work and how to define a filter.
 
-- `classCode`: (Required) The class code of the ADB interface.
-- `subclassCode`: (Required) The subclass code of the ADB interface.
-- `protocolCode`: (Required) The protocol code of the ADB interface.
-- `vendorId`: The USB vendor ID of the device.
-- `productId`: The USB product ID of the device.
-- `serialNumber`: The serial number of the device.
-
-`classCode`, `subclassCode` and `protocolCode` fields are required to ensure the device is an ADB device. They can be different from `ADB_DEFAULT_DEVICE_FILTER` if your device has a different configuration. Tango will use these fields to select the correct interface to communicate with.
-
-`venderId`, `productId` and `serialNumber` fields can be used to select a specific manufacturer, a specific model, or a specific device.
+:::
 
 :::info
 
@@ -90,7 +67,9 @@ Some lazy manufacturers use the same `serialNumber` for all devices. So even if 
 
 :::
 
-If a filter has multiple fields, the device must match all fields to be returned. For example, this filter only allows a specific manufacturer/model:
+### Examples
+
+To select a specific manufacturer and model:
 
 ```ts transpile
 import {
@@ -98,18 +77,18 @@ import {
   ADB_DEFAULT_DEVICE_FILTER,
 } from "@yume-chan/adb-daemon-webusb";
 
+// highlight-start
 const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
-  // highlight-start
   {
     ...ADB_DEFAULT_DEVICE_FILTER,
     vendorId: 0x18d1,
     productId: 0x4ee2,
   },
-  // highlight-end
 ]);
+// highlight-end
 ```
 
-If multiple filters are specified, any device matching at least one filter will be returned. So, to allow multiple manufacturers/models:
+To allow multiple manufacturers/models:
 
 ```ts transpile
 import {
@@ -117,8 +96,8 @@ import {
   ADB_DEFAULT_DEVICE_FILTER,
 } from "@yume-chan/adb-daemon-webusb";
 
-const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
-  // highlight-start
+// highlight-start
+const device: AdbDaemonWebUsbDevice | undefined = await Manager.getDevices([
   {
     ...ADB_DEFAULT_DEVICE_FILTER,
     vendorId: 0x18d1,
@@ -129,6 +108,6 @@ const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
     vendorId: 0x04e8,
     productId: 0x6860,
   },
-  // highlight-end
 ]);
+// highlight-end
 ```

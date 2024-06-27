@@ -18,7 +18,7 @@ flowchart LR
     end
 ```
 
-As mentioned in [Create USB connection](../daemon/usb/create-connection.md), a USB device can only be exclusively accessed by one process at a time. This means if multiple ADB clients are trying to connect to the same device, only one of them will succeed.
+As mentioned in [Create USB connection](../daemon/usb/create-connection.mdx), a USB device can only be exclusively accessed by one process at a time. This means if multiple ADB clients are trying to connect to the same device, only one of them will succeed.
 
 Google ADB solves this problem by starting a server (also called "host") to manage the USB devices, and all ADB clients connect to the server instead of the device directly. The server will forward the packets from clients to the device, and forward the packets from the device to the clients.
 
