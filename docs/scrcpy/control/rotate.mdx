@@ -1,0 +1,22 @@
+---
+sidebar_position: 4
+---
+
+# Rotate Device
+
+Request to change the device orientation (landscape to portrait, or portrait to landscape). If the current app doesn't support the requested orientation, the device will not rotate.
+
+The effect of this command is the same as unlocking the device orientation, rotating the device, and locking the device orientation again.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.rotateDevice();
+
+// Using `ScrcpyControlMessageWriter`
+await writer.rotateDevice();
+
+// Using `AdbScrcpyClient`
+await client.controller!.rotateDevice();
+```

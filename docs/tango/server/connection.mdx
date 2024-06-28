@@ -38,20 +38,26 @@ sequenceDiagram
     participant D as Device
 
     C->>+A: Get device list
+    A->>A: Create server command
     A->>+Conn: Send command
     Conn->>+G: Forward command
 
     G->>-Conn: Return response
     Conn->>-A: Forward response
+    A->>A: Parse response
     A->>-C: Return device list
 
     C->>+A: Connect to device
+    A->>A: Create server command
     A->>+Conn: Send command
     Conn->>+G: Forward command
-    G->>+D: Forward command
+    G->>G: Create device command
+    G->>+D: Send command
     D->>-G: Return response
-    G->>-Conn: Forward response
+    G->>G: Parse response
+    G->>-Conn: Return response
     Conn->>-A: Forward response
+    A->>A: Parse response
     A->>-C: Return device instance
 ```
 

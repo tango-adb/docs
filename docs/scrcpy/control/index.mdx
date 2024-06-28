@@ -1,0 +1,57 @@
+# Control device
+
+Scrcpy supports various input events, including mouse, touch, keyboard, and physical buttons. The client sends input events to the server, which injects them into the device.
+
+There are three ways to create or send control messages, they provide the same set of methods:
+
+* [Touch event](./touch.mdx)
+* [Keyboard event](./keyboard.mdx)
+* [Text input](./text.mdx)
+* [Rotate device](./rotate.mdx)
+
+## Using `@yume-chan/scrcpy`
+
+### Using `ScrcpyControlMessageSerializer`
+
+The `ScrcpyControlMessageSerializer` class provides methods to serialize events into Scrcpy messages. It's up to the caller to send the serialized message to the server.
+
+The message format depends on the Scrcpy version, so a `ScrcpyOptionsX_XX` object is required to create the serializer.
+
+```ts transpile
+import { ScrcpyControlMessageSerializer } from "@yume-chan/scrcpy";
+
+const serializer = new ScrcpyControlMessageSerializer(options);
+const message: Uint8Array = serializer.rotateDevice();
+```
+
+### Using `ScrcpyControlMessageWriter`
+
+The `ScrcpyControlMessageWriter` class connects a `WritableStream<Uint8Array>` to a `ScrcpyControlMessageSerializer`. It writes serialized messages to the stream.
+
+```ts transpile
+import { ScrcpyControlMessageWriter } from "@yume-chan/scrcpy";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+const stream = new WritableStream<Uint8Array>();
+const writer = new ScrcpyControlMessageWriter(stream.getWriter(), options);
+
+await writer.rotateDevice();
+```
+
+It provides the same set of methods as `ScrcpyControlMessageSerializer`, plus a `write` method to allow extending the protocol.
+
+```ts transpile
+await writer.write(new Uint8Array([0x01, 0x02, 0x03]));
+```
+
+## Using `@yume-chan/adb-scrcpy`
+
+When control is not disabled (`control: false` not exist in options), `AdbScrcpyClient.controller` is a `ScrcpyControlMessageWriter` that connects to the server's control socket.
+
+```ts transpile
+if (client.controller) {
+  await client.controller.rotateDevice();
+}
+```
+
+`AdbScrcpyClient` also hooks up the device message socket to the options object, so `setClipboard` method can be used directly.

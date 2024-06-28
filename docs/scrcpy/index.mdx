@@ -6,8 +6,20 @@ sidebar_position: 1
 
 [Scrcpy](https://github.com/Genymobile/scrcpy) is an open-source tool to mirror Android screen to desktop, and control it from desktop. It has two parts:
 
-* A client written in C: It uses SDL for cross-platform display and input, and FFMpeg for video encoding.
-* A server written in Java: It runs on Android devices, and uses Android system APIs to capture screen and inject input events. The server is started by client using ADB, thus having much more privileges than regular apps.
+* A client written in C: Uses SDL for cross-platform display and input, and FFMpeg for video decoding. It spawns Google ADB client to set up a reverse tunnel, start server on device, and connect to it.
+* A server written in Java: Runs on Android devices, uses Android system APIs to capture screen/audio, and inject input events. The server is started by client using ADB, thus having much more privileges than regular apps.
+
+```mermaid
+flowchart LR
+    subgraph PC
+    Client <-->|TCP| AS["ADB Server"]
+    end
+    subgraph Device
+    AS <-->|USB| AD["ADB Daemon"]
+    AS <-->|TCP| AD
+    AD <-->|TCP| Server
+    end
+```
 
 Tango provides a TypeScript implementation of the client API, so that it can run in browsers and Node.js. It's fully compatible with the original Scrcpy server, so latest features and bug fixes are available immediately. It doesn't provide any UI components, so you need to create your own UI.
 

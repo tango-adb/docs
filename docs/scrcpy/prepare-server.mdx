@@ -11,6 +11,8 @@ Scrcpy server is a Java application that runs on Android devices. Tango uses the
 
 Tango doesn't include the server binary in the package, so the first step is to download the server binary.
 
+The server binary is subject to [Apache License 2.0](https://github.com/Genymobile/scrcpy/blob/master/LICENSE).
+
 ## Download from official releases
 
 You can download the official server binary from [Scrcpy GitHub releases](https://github.com/Genymobile/scrcpy/releases) and copy into your project.
@@ -19,7 +21,7 @@ You can download the official server binary from [Scrcpy GitHub releases](https:
 
 Depends on your runtime, bundler and framework, you may need to consume `server.bin` differently.
 
-For frontend meta frameworks, usually there are two ways to include a binary file:
+For frontend meta frameworks (Next.js, Nuxt, Solid Start, etc.), usually there are two ways to include a binary file:
 
 1. Put it in `public` folder, and reference it using a fixed URL (e.g. `https://your-domain.com/server.bin`)
 2. Import it in a JavaScript source file and let the bundler handle it
@@ -60,7 +62,7 @@ const server: Buffer = await fs.readFile(url);
 
 ## Use `@yume-chan/fetch-scrcpy-server`
 
-`@yume-chan/fetch-scrcpy-server` package provides a script to download the server binary and write the version string automatically.
+`@yume-chan/fetch-scrcpy-server` package provides a script to download the server binary and save the version string automatically.
 
 ```sh npm2yarn
 npm i -D @yume-chan/fetch-scrcpy-server
@@ -134,10 +136,14 @@ const server: Buffer = await fs.readFile(BIN);
 
 ### Run the script automatically
 
-After installing the package, you can add it to your NPM scripts, so every time you run `npm install`, the script will be executed automatically.
+After installing the package, you can add it to your `package.json`, so every time you run `npm install`, the script will be executed automatically.
 
 ```json
 {
+  "name": "...",
+  "devDependencies": {
+    "@yume-chan/fetch-scrcpy-server": "^0.0.24"
+  },
   "scripts": {
     "postinstall": "fetch-scrcpy-server 2.1"
   }
@@ -146,7 +152,9 @@ After installing the package, you can add it to your NPM scripts, so every time 
 
 ## Build the server
 
-The easiest way to modify and build the server is to use [Android Studio](https://developer.android.com/studio).
+You can also build the server binary yourself. This is useful if you want to modify the server, or if you want to use the latest version from Scrcpy Git repository.
+
+The easiest way is to use [Android Studio](https://developer.android.com/studio).
 
 1. Clone Scrcpy
 
@@ -159,3 +167,9 @@ The easiest way to modify and build the server is to use [Android Studio](https:
 4. Select `Build` -> `Make Project` menu item
 
 The server binary will be written to `server/build/outputs/apk/debug/server-debug.apk` (`debug` variant) or `server/build/outputs/apk/release/server-release-unsigned.apk` (`release` variant).
+
+:::note
+
+Check [Scrcpy documentation](https://github.com/Genymobile/scrcpy/blob/master/doc/build.md) for more details on building both the client and server.
+
+:::

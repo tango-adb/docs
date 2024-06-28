@@ -1,0 +1,72 @@
+---
+sidebar_position: 2
+---
+
+# Keyboard event
+
+Inject a keyboard event into the device.
+
+```ts
+enum AndroidKeyEventAction {
+  Down = 0,
+  Up = 1,
+}
+
+export enum AndroidKeyEventMeta {
+  AltOn = 0x02,
+  AltLeftOn = 0x10,
+  AltRightOn = 0x20,
+  ShiftOn = 0x01,
+  ShiftLeftOn = 0x40,
+  ShiftRightOn = 0x80,
+  CtrlOn = 0x1000,
+  CtrlLeftOn = 0x2000,
+  CtrlRightOn = 0x4000,
+  MetaOn = 0x10000,
+  MetaLeftOn = 0x20000,
+  MetaRightOn = 0x40000,
+  CapsLockOn = 0x100000,
+  NumLockOn = 0x200000,
+  ScrollLockOn = 0x400000,
+}
+
+interface ScrcpyInjectKeyCodeControlMessage {
+  action: AndroidKeyEventAction;
+  keyCode: number;
+  repeat: number;
+  metaState: AndroidKeyEventMeta;
+}
+```
+
+* `action`: The action of the event.
+* `keyCode`: The key code of the event. It uses Android key codes, see `AndroidKeyCode` enum for a mapping between Web key codes to Android key codes.
+* `repeat`: The number of times the key was repeated.
+* `metaState`: The meta state of the event.
+
+## Usage
+
+```ts
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.injectKeyCode({
+  action: AndroidKeyEventAction.Down,
+  keyCode: AndroidKeyCode.KEYCODE_A,
+  repeat: 0,
+  metaState: AndroidKeyEventMeta.ShiftOn,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.injectKeyCode({
+  action: AndroidKeyEventAction.Down,
+  keyCode: AndroidKeyCode.KEYCODE_A,
+  repeat: 0,
+  metaState: AndroidKeyEventMeta.ShiftOn,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.injectKeyCode({
+  action: AndroidKeyEventAction.Down,
+  keyCode: AndroidKeyCode.KEYCODE_A,
+  repeat: 0,
+  metaState: AndroidKeyEventMeta.ShiftOn,
+});
+```

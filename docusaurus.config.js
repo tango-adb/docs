@@ -233,7 +233,7 @@ export default {
           type: "doc",
           docId: "internal/index",
           position: "left",
-          label: "ADB",
+          label: "Internal",
         },
         {
           href: "https://github.com/yume-chan/ya-webadb",

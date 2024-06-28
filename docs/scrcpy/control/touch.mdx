@@ -1,0 +1,83 @@
+---
+sidebar_position: 1
+---
+
+# Touch event
+
+Inject a touch event into the device.
+
+Both mouse and touch events are supported. Multiple fingers are also supported.
+
+```ts
+namespace ScrcpyPointerId {
+  export const Mouse = -1n;
+  export const Finger = -2n;
+  export const VirtualMouse = -3n;
+  export const VirtualFinger = -4n;
+}
+
+interface ScrcpyInjectTouchControlMessage {
+  action: AndroidMotionEventAction;
+  pointerId: bigint;
+  pointerX: number;
+  pointerY: number;
+  screenWidth: number;
+  screenHeight: number;
+  pressure: number;
+  actionButton: number;
+  buttons: number;
+}
+```
+
+- `action`: The action of the event.
+- `pointerId`: The ID of the pointer. There are some predefined values in `ScrcpyPointerId` namespace, but touch screen devices can assign a value for each finger.
+- `pointerX`: The X coordinate of the event.
+- `pointerY`: The Y coordinate of the event.
+- `screenWidth`: The width of the screen. It must match the current video stream resolution to prevent de-synchronization.
+- `screenHeight`: The height of the screen. It must match the current video stream resolution to prevent de-synchronization.
+- `pressure`: The pressure of the event. A floating-point value between 0 and 1.
+- `actionButton`: The button that changed. It's a value of `AndroidMotionEventButton` enum.
+- `buttons`: The state of all the buttons. It's a bit-or combination of `AndroidMotionEventButton` values.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.injectTouch({
+  action: AndroidMotionEventAction.Down,
+  pointerId: ScrcpyPointerId.Finger,
+  pointerX: 100,
+  pointerY: 200,
+  screenWidth: 1920,
+  screenHeight: 1080,
+  pressure: 0.5,
+  actionButton: AndroidMotionEventButton.Primary,
+  buttons: AndroidMotionEventButton.Primary,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.injectTouch({
+  action: AndroidMotionEventAction.Down,
+  pointerId: ScrcpyPointerId.Finger,
+  pointerX: 100,
+  pointerY: 200,
+  screenWidth: 1920,
+  screenHeight: 1080,
+  pressure: 0.5,
+  actionButton: AndroidMotionEventButton.Primary,
+  buttons: AndroidMotionEventButton.Primary,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.injectTouch({
+  action: AndroidMotionEventAction.Down,
+  pointerId: ScrcpyPointerId.Finger,
+  pointerX: 100,
+  pointerY: 200,
+  screenWidth: 1920,
+  screenHeight: 1080,
+  pressure: 0.5,
+  actionButton: AndroidMotionEventButton.Primary,
+  buttons: AndroidMotionEventButton.Primary,
+});
+```
