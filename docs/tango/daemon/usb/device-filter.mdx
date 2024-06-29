@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Device Filter
+# Device filter
 
 WebUSB [`requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice#filters) method requires a `filters` option to select which devices to show in the picker.
 
@@ -101,4 +101,6 @@ const filters: AdbDeviceFilter[] = [
 
 In next version, `ADB_DEFAULT_DEVICE_FILTER` will be automatically merged into the specified filters, so you don't need to do it manually.
 
-Empty filter array will also be treated as `[ADB_DEFAULT_DEVICE_FILTER]`, so `undefined`, `[]`, `[{}]` and `[ADB_DEFAULT_INTERFACE_FILTER]` will all have the same effect.
+The `AdbDeviceFilter` type will be removed, and the `filters` option will use `USBDeviceFilter` type directly (all fields are optional).
+
+Empty `filters` array will be treated as `[ADB_DEFAULT_DEVICE_FILTER]`, so `undefined`, `[]`, `[{}]` and `[ADB_DEFAULT_INTERFACE_FILTER]` will all have the same effect.

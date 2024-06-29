@@ -1,4 +1,4 @@
-# Direct Connection
+# Daemon Transport
 
 ```mermaid
 flowchart LR
@@ -15,13 +15,13 @@ flowchart LR
     end
 ```
 
-In Direct Connection Mode, Tango connects to the ADB daemon running on Android devices directly. This is the lowest-level connection mode, Tango controls all the steps, including authentication, message encoding and decoding, and connection management.
+Daemon Transport connects to ADB daemons directly. This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
 
-The `AdbDaemonTransport` class from `@yume-chan/adb` implements this mode.
+The `AdbDaemonTransport` class from `@yume-chan/adb` package implements this mode.
 
 To support different runtime and connection method, `AdbDaemonTransport` accepts an `AdbDaemonConnection` object for communicating with the device, and an `AdbCredentialStore` object for managing client certificates.
 
-Here are the overall steps to create a direct connection:
+Here are the overall steps to create a Daemon Transport:
 
 ```mermaid
 sequenceDiagram

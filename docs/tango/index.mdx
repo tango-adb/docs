@@ -39,9 +39,11 @@ Tango is split into multiple packages to handle different runtimes. First, insta
 npm i @yume-chan/adb @yume-chan/stream-extra
 ```
 
-Depending on the runtime and connection type, additional packages are required to communicate with devices (see below).
+## Transports
 
-## Direct Connection Transport
+A **Transport** is an interface that provides a way to communicate with ADB daemon running on Android devices. Tango has two built-in transports for common use cases, and also supports custom transports.
+
+### Daemon Transport
 
 ```mermaid
 flowchart LR
@@ -58,11 +60,11 @@ flowchart LR
     end
 ```
 
-ADB Daemon is a program running on Android devices (when Developer Options are enabled) that handles ADB commands.
+ADB Daemon is a program running on Android devices (when USB Debugging or Wireless Debugging options are enabled) that handles incoming ADB connections and commands.
 
-In this mode, Tango connects to the ADB daemon directly. This means it can run on devices without Google ADB (not installed, or not available, for example on mobile devices).
+Daemon Transport connects to ADB daemons directly. This means it can run on devices without Google ADB (not installed, or not available, for example on mobile devices).
 
-Direct connection mode supports three connection methods:
+It supports three connection methods:
 
 * USB connection: requires a Web browser with WebUSB support (currently, only Chromium-based ones), or Node.js with `usb` package. Note that only one program (or Tango instance) can connect to a device at a time, so it's not compatible with Google ADB server.
 * ADB over Wi-Fi: uses TCP sockets, thus not available in Web browsers. In Node.js, it can be implemented using the built-in `net` module. Note that this refers to the old `adb tcpip` mode, not the new Wireless Debugging/`adb pair` mode added in Android 11.
@@ -71,11 +73,11 @@ Direct connection mode supports three connection methods:
 
 :::note[Next Step]
 
-[Create Direct Connection](./daemon/index.mdx)
+[Create Daemon Transport](./daemon/index.mdx)
 
 :::
 
-## Google ADB Client Transport
+### Server Transport
 
 ```mermaid
 flowchart LR
@@ -91,23 +93,23 @@ flowchart LR
     end
 ```
 
-Google ADB server is a program running on PC that manages devices and allows sharing a device with multiple clients.
+Google ADB Server is a program running on PC that manages connected devices and allows sharing a device with multiple clients.
 
-In this mode, Tango talks to a Google ADB server, which can either run on the same machine or on a remote machine.
+Server Transport reimplemented Google ADB Client in TypeScript. It connects to Google ADB server using TCP sockets.
 
-Google ADB server is traditionally the only way to connect to the ADB daemon running on Android devices, so this mode is compatible with other programs that use ADB, such as Android Studio.
+Google ADB Server is traditionally the only way to connect to ADB Daemons, so this transport allows shared access to devices with other programs that use ADB, such as Android Studio.
 
-Because Google ADB server listens on a TCP socket, this mode is only available in Node.js. In Web browsers, a custom connector is required to forward TCP sockets from backend server.
+Because Google ADB Server uses TCP sockets, this transport is only available in Node.js. In Web browsers, a custom connector that converts TCP sockets to Web-compatible transports is required.
 
 :::note[Next Step]
 
-[Connect to server](./server/connection.mdx)
+[Connect to Server](./server/index.mdx)
 
 :::
 
-## Custom Transport
+### Custom Transport
 
-ADB protocol is a stream multiplexing protocol, where each ADB command is a logical stream, called ADB socket. The goal of both the Direct Connection Transport and Google ADB Client Transport is to manage ADB sockets.
+ADB protocol is a stream multiplexing protocol, where each ADB command is a logical stream, called ADB socket. The goal of both the Daemon Transport and Server Transport is to manage ADB sockets.
 
 Tango also supports custom transports that works directly on ADB socket level. For example, a mock transport can be used in tests, or a WebSocket transport to access devices on a server over the Internet.
 

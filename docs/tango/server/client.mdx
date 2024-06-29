@@ -1,8 +1,47 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # Create client
+
+To get connected devices and connect to them, we need to create a client instance first.
+
+## Create connector
+
+The client requires a server connector to communicate with the Google ADB server. The connector is responsible for sending and receiving packets.
+
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
+
+Currently there is no Web API that allows TCP connection. Looking forward to the [Direct Socket API](https://github.com/WICG/direct-sockets).
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/adb-server-node-tcp) package provides a server connector based on Node.js built-in `net` module.
+
+```sh npm2yarn
+npm i @yume-chan/adb-server-node-tcp
+```
+
+Example:
+
+```ts transpile
+import { Adb, AdbServerClient, AdbServerDevice } from "@yume-chan/adb";
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+  host: "localhost",
+  port: 5037,
+});
+```
+
+Because each command creates a new connection, this step only saves the connection information, but does not actually connect to the server.
+
+</TabItem>
+</Tabs>
+
+## Create client
 
 With a server connector, we can create a client:
 
@@ -13,78 +52,3 @@ const client: AdbServerClient = new AdbServerClient(connector);
 ```
 
 This step doesn't send or receive any packets, it only initializes some internal states.
-
-## Get devices
-
-Use the `AdbServerClient#getDevices` method to get all connected devices, including those that are not authenticated yet.
-
-The return value is an array of `AdbServerClient.Device` objects, which contains the device's serial number, product name, model name, and device name, as well as the transport ID used to create a transport later.
-
-```ts
-namespace AdbServerClient {
-  interface Device {
-    serial: string;
-    authenticating: boolean;
-    product?: string;
-    model?: string;
-    device?: string;
-    transportId: bigint;
-  }
-}
-
-declare class AdbServerClient {
-  getDevices(): Promise<AdbServerClient.Device[]>;
-}
-```
-
-```ts transpile
-import type { AdbServerClient } from "@yume-chan/adb";
-
-const devices: AdbServerClient.Device[] = await client.getDevices();
-if (devices.length === 0) {
-  alert("No device connected");
-  return;
-}
-
-const device = devices[0];
-```
-
-## Create transport
-
-Then use the `AdbServerClient#createTransport` method to create a transport and an `Adb` instance. The device must have already been authenticated.
-
-Devices can be selected by either their transport ID, serial number, or connection type. Because `AdbServerClient.Device` has a `transportId` field, it can also be used as a `AdbServerClient.DeviceSelector`.
-
-```ts
-namespace AdbServerClient {
-  type DeviceSelector =
-    | { transportId: bigint }
-    | { serial: string }
-    | { usb: true }
-    | { tcp: true }
-    | undefined;
-}
-
-declare class AdbServerTransport implements AdbTransport {}
-
-declare class AdbServerClient {
-  createTransport(device: AdbServerClient.DeviceSelector): Promise<AdbServerTransport>;
-}
-```
-
-```ts transpile
-import { Adb } from "@yume-chan/adb";
-
-const transport: AdbServerTransport = await client.createTransport(device);
-const adb: Adb = new Adb(transport);
-```
-
-:::note[Next Step]
-
-See [commands](../../api/index.mdx) for how to use the `Adb` instance.
-
-:::
-
-## Other commands
-
-For other commands supported by `AdbServerClient`, see [server commands](./commands.mdx).

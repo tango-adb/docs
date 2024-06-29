@@ -1,0 +1,145 @@
+---
+sidebar_position: 3
+---
+
+# Device selector
+
+Many methods of `AdbServerClient` require a `DeviceSelector` to specify which device to operate on. This type is a union of several types, each of which represents a different way to select a device.
+
+```ts
+namespace AdbServerClient {
+  type DeviceSelector =
+    | { transportId: bigint }
+    | { serial: string }
+    | { usb: true }
+    | { tcp: true }
+    | undefined;
+}
+```
+
+## `transportId`
+
+Selects a device by its transport ID. This is the most reliable way to select a device, as it is unique to each connection between the server and the device. However, it will change when the device is disconnected and reconnected.
+
+Example:
+
+```ts
+const selector: AdbServerClient.DeviceSelector = { transportId: 1n };
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb -t <transportId> <command>
+```
+
+:::
+
+## `serial`
+
+Selects a device by its serial number. This is the most common way to select a device, as it is unique to each device most of the time.
+
+However, some manufacturers use the same serial number for all devices, so it's possible that multiple devices with the same serial number will be returned.
+
+If there are multiple devices with the same serial number, an error will be thrown.
+
+Example:
+
+```ts
+const selector: AdbServerClient.DeviceSelector = { serial: '1234567890ABCDEF' };
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb -s <serial> <command>
+```
+
+:::
+
+## `usb`
+
+Selects the only USB device. This is useful when there is only one USB device connected to the server.
+
+If there are multiple USB devices, an error will be thrown.
+
+Example:
+
+```ts
+const selector: AdbServerClient.DeviceSelector = { usb: true };
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb -d <command>
+```
+
+:::
+
+## `tcp`
+
+Selects the only TCP device. This is useful when there is only one TCP device connected to the server.
+
+ADB over Wi-Fi devices, Wireless Debugging devices, and local Android emulators are all considered TCP devices.
+
+If there are multiple TCP devices, an error will be thrown.
+
+Example:
+
+```ts
+const selector: AdbServerClient.DeviceSelector = { tcp: true };
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb -e <command>
+```
+
+:::
+
+## `undefined`
+
+Selects the only device. This is useful when there is only one device connected to the server.
+
+If there are multiple devices, an error will be thrown.
+
+Example:
+
+```ts
+const selector: AdbServerClient.DeviceSelector = undefined;
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb <command>
+```
+
+:::
+
+## Priority
+
+If an object with multiple fields is used as a `DeviceSelector`, only one of the fields will be used. The fields are checked in the following order:
+
+1. `transportId`
+2. `serial`
+3. `usb`
+4. `tcp`
+
+For example, `{ transportId: 1n, serial: '1234567890ABCDEF' }` will select the device with transport ID `1n`, ignoring the `serial` field.
+
+## Use `AdbServerClient.Device`
+
+Because `AdbServerClient.Device` has a `transportId` field, it can also be used as a `DeviceSelector`.
+
+It will select the device with the specified transport ID.
+
+Example:
+
+```ts
+const devices: AdbServerClient.Device[] = await client.getDevices();
+const device = devices[0];
+const selector: AdbServerClient.DeviceSelector = device;
+```

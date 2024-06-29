@@ -119,7 +119,7 @@ declare class AdbReverseCommand {
 
 Add a managed port forwarding to the device. When apps on device connects to `deviceAddress`, ADB daemon forwards the connection to the transport, and the transport will call `handler` with the socket.
 
-This method is guaranteed to work on all transports. Some transports, like the server client transport, might emulate the behavior by listening on a TCP port and forwarding the connection to the handler.
+This method is guaranteed to work on all transports. Some transports, like the server transport, might emulate the behavior by listening on a TCP port and forwarding the connection to the handler.
 
 ### `deviceAddress`
 

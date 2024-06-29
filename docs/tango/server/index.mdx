@@ -1,8 +1,4 @@
----
-sidebar_position: 1
----
-
-# Create connection
+# Server Transport
 
 ```mermaid
 flowchart LR
@@ -60,34 +56,3 @@ sequenceDiagram
     A->>A: Parse response
     A->>-C: Return device instance
 ```
-
-<Tabs className="runtime-tabs" groupId="runtime">
-<TabItem value="web" label="Web">
-
-Currently there is no Web API that allows TCP connection. Looking forward to the [Direct Socket API](https://github.com/WICG/direct-sockets).
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/adb-server-node-tcp) package provides a server connector based on Node.js built-in `net` module.
-
-```sh npm2yarn
-npm i @yume-chan/adb-server-node-tcp
-```
-
-Example:
-
-```ts transpile
-import { Adb, AdbServerClient, AdbServerDevice } from "@yume-chan/adb";
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
-
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
-  host: "localhost",
-  port: 5037,
-});
-```
-
-Because each command creates a new connection, this step only saves the connection information, but does not actually connect to the server.
-
-</TabItem>
-</Tabs>

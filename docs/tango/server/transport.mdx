@@ -1,0 +1,44 @@
+---
+sidebar_position: 4
+---
+
+# Create transport
+
+The `AdbServerClient#createTransport` method will create an `AdbTransport` for the specified device. The device must have already been authenticated.
+
+The target device can be selected using a `DeviceSelector` object.
+
+:::note
+
+See [Device selector](./selector.mdx) page for more information about `DeviceSelector`.
+
+:::
+
+```ts
+declare class AdbServerClient {
+  createTransport(
+    device: AdbServerClient.DeviceSelector
+  ): Promise<AdbTransport>;
+}
+```
+
+The returned `AdbTransport` object can be used to create an `Adb` instance.
+
+```ts transpile
+import { Adb, AdbTransport } from "@yume-chan/adb";
+
+const transport: AdbTransport = await client.createTransport(device);
+const adb: Adb = new Adb(transport);
+```
+
+:::note[Next Step]
+
+See [API](../../api/index.mdx) page for all supported ADB commands.
+
+:::
+
+:::note
+
+See [Server commands](./commands.mdx) page for all supported server commands.
+
+:::

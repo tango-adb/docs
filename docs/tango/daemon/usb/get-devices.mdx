@@ -22,7 +22,7 @@ Previously, we have disabled the permission system in `usb` package's WebUSB imp
 
 WebUSB `USB#getDevices` method can be used to get all connected devices (that the user has granted permission to access). However, it might return non-ADB devices as well.
 
-To only get ADB devices, the `AdbDaemonWebUsbDeviceManager#getDevices` method also accepts a `filters` option, to only return devices that match the specified criteria.
+To only get ADB devices, `AdbDaemonWebUsbDeviceManager#getDevices` method also accepts a `filters` option, to only return devices that match the specified criteria.
 
 ```ts
 interface AdbDeviceFilter {

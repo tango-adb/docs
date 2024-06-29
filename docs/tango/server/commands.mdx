@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 6
 ---
 
 # Server commands
@@ -82,28 +82,29 @@ adb host-features
 ### Get devices
 
 ```ts
-interface AdbServerDevice {
-  serial: string;
-  product?: string | undefined;
-  model?: string | undefined;
-  device?: string | undefined;
-  transportId: bigint;
+namespace AdbServerClient {
+  interface Device {
+    serial: string;
+    authenticating: boolean;
+    product?: string;
+    model?: string;
+    device?: string;
+    transportId: bigint;
+  }
 }
 
 declare class AdbServerClient {
-  getDevices(): Promise<AdbServerDevice[]>;
+  getDevices(): Promise<AdbServerClient.Device[]>;
 }
 ```
 
 Gets all connected devices.
 
-:::info
+:::note
 
-Some lazy manufacturers use the same `serial` for all devices. It's possible that multiple devices with the same `serial` will be returned. So it's recommended to use `transportId` to identify devices.
+See [Get devices](./devices.mdx) page for more information about the `getDevices` method.
 
 :::
-
-`transportId` uniquely identifies a connection between server and device, but isn't tied to the device. It will change when the device is disconnected and reconnected.
 
 :::info[Equivalent ADB Command]
 
@@ -113,38 +114,41 @@ adb devices -l
 
 :::
 
+### Track devices
+
+```ts
+declare class AdbServerClient {
+  trackDevices(
+    signal?: AbortSignal
+  ): AsyncGenerator<AdbServerClient.Device[], void, void>;
+}
+```
+
+Get notified when a device is connected or disconnected.
+
+:::note
+
+See [Watch devices](./watch.mdx) page for more information about the `trackDevices` method.
+
+:::
+
+:::info[Equivalent ADB Command]
+
+There is no equivalent ADB command.
+
+:::
+
 ## Commands that operates device
 
 ### Device selector
 
-All device commands uses the `AdbServerClient.DeviceSelector` type to select the target device.
+All commands that operates on a device requires a `DeviceSelector` object to specify the target device.
 
-```ts
-namespace AdbServerClient {
-  type DeviceSelector =
-    | { transportId: bigint }
-    | { serial: string }
-    | { usb: true }
-    | { tcp: true }
-    | undefined;
-}
-```
+:::note
 
-- `{ transportId: bigint }`: Selects the device with the specified transport ID. (Same as Google ADB's `-t` option)
-- `{ serial: string }`: Selects the device with the specified serial number. If there are multiple devices with the same serial number, an error will be thrown. (Same as Google ADB's `-s` option)
-- `{ usb: true }`: Selects the only USB device. If there are multiple USB devices, an error will be thrown. (Same as Google ADB's `-d` option)
-- `{ tcp: true }`: Selects the only TCP (ADB over Wi-Fi or emulator) device. If there are multiple TCP devices, an error will be thrown. (Same as Google ADB's `-e` option)
-- `undefined`: Selects the only device. If there are multiple devices, an error will be thrown. (Same as no options for Google ADB)
-
-:::info
-
-If an `AdbServerClient.DeviceSelector` object has multiple fields, only one of them will be used, based on the order above.
-
-Because `AdbServerClient.Device` has a `transportId` field, it can also be used as a `AdbServerClient.DeviceSelector`.
+See [Device selector](./selector.mdx) page for more information about `DeviceSelector`.
 
 :::
-
-In all fields, only `transportId` is guaranteed to be unique, so it's recommended to always use `transportId` to select devices.
 
 ### Get device features
 
@@ -173,15 +177,17 @@ adb features
 ### Create device socket
 
 ```ts
-interface AdbServerSocket extends AdbSocket {
-  transportId: bigint;
+namespace AdbServerClient {
+  interface Socket extends AdbSocket {
+    transportId: bigint;
+  }
 }
 
 declare class AdbServerClient {
-  connectDevice(
+  createDeviceConnection(
     device: AdbServerClient.DeviceSelector,
     service: string
-  ): Promise<AdbServerSocket>;
+  ): Promise<AdbServerClient.Socket>;
 }
 ```
 
@@ -246,7 +252,9 @@ adb wait-for-usb-disconnect
 declare class AdbServerTransport implements AdbTransport {}
 
 declare class AdbServerClient {
-  createTransport(device: AdbServerClient.DeviceSelector): Promise<AdbServerTransport>;
+  createTransport(
+    device: AdbServerClient.DeviceSelector
+  ): Promise<AdbServerTransport>;
 }
 ```
 
