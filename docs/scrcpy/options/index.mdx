@@ -17,7 +17,7 @@ Each time a new option is added to the server, or a breaking change is made, a n
 
 Some Scrcpy versions contain only bug fixes or client-side changes, so they don't have a corresponding options class. In this case, the option class for the previous version can be used.
 
-Check the [versions](./versions.mdx) page to see which options class to use for each server version.
+Check the [versions](../versions.mdx) page to see which options class to use for each server version.
 
 ### Create options
 
@@ -59,7 +59,7 @@ If an error happened in the device message socket, `options.clipboard` will ente
 
 It's more rare for protocol changes to affect `AdbScrcpyOptionsX_XX`, thus there are fewer `AdbScrcpyOptionsX_XX` classes than `ScrcpyOptionsX_XX` classes, and the versions between them don't always match.
 
-Check the [versions](./versions.mdx) page to see which options class to use for each server version.
+Check the [versions](../versions.mdx) page to see which options class to use for each server version.
 
 `AdbScrcpyOptionsX_XX` wraps a `ScrcpyOptionsX_XX` instance, so read the previous section and create a `ScrcpyOptionsX_XX` instance first.
 
