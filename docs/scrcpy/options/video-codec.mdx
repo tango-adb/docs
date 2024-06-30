@@ -1,0 +1,27 @@
+---
+sidebar_position: 1
+---
+
+# Video codec
+
+Scrcpy 2.0 added the option to use H.265 (HEVC) and AV1 video codecs. They can provide better video quality at the same bitrate compared to H.264.
+
+## H.264
+
+H.264 is the default video codec. It's widely supported and provides good video quality. Most devices since Android 5 has hardware support for H.264 encoding and decoding.
+
+## H.265 (HEVC)
+
+H.265 is a newer video codec that provides better video quality at the same bitrate compared to H.264. However, it requires more processing power to encode and decode.
+
+H.265 encoder is not required by Google, but many devices since Android 7 have hardware support for H.265 encoding and decoding.
+
+## AV1
+
+AV1 is a more recent video codec that provides even better video quality at the same bitrate compared to H.265.
+
+Android 14 is the first version to require AV1 encoder and decoder support, and only the most recent SoCs have hardware support for AV1 encoding and decoding.
+
+## VP9
+
+VP9 is a video codec developed by Google. Android Studio's screen mirror feature uses VP9 to encode video, but in my testing, the device support is not as good as H.264.

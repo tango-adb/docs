@@ -1,0 +1,110 @@
+---
+sidebar_position: 1
+---
+
+# Tiny H264 decoder
+
+Decode and render H.264 streams in Web browsers using TinyH264, the (now deprecated and removed) Android H.264 software decoder.
+
+It's slow, and only supports H.264 main profile at level 4, but works on most browsers.
+
+```sh npm2yarn
+npm install @yume-chan/scrcpy-decoder-tinyh264
+```
+
+## Performance
+
+There are two aspects of performance:
+
+### Decoding
+
+It wraps [`tinyh264`](https://npmjs.org/package/tinyh264) package, which compiles the C code into WebAssembly, and runs it in a Web Worker. This way, the main thread is not blocked by the decoding process.
+
+Because H.264 is a complex codec, decoding it is CPU-intensive. It might not be able to keep up with the video frame rate on low-end devices.
+
+### Rendering
+
+Tiny H264 decoder outputs raw YUV frames, which needs to be converted to RGB before rendering.
+
+It uses [`yuv-canvas`](https://www.npmjs.com/package/yuv-canvas) package to do the conversion. When supported, it uses a WebGL shader to accelerate the conversion, so it's very fast. But on unsupported devices, it falls back to a software implementation, which is super slow.
+
+## Limit profile/level
+
+Because it only supports H.264 Baseline level 4 codec, but many newer devices default to higher profiles/levels, you must limit it using the `codecOptions` option:
+
+```ts transpile
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+const H264Capabilities = TinyH264Decoder.capabilities.h264;
+
+const options = new ScrcpyOptions1_24({
+  // other options...
+  codecOptions: new CodecOptions({
+    profile: H264Capabilities.maxProfile,
+    level: H264Capabilities.maxLevel,
+  }),
+});
+```
+
+However, it will fail on some very old devices that doesn't even support Baseline level 4 codec. If that happens, You can retry starting the server without the `codecOptions` option.
+
+```ts transpile
+try {
+  await startServer(
+    new ScrcpyOptions1_24({
+      // other options...
+      codecOptions: new CodecOptions({
+        profile: H264Capabilities.maxProfile,
+        level: H264Capabilities.maxLevel,
+      }),
+    })
+  );
+} catch (e) {
+  await startServer(
+    new ScrcpyOptions1_24({
+      // other options...
+    })
+  );
+}
+```
+
+## Usage
+
+```ts transpile
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+const decoder = new TinyH264Decoder();
+document.body.appendChild(decoder.renderer);
+
+videoPacketStream // from above
+  .pipeTo(decoder.writable)
+  .catch(() => {});
+```
+
+The `renderer` field is a `HTMLCanvasElement` that displays the video frames. You can append it to any element in the DOM.
+
+### Handle size changes
+
+When the device orientation changes, Scrcpy server will recreate a new video encoder with the new size. The decoder can handle this automatically, and update the canvas size.
+
+However, the video size is also useful for other purposes, like [injecting touch events](../control/touch.mdx). The `sizeChanged` event will be emitted when the video size changes:
+
+```ts transpile
+decoder.sizeChanged(({ width, height }) => {
+  console.log(width, height);
+});
+```
+
+### Rendering metrics
+
+The decoder will try to render every frame when it arrives, to minimize latency.
+
+However, when the video frame rate is higher than the display refresh rate, or when the hardware can't keep up, some frames will be dropped.
+
+The `framesRendered` and `framesSkipped` fields provides accumulated rendering metrics:
+
+```ts transpile
+setInterval(() => {
+  console.log(decoder.framesRendered, decoder.framesSkipped);
+}, 1000);
+```

@@ -1,0 +1,61 @@
+---
+sidebar_position: 2
+---
+
+# WebCodecs Decoder
+
+Decode and render H.264, H.265 and AV1 streams in Web browsers using [WebCodecs API](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API), the new Web standard for hardware-accelerated video decoding.
+
+It's fast, uses less hardware resources, and supports more profiles and levels. However, it's only available in recent versions of Chrome and Safari.
+
+```sh npm2yarn
+npm install @yume-chan/scrcpy-decoder-webcodecs
+```
+
+## Feature detection
+
+To check if the WebCodecs API is available, you can check if `VideoDecoder` is defined:
+
+```ts transpile
+const isSupported = globalThis.VideoDecoder !== undefined;
+```
+
+`VideoDecoder.isConfigSupported` is a static method that checks if a given codec configuration is supported.
+
+It accepts a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1.
+
+```ts transpile
+const result = await VideoDecoder.isConfigSupported({
+  codec: "hev1.1.60.L153.B0.0.0.0.0.0",
+});
+const isSupported = result.supported === true;
+```
+
+## Usage
+
+The usage is same as the Tiny H264 decoder:
+
+```ts transpile
+import { WebCodecsDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
+
+const decoder = new WebCodecsDecoder();
+document.body.appendChild(decoder.renderer);
+
+videoPacketStream // from above
+  .pipeTo(decoder.writable)
+  .catch(() => {});
+```
+
+:::note
+
+See [Tiny H264 decoder usage](./tiny-h264.mdx#usage) for more information.
+
+:::
+
+## Microsoft Edge on Windows
+
+Microsoft Edge on Windows uses Media Foundation decoders.
+
+Decoding H.265 requires the [HEVC Video Extensions](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) or HEVC Video Extensions from Device Manufacturer app from Microsoft Store. But it has been reported that the H.265 decoder outputs incorrect sized frames.
+
+Decoding AV1 requires the [AV1 Video Extension](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) app from Microsoft Store.
