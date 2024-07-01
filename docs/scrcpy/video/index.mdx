@@ -46,9 +46,54 @@ videoPacketStream
   });
 ```
 
+Similar to `options.clipboard`, don't `await` the `pipeTo`. You need to read multiple streams at the same time, but the returned `Promise` will only resolve when `videoSocket` ends.
+
+### Metadata
+
+The `metadata` object contains information like the video codec and initial video size.
+
+```ts
+interface ScrcpyVideoStreamMetadata {
+  deviceName?: string | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  codec: ScrcpyVideoCodecId;
+}
+```
+
+Some fields are dependent on the server version and options:
+
+| Version | `deviceName`                                   | `width` and `height`                           | `codec`                                                                                                 |
+| ------- | ---------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| v1.15   | Always present                                 | Always present                                 | Always `H264`                                                                                           |
+| v1.22   | Present when `sendDeviceMeta` option is `true` | Present when `sendDeviceMeta` option is `true` | Always `H264`                                                                                           |
+| v2.0    | Present when `sendDeviceMeta` option is `true` | Present when `sendCodecMeta` option is `true`  | Value from server when `sendCodecMeta` is `true`, or value from options when `sendCodecMeta` is `false` |
+
+It's recommended to parse `width` and `height` from the video stream itself, as then device orientation changes, the video size will be updated.
+
+### Media Stream
+
+When `sendFrameMeta` option is `false`, `videoPacketStream` will not contain `configuration` packets, and in `data` packets, `keyframe` and `pts` fields will always be `undefined`.
+
+In other words, it only contains the raw video data. This stream can be used with some advanced decoders like FFmpeg, who can detect configuration and keyframes from a raw stream.
+
+When `sendFrameMeta` option is `true` (the default value), there will be both `configuration` and `data` packets in the stream. The `keyframe` and `pts` fields will be populated in `data` packets.
+
+- `configuration` packets are guaranteed to be the first packet in the stream. It contains the video codec configuration. It will be occasionally sent again when video encoder is restarted (e.g. when the device orientation changes).
+- `data` packets contain the video frames. The `keyframe` field indicates whether it's a keyframe or not. The `pts` field is the presentation timestamp of the frame. Each `data` packet will contain a complete frame.
+
 ## With `@yume-chan/adb-scrcpy`
 
-When video is enabled (`video: false` not exist in options), `AdbScrcpyClient.videoStream` is a `Promise` that resolves to `AdbScrcpyVideoStream`.
+When video is enabled (`video: false` not exist in options), `AdbScrcpyClient.videoStream` is a `Promise` that resolves to an `AdbScrcpyVideoStream`.
+
+```ts
+interface AdbScrcpyVideoStream {
+  stream: ReadableStream<ScrcpyMediaStreamPacket>;
+  metadata: ScrcpyVideoStreamMetadata;
+}
+```
+
+It's very similar to the `videoMetadata` and `videoPacketStream` values in the above example, as `videoStream` calls `parseVideoStreamMetadata` and `createMediaStreamTransformer` internally.
 
 ```ts transpile
 if (client.videoSteam) {
@@ -78,7 +123,7 @@ if (client.videoSteam) {
 }
 ```
 
-It uses `options.parseVideoStreamMetadata` and `options.createMediaStreamTransformer` internally, so the returned `videoPacketStream` is the same as the one created manually.
+Check the [With `@yume-chan/scrcpy`](#with-yume-chanscrcpy) section above for how to handle different types of packets.
 
 ## Decode and render video
 

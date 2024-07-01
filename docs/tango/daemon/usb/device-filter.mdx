@@ -97,10 +97,12 @@ const filters: AdbDeviceFilter[] = [
 ];
 ```
 
-## Upcoming changes
+:::note[Upcoming changes]
 
 In next version, `ADB_DEFAULT_DEVICE_FILTER` will be automatically merged into the specified filters, so you don't need to do it manually.
 
 The `AdbDeviceFilter` type will be removed, and the `filters` option will use `USBDeviceFilter` type directly (all fields are optional).
 
 Empty `filters` array will be treated as `[ADB_DEFAULT_DEVICE_FILTER]`, so `undefined`, `[]`, `[{}]` and `[ADB_DEFAULT_INTERFACE_FILTER]` will all have the same effect.
+
+:::

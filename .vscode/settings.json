@@ -12,6 +12,7 @@
         "fastboot",
         "framebuffer",
         "getprop",
+        "libusb",
         "logcat",
         "nohostname",
         "nouser",

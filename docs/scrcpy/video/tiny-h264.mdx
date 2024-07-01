@@ -18,15 +18,15 @@ There are two aspects of performance:
 
 ### Decoding
 
-It wraps [`tinyh264`](https://npmjs.org/package/tinyh264) package, which compiles the C code into WebAssembly, and runs it in a Web Worker. This way, the main thread is not blocked by the decoding process.
+[`tinyh264`](https://npmjs.org/package/tinyh264) package is used for decoding, which compiles the C code into WebAssembly, and runs it in a Web Worker. This way, the main thread is not blocked by the decoding process.
 
 Because H.264 is a complex codec, decoding it is CPU-intensive. It might not be able to keep up with the video frame rate on low-end devices.
 
 ### Rendering
 
-Tiny H264 decoder outputs raw YUV frames, which needs to be converted to RGB before rendering.
+Tiny H264 decoder outputs raw YUV frames, which needs to be converted to RGB for rendering.
 
-It uses [`yuv-canvas`](https://www.npmjs.com/package/yuv-canvas) package to do the conversion. When supported, it uses a WebGL shader to accelerate the conversion, so it's very fast. But on unsupported devices, it falls back to a software implementation, which is super slow.
+[`yuv-canvas`](https://www.npmjs.com/package/yuv-canvas) package is used to do the conversion and rendering. When supported, it uses a WebGL shader to accelerate the conversion, so it's very fast. But on unsupported devices, it falls back to a software implementation, which is super slow.
 
 ## Limit profile/level
 
