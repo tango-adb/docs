@@ -1,0 +1,42 @@
+---
+sidebar_position: 5
+---
+
+# Back or screen on
+
+This event simulates the back button if screen is on, or turns the screen on if screen is off.
+
+Official Scrcpy client sends this event when the right mouse button is clicked. Clients can also use [keyboard events](./keyboard.mdx) to simulate the back and power button separately.
+
+## Options
+
+- action: The action of the event. This is only applied to the back button.
+
+## Changelog
+
+### v1.15
+
+- `action` field is not supported and will be ignored. The server will inject one key down and one key up event for the back button.
+
+### v1.18
+
+- `action` field is added. The server will inject one key event with the specified action for the back button. The client needs to send one key down event and one key up event to press and release the back button.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.backOrScreenOn({
+  action: AndroidKeyEventAction.Down,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.backOrScreenOn({
+  action: AndroidKeyEventAction.Down,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.backOrScreenOn({
+  action: AndroidKeyEventAction.Down,
+});
+```

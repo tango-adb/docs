@@ -1,0 +1,46 @@
+---
+sidebar_position: 10
+---
+
+# Screen power mode
+
+Turn on or off the device screen.
+
+Different from injecting a power key event, this command only affects the physical screen, it doesn't lock the device.
+
+Most apps are completely unaware of the screen state, so they will continue to run normally even if the screen is off. But some apps (Chrome has been reported) may behave differently when the screen is off, for example touch events may not be processed.
+
+If `cleanup: true` (the default value) is set in the `ScrcpyOptions`, Scrcpy server will restore the screen state to `Normal` on exit. Pressing the physical power button twice usually turns the screen back on.
+
+## Caveats
+
+On some LCD screens, turning off the screen only turns off the backlight, so the screen will still be visible under strong light.
+
+Some fingerprint sensors under the screen use the screen to illuminate the finger, so turning off the screen will cause them to stop working.
+
+## Options
+
+```ts
+export enum AndroidScreenPowerMode {
+  Off = 0,
+  Normal = 2,
+}
+```
+
+- `Off`: Turn off the display.
+- `Normal`: Turn on the display.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.setScreenPowerMode(
+  AndroidScreenPowerMode.Off
+);
+
+// Using `ScrcpyControlMessageWriter`
+await writer.setScreenPowerMode(AndroidScreenPowerMode.Off);
+
+// Using `AdbScrcpyClient`
+await client.controller!.setScreenPowerMode(AndroidScreenPowerMode.Off);
+```

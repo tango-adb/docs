@@ -1,0 +1,88 @@
+---
+sidebar_position: 4
+---
+
+# Mouse scroll event
+
+Inject a mouse scroll event into the device.
+
+Mouse scroll event simulate a physical mouse wheel. It doesn't simulate a finger swipe gesture.
+
+Most apps will respond to mouse scroll events and scroll the content accordingly, but some apps (like games) may not support it or have incorrect scrolling speed.
+
+## Options
+
+```ts
+interface ScrcpyInjectScrollControlMessage {
+  pointerX: number;
+  pointerY: number;
+  screenWidth: number;
+  screenHeight: number;
+  scrollX: number;
+  scrollY: number;
+  buttons: number;
+}
+```
+
+- `pointerX`: The X coordinate of the event.
+- `pointerY`: The Y coordinate of the event.
+- `screenWidth`: The width of the screen. It must match the current video stream resolution to prevent de-synchronization.
+- `screenHeight`: The height of the screen. It must match the current video stream resolution to prevent de-synchronization.
+- `scrollX`: The horizontal scroll amount. Positive values scroll left, negative values scroll right.
+- `scrollY`: The vertical scroll amount. Positive values scroll up, negative values scroll down.
+- `buttons`: The state of all the buttons. It's a bit-or combination of `AndroidMotionEventButton` values.
+
+`scrollX` and `scrollY` is in ticks, the result pixel is determined by system settings and app implementation. Fractional values are allowed to simulate high-precision scroll.
+
+## Changelog
+
+### v1.15
+
+- `scrollX` and `scrollY` only accepts integer values. Options classes before `ScrcpyOptions1_25` will accumulate fractional values and only send integer values to the server.
+- `buttons` is not supported and will be ignored.
+
+### v1.22
+
+- Support for `buttons` field is added.
+
+### v1.25
+
+- Support for fractional values in `scrollX` and `scrollY` is added.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.injectScroll({
+  pointerX: 100,
+  pointerY: 200,
+  screenWidth: 1920,
+  screenHeight: 1080,
+  scrollX: 0,
+  scrollY: -1,
+  buttons: 0,
+});
+
+
+// Using `ScrcpyControlMessageWriter`
+await writer.injectScroll({
+  pointerX: 100,
+  pointerY: 200,
+  screenWidth: 1920,
+  screenHeight: 1080,
+  scrollX: 0,
+  scrollY: -1,
+  buttons: 0,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.injectScroll({
+  pointerX: 100,
+  pointerY: 200,
+  screenWidth: 1920,
+  screenHeight: 1080,
+  scrollX: 0,
+  scrollY: -1,
+  buttons: 0,
+});
+```
