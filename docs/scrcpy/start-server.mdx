@@ -16,11 +16,23 @@ adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobi
 
 ## With `@yume-chan/scrcpy`
 
-`@yume-chan/scrcpy` only provides APIs to serialize and deserialize Scrcpy protocol messages. It doesn't provide any APIs to interact with the device.
+`@yume-chan/scrcpy` only provides APIs to serialize and deserialize Scrcpy protocol messages. It can't start the server directly.
+
+The `ScrcpyOptions#serialize` method generates the command line arguments for the specified options:
+
+```ts transpile
+import { ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
+
+const options = ScrcpyOptions2_1({
+  // options
+});
+
+const commandLineArguments: string[] = options.serialize();
+```
 
 ## With `@yume-chan/adb-scrcpy`
 
-Use the `AdbScrcpyClient.start()` method with an option class to start the server. It automatically sets up port forwarding, launches the server, and connects to it.
+Use `AdbScrcpyClient.start()` method with an option class to start the server. It automatically sets up port forwarding, launches the server, and connects to it.
 
 ```ts transpile
 import {

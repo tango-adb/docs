@@ -8,8 +8,6 @@ Turn on or off the device screen.
 
 Different from injecting a power key event, this command only affects the physical screen, it doesn't lock the device.
 
-Most apps are completely unaware of the screen state, so they will continue to run normally even if the screen is off. But some apps (Chrome has been reported) may behave differently when the screen is off, for example touch events may not be processed.
-
 If `cleanup: true` (the default value) is set in the `ScrcpyOptions`, Scrcpy server will restore the screen state to `Normal` on exit. Pressing the physical power button twice usually turns the screen back on.
 
 ## Caveats
@@ -17,6 +15,11 @@ If `cleanup: true` (the default value) is set in the `ScrcpyOptions`, Scrcpy ser
 On some LCD screens, turning off the screen only turns off the backlight, so the screen will still be visible under strong light.
 
 Some fingerprint sensors under the screen use the screen to illuminate the finger, so turning off the screen will cause them to stop working.
+
+Most apps are completely unaware of the screen state, so they will continue to run normally even if the screen is off. But some apps may behave differently when the screen is off, it has been reported that:
+
+* Chrome for Android doesn't respond to touch events when the screen is off.
+* Xiaomi HyperOS system UI loses blur effect when the screen is off.
 
 ## Options
 
