@@ -15,11 +15,15 @@ flowchart LR
     end
 ```
 
-Daemon Transport connects to ADB daemons directly. This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
+**Daemon Transport** connects to ADB daemons directly. This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
 
-The `AdbDaemonTransport` class from `@yume-chan/adb` package implements this mode.
+This transport is implemented by the `AdbDaemonTransport` class from `@yume-chan/adb` package.
 
-To support different runtime and connection method, `AdbDaemonTransport` accepts an `AdbDaemonConnection` object for communicating with the device, and an `AdbCredentialStore` object for managing client certificates.
+```sh npm2yarn
+npm i @yume-chan/adb
+```
+
+To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize ADB packets. An `AdbDaemonConnection` implementation is required to send and receive those packets, and an `AdbCredentialStore` implementation is required to manage client certificates.
 
 Here are the overall steps to create a Daemon Transport:
 
@@ -49,13 +53,13 @@ sequenceDiagram
     C->>C: Create Adb instance
 ```
 
-There are two built-in `AdbDaemonConnection` implementations, and you can also create other custom connections to meet your requirements.
+Tango provides two built-in `AdbDaemonConnection` implementations, and you can also create other custom connections to meet your requirements.
 
 ## USB Connection
 
-USB connection is the most common way to connect to Android devices.
+USB connection is the oldest and most common way to connect to Android devices.
 
-[`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` using [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations, including the native implementation in Web browsers, and the [`usb`](https://www.npmjs.com/package/usb) package in Node.js.
+[`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` implementation based on [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations, including the native implementation in Web browsers, and the [`usb`](https://www.npmjs.com/package/usb) package in Node.js.
 
 :::note[Next Step]
 
@@ -67,7 +71,7 @@ USB connection is the most common way to connect to Android devices.
 
 ADB over Wi-Fi (a.k.a TCP/IP mode) allows you to connect to Android devices without a USB cable. It can also connect to Google Android Emulators running on the same machine.
 
-There is no Web API for TCP connection, so it's not available in Web browsers. In Node.js, it can be implemented using the built-in `net` module.
+There is no Web API for TCP connection, so it's not available on Web platforms. In Node.js, it can be implemented using the built-in `net` module.
 
 :::note[Next Step]
 
