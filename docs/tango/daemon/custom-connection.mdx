@@ -24,20 +24,22 @@ See [Web Streams Basics](../web-stream.mdx) page for a quick introduction to `Re
 
 ADB protocol is based on packets. `AdbDaemonTransport` works on deserialized `AdbPacket` objects, and a connection is responsible for transferring those packets between device and `AdbDaemonTransport`. USB and TCP connections convert them to raw bytes and send through USB or TCP, while a custom connection may transfer them using JSON, protobuf, or any other formats over TCP, WebSocket, [WebTransport](https://developer.mozilla.org/en-US/docs/Web/API/WebTransport), or any other transportation.
 
-Each `AdbPacket` is an plain object with the following fields: The field names should be self-explanatory.
+Each `AdbPacket` is an plain object with the following fields:
 
-- command: A 32-bit number.
-- arg0: A 32-bit number.
-- arg1: A 32-bit number.
-- payload: A `Uint8Array`.
-- checksum: A 32-bit number calculated by summing all bytes in the `payload`.
-- magic: A 32-bit number calculated by `command ^ 0xffffffff`.
+- **command**: A 32-bit unsigned integer.
+- **arg0**: A 32-bit unsigned integer.
+- **arg1**: A 32-bit unsigned integer. `arg0` and `arg1` have different meanings for different `command`s.
+- **payload**: A `Uint8Array`.
+- **checksum**: A 32-bit unsigned integer calculated by summing all bytes in `payload`.
+- **magic**: A 32-bit unsigned integer calculated by `command ^ 0xffffffff`.
 
 `AdbDaemonTransport` will give the connection `AdbPacket`s with all fields filled, but the connection can omit `checksum` and `magic` fields when passing packets to `AdbDaemonTransport`, as those are not essential for basic operations.
 
 ## Create ReadableStream
 
 As mentioned in [Web Streams Basics](../web-stream.mdx), it's very simple to convert pull or push style data sources into `ReadableStream`s.
+
+### Pull style data source
 
 For pull style data sources, simply use the `ReadableStream`:
 
@@ -59,14 +61,16 @@ const readable = new ReadableStream({
 });
 ```
 
-For push style data sources, use `PushReadableStream`:
+### Push style data source
+
+For push style data sources, you can use `PushReadableStream` to easily convert it to a `ReadableStream`:
 
 ```ts transpile
 import { AdbPacketData } from "@yume-chan/adb";
 import { PushReadableStream } from "@yume-chan/stream-extra";
 
 declare function onPacket(
-  handler: (packet: AdbPacketData | undefined) => Promise<void>,
+  handler: (packet: AdbPacketData | undefined) => Promise<void>
 ): void;
 
 const readable = new PushReadableStream((controller) => {
@@ -80,9 +84,34 @@ const readable = new PushReadableStream((controller) => {
 });
 ```
 
+### Push style data source with backpressure
+
+Ideally, if the data source supports pause and resume, you should propagate the `ReadableStream` backpressure to the source. For example, with a Node.js `Readable`:
+
+```ts transpile
+import { Readable } from "node:stream";
+import { AdbPacketData } from "@yume-chan/adb";
+import { PushReadableStream } from "@yume-chan/stream-extra";
+
+declare const source: Readable;
+
+const readable = new PushReadableStream((controller) => {
+  source.on("data", async (chunk: AdbPacketData) => {
+    source.pause();
+    await controller.enqueue(chunk);
+    source.resume();
+  });
+  source.on("end", () => {
+    controller.close();
+  });
+});
+```
+
 ## Create WriteableStream
 
-The write side is simply a `WritableStream`:
+The write side needs to be a `WritableStream` of `Consumable<AdbPacketInit>`:
+
+`Consumable<AdbPacketInit>` allows the data producer to reuse the `payload` buffer, which reduces memory allocations and GC overhead to improve performance. The consumer must call `consume` after using the value (written to a socket, copied to another buffer, etc.) to notify the producer that the value can be reused.
 
 ```ts transpile
 import { AdbPacketInit } from "@yume-chan/adb";
@@ -103,7 +132,7 @@ const writeable = new WritableStream<Consumable<AdbPacketInit>>({
 
 ## Create stream pair
 
-`AdbDaemonTransport` requires a `ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>>`, this is simply a plain object with a `readable` field and a `writable` field containing the above two streams.
+`AdbDaemonTransport` requires a `ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>>`, which is a plain object with `readable` and `writable` fields containing the above two streams:
 
 ```ts transpile
 import { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
@@ -123,24 +152,30 @@ const connection: ReadableWritablePair<
 The core package also has helper methods to convert streams between `Uint8Array` and `AdbPacket`:
 
 ```ts transpile
-import { AdbPacketSerializeStream } from "@yume-chan/adb";
+import {
+  AdbPacket,
+  AdbPacketInit,
+  AdbPacketData,
+  AdbPacketSerializeStream,
+} from "@yume-chan/adb";
 import {
   WrapReadableStream,
   WrapWritableStream,
   ReadableStream,
   StructDeserializeStream,
-  UnwrapConsumableStream,
+  MaybeConsumable,
 } from "@yume-chan/stream-extra";
 
 declare const rawReadable: ReadableStream<Uint8Array>;
 
-const readable = new WrapReadableStream(rawReadable).pipeThrough(
-  new StructDeserializeStream(AdbPacket),
-);
+const readable: ReadableStream<AdbPacketData> = new WrapReadableStream(
+  rawReadable
+).pipeThrough(new StructDeserializeStream(AdbPacket));
 
 declare const rawWritable: WritableStream<Uint8Array>;
 
-const writable = new WrapWritableStream(rawWritable)
-  .bePipedThroughFrom(new UnwrapConsumableStream())
-  .bePipedThroughFrom(new AdbPacketSerializeStream());
+const writable: WritableStream<MaybeConsumable<AdbPacketInit>> =
+  new WrapWritableStream(rawWritable)
+    .bePipedThroughFrom(new MaybeConsumable.UnwrapStream())
+    .bePipedThroughFrom(new AdbPacketSerializeStream());
 ```

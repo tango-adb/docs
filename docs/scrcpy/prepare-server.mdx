@@ -72,25 +72,31 @@ Usage:
 npx fetch-scrcpy-server <version>
 ```
 
+:::info
+
+Because the package name (`@yume-chan/fetch-scrcpy-server`) and script name (`fetch-scrcpy-server`) are different, `npx` will not work unless the package is installed.
+
+:::
+
 For example:
 
 ```sh
 npx fetch-scrcpy-server 2.1
 ```
 
+The server binary is written to `server.bin` and the version is written to `version.js` in this package's root directory (in your `node_modules`).
+
 :::info[Note for Scrcpy 2.2]
 
-Usually the version number is `[major].[minor].[revision]`, but for Scrcpy 2.2, due to a packaging error (from Scrcpy side), the server expects the version number to be `v2.2` (with a `v` prefixed).
+Usually the version number is `X.Y.Z`, but for Scrcpy 2.2, due to a packaging error (from Scrcpy side), the server expects the version number to be `v2.2` instead of just `2.2`.
 
-To download Scrcpy 2.2 server, use:
+`npx fetch-scrcpy-server 2.2` writes the version as `2.2`, causing the server to fail to start. A workaround is added to the package that, by specifying the version as `v2.2`, the script will write `v2.2` to the version file.
 
 ```sh
 npx fetch-scrcpy-server v2.2
 ```
 
 :::
-
-The server binary is written to `server.bin` and the version is written to `version.js` in this package's root (usually in your `node_modules`).
 
 Importing this package will give you two variables:
 
@@ -136,15 +142,17 @@ const server: Buffer = await fs.readFile(BIN);
 
 After installing the package, you can add it to your `package.json`, so every time you run `npm install`, the script will be executed automatically.
 
-```json
+```json title="package.json"
 {
   "name": "...",
   "devDependencies": {
     "@yume-chan/fetch-scrcpy-server": "^0.0.24"
   },
+  // highlight-start
   "scripts": {
     "postinstall": "fetch-scrcpy-server 2.1"
   }
+  // highlight-end
 }
 ```
 

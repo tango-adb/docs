@@ -12,14 +12,11 @@ If `cleanup: true` (the default value) is set in the `ScrcpyOptions`, Scrcpy ser
 
 ## Caveats
 
-On some LCD screens, turning off the screen only turns off the backlight, so the screen will still be visible under strong light.
-
-Some fingerprint sensors under the screen use the screen to illuminate the finger, so turning off the screen will cause them to stop working.
-
-Most apps are completely unaware of the screen state, so they will continue to run normally even if the screen is off. But some apps may behave differently when the screen is off, it has been reported that:
-
-* Chrome for Android doesn't respond to touch events when the screen is off.
-* Xiaomi HyperOS system UI loses blur effect when the screen is off.
+* On some LCD screens, turning off the screen only turns off the backlight, the screen is still visible under strong light.
+* Some in-display fingerprint sensors use the screen to illuminate the finger, turning off the screen will cause them to stop working.
+* Most apps are unaware of the screen state, but some apps may behave differently when the screen is off, it has been reported that:
+  - Chrome for Android might not respond to touch events
+  - Xiaomi HyperOS system UI loses all blur effects
 
 ## Options
 
@@ -36,6 +33,8 @@ export enum AndroidScreenPowerMode {
 ## Usage
 
 ```ts transpile
+import { AndroidScreenPowerMode } from "@yume-chan/scrcpy";
+
 // Using `ScrcpyControlMessageSerializer`
 const message: Uint8Array = serializer.setScreenPowerMode(
   AndroidScreenPowerMode.Off

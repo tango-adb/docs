@@ -40,18 +40,24 @@ interface ScrcpyInjectKeyCodeControlMessage {
 }
 ```
 
-* `action`: The action of the event.
-* `keyCode`: The key code of the event. It uses Android key codes, see `AndroidKeyCode` enum for a mapping between Web key codes to Android key codes.
-* `repeat`: The number of times the key was repeated.
-* `metaState`: The meta state of the event.
+- `action`: The action of the event.
+- `keyCode`: The key code of the event. It uses Android key codes, see `AndroidKeyCode` enum for a mapping between Web key codes to Android key codes.
+- `repeat`: The number of times the key was repeated.
+- `metaState`: The meta state of the event.
 
 ## Usage
 
 ```ts
+import {
+  AndroidKeyCode,
+  AndroidKeyEventAction,
+  AndroidKeyEventMeta,
+} from "@yume-chan/scrcpy";
+
 // Using `ScrcpyControlMessageSerializer`
 const message: Uint8Array = serializer.injectKeyCode({
   action: AndroidKeyEventAction.Down,
-  keyCode: AndroidKeyCode.KEYCODE_A,
+  keyCode: AndroidKeyCode.KeyA,
   repeat: 0,
   metaState: AndroidKeyEventMeta.ShiftOn,
 });
@@ -59,7 +65,7 @@ const message: Uint8Array = serializer.injectKeyCode({
 // Using `ScrcpyControlMessageWriter`
 await writer.injectKeyCode({
   action: AndroidKeyEventAction.Down,
-  keyCode: AndroidKeyCode.KEYCODE_A,
+  keyCode: AndroidKeyCode.KeyA,
   repeat: 0,
   metaState: AndroidKeyEventMeta.ShiftOn,
 });
@@ -67,7 +73,7 @@ await writer.injectKeyCode({
 // Using `AdbScrcpyClient`
 await client.controller!.injectKeyCode({
   action: AndroidKeyEventAction.Down,
-  keyCode: AndroidKeyCode.KEYCODE_A,
+  keyCode: AndroidKeyCode.KeyA,
   repeat: 0,
   metaState: AndroidKeyEventMeta.ShiftOn,
 });

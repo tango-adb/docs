@@ -6,6 +6,26 @@ sidebar_position: 5
 
 [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) are from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API). They represent a stream of data that can be read from or written to asynchronously.
 
+## `@yume-chan/stream-extra` package
+
+`@yume-chan/stream-extra` package re-exports the native `ReadableStream`, `WriteableStream`, and `TransformStream` classes from `globalThis`, with bundled type definitions for them.
+
+This is mainly for TypeScript users, as Web Streams API, being a Web standard, is only available in `lib.dom.d.ts`. When using Tango in Node.js, we don't want to include the entire `lib.dom.d.ts` which pollutes the global scope with Web APIs.
+
+However, the type definitions in `@yume-chan/stream-extra` is not compatible with the ones in `lib.dom.d.ts`, which is mainly due to Chrome failing to implement the async iterator protocol for `ReadableStream`. When interoperating with native Web APIs like `Blob.stream()` or `Response.body`, explicit type casts are required.
+
+```ts showLineNumbers
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare function someApi(source: ReadableStream<Uint8Array>): void;
+
+// highlight-start
+someApi(new Blob([]).stream()); // Error
+someApi(new Blob([]).stream() as unknown as ReadableStream<Uint8Array>); // OK, using the imported `ReadableStream` type
+someApi(new Blob([]).stream() as never); // OK
+// highlight-end
+```
+
 ## `ReadableStream`
 
 To create a `ReadableStream`, you only need to provide a data source:
@@ -25,6 +45,8 @@ In TypeScript, the generic parameter of `ReadableStream` is the type of the data
 
 The `close` method closes the stream, which means no more data can be added to the stream.
 
+### `enqueue`
+
 The `enqueue` method adds a value to the stream, it can be called anytime, anywhere, as long as you have a reference to the `controller` object. For example you can do this:
 
 ```ts transpile
@@ -43,7 +65,9 @@ setTimeout(() => {
 }, 1000);
 ```
 
-However, this is not a good practice. If the `ReadableStream` produces data faster than downstream `WritableStream` can consume, the buffered data will take more and more memory. To know when should you enqueue data, you can use the `pull` method:
+### `pull` and backpressure
+
+However, this is not a good practice. If the `ReadableStream` produces data faster than downstream `WritableStream` can consume, the buffered data will take more and more memory. To know when you can enqueue data, you can use the `pull` method:
 
 ```ts transpile
 let value = 0;

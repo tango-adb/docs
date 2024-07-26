@@ -22,13 +22,13 @@ As of June 2024, it's still not clear how the Direct Socket API will be implemen
     <TabItem value="node" label="Node.js">
         Install `@types/node` package for code suggestions and type checking of Node.js APIs:
 
-        ```sh npm2yarn
+```sh npm2yarn
 npm i -D @types/node
-        ```
+```
 
         The following code converts Node.js's `net.Socket` to a `TCPSocket`:
 
-        ```ts transpile
+```ts transpile
 import { PromiseResolver } from "@yume-chan/async";
 import {
   PushReadableStream,
@@ -85,7 +85,7 @@ export class TCPSocket {
         this.#socket.on("end", () => {
           try {
             controller.close();
-          } catch { }
+          } catch {}
         });
 
         controller.abortSignal.addEventListener("abort", () => {
@@ -121,20 +121,24 @@ export class TCPSocket {
     });
   }
 }
-        ```
-    </TabItem>
+```
+
+</TabItem>
+
 </Tabs>
 
 ## `AdbDaemonDirectSocketsDevice`
 
 The following code implements an `AdbDaemonDevice` using a `TCPSocket`:
 
+This code is based on [Custom connection](./create-connection.mdx).
+
 ```ts transpile
 import type { AdbDaemonDevice } from "@yume-chan/adb";
 import { AdbPacket, AdbPacketSerializeStream } from "@yume-chan/adb";
 import {
   StructDeserializeStream,
-  UnwrapConsumableStream,
+  MaybeConsumable,
   WrapReadableStream,
   WrapWritableStream,
 } from "@yume-chan/stream-extra";
@@ -180,10 +184,10 @@ export class AdbDaemonDirectSocketsDevice implements AdbDaemonDevice {
 
     return {
       readable: new WrapReadableStream(readable).pipeThrough(
-        new StructDeserializeStream(AdbPacket),
+        new StructDeserializeStream(AdbPacket)
       ),
       writable: new WrapWritableStream(writable)
-        .bePipedThroughFrom(new UnwrapConsumableStream())
+        .bePipedThroughFrom(new MaybeConsumable.UnwrapStream())
         .bePipedThroughFrom(new AdbPacketSerializeStream()),
     };
   }
@@ -195,12 +199,10 @@ export class AdbDaemonDirectSocketsDevice implements AdbDaemonDevice {
 The following code creates a connection:
 
 ```ts transpile
-const device: AdbDaemonDirectSocketsDevice = new AdbDaemonDirectSocketsDevice(
-  {
-    host: "192.168.50.30",
-    port: 5555,
-  }
-);
+const device: AdbDaemonDirectSocketsDevice = new AdbDaemonDirectSocketsDevice({
+  host: "192.168.50.30",
+  port: 5555,
+});
 
 const connection: ReadableWritablePair<
   AdbPacketData,

@@ -44,6 +44,12 @@ interface ScrcpyInjectTouchControlMessage {
 ## Usage
 
 ```ts transpile
+import {
+  AndroidMotionEventAction,
+  AndroidMotionEventButton,
+  ScrcpyPointerId,
+} from "@yume-chan/scrcpy";
+
 // Using `ScrcpyControlMessageSerializer`
 const message: Uint8Array = serializer.injectTouch({
   action: AndroidMotionEventAction.Down,

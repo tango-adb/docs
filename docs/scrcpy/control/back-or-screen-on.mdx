@@ -10,7 +10,7 @@ Official Scrcpy client sends this event when the right mouse button is clicked. 
 
 ## Options
 
-- action: The action of the event. This is only applied to the back button.
+- `action`: The action of the event. This is only applied to the back button. It should be one of the `AndroidKeyEventAction` values.
 
 ## Changelog
 
@@ -25,6 +25,8 @@ Official Scrcpy client sends this event when the right mouse button is clicked. 
 ## Usage
 
 ```ts transpile
+import { AndroidKeyEventAction } from "@yume-chan/scrcpy";
+
 // Using `ScrcpyControlMessageSerializer`
 const message: Uint8Array = serializer.backOrScreenOn({
   action: AndroidKeyEventAction.Down,
