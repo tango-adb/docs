@@ -2,6 +2,8 @@
 sidebar_position: 4
 ---
 
+import Version from '../version-span';
+
 # Mouse scroll event
 
 Inject a mouse scroll event into the device.
@@ -28,26 +30,8 @@ interface ScrcpyInjectScrollControlMessage {
 - `pointerY`: The Y coordinate of the event.
 - `screenWidth`: The width of the screen. It must match the current video stream resolution to prevent de-synchronization.
 - `screenHeight`: The height of the screen. It must match the current video stream resolution to prevent de-synchronization.
-- `scrollX`: The horizontal scroll amount. Positive values scroll left, negative values scroll right.
-- `scrollY`: The vertical scroll amount. Positive values scroll up, negative values scroll down.
-- `buttons`: The state of all the buttons. It's a bit-or combination of `AndroidMotionEventButton` values.
-
-`scrollX` and `scrollY` is in ticks, the result pixel is determined by system settings and app implementation. Fractional values are allowed to simulate high-precision scroll.
-
-## Changelog
-
-### v1.15
-
-- `scrollX` and `scrollY` only accepts integer values. Options classes before `ScrcpyOptions1_25` will accumulate fractional values and only send integer values to the server.
-- `buttons` is not supported and will be ignored.
-
-### v1.22
-
-- Support for `buttons` field is added.
-
-### v1.25
-
-- Support for fractional values in `scrollX` and `scrollY` is added.
+- `scrollX` and `scrollY`: The horizontal and vertical scroll amount in ticks, the exact pixel amount is determined by system settings and app implementation. Positive values scroll left and up, negative values scroll right and down. <Version until="v1.25">The server only accepts integer values. Fractional values will be accumulated and only sent to server when it reaches 1 or -1</Version><Version since="v1.25">Fractional values are supported for high precision scrolling</Version>
+- `buttons`: The state of all the buttons. It's a bit-or combination of `AndroidMotionEventButton` values. <Version until="v1.22">It's not supported and ignored</Version>
 
 ## Usage
 

@@ -14,13 +14,13 @@ npm install @yume-chan/scrcpy-decoder-webcodecs
 
 ## Feature detection
 
-To check if the WebCodecs API is available, you can check if `VideoDecoder` is defined:
+To check if the WebCodecs API is available, you can check if [`VideoDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder) is defined:
 
 ```ts transpile
 const isSupported = globalThis.VideoDecoder !== undefined;
 ```
 
-`VideoDecoder.isConfigSupported` is a static method that checks if a given codec configuration is supported.
+[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) is a static method that checks if a given codec configuration is supported.
 
 It accepts a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1.
 
@@ -28,8 +28,10 @@ It accepts a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"`
 const result = await VideoDecoder.isConfigSupported({
   codec: "hev1.1.60.L153.B0.0.0.0.0.0",
 });
-const isSupported = result.supported === true;
+const isHevcSupported = result.supported === true;
 ```
+
+You can decide which video codec to use based on the results.
 
 ## Usage
 
@@ -54,8 +56,8 @@ See [Tiny H264 decoder usage](./tiny-h264.mdx#usage) for more information.
 
 ## Microsoft Edge on Windows
 
-Microsoft Edge on Windows uses Media Foundation decoders.
+By default, Chromium browsers uses FFMpeg internally for WebCodecs API. However, Microsoft Edge, when running on Windows, uses Media Foundation decoders instead.
 
-Decoding H.265 requires the [HEVC Video Extensions](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) or HEVC Video Extensions from Device Manufacturer app from Microsoft Store. But it has been reported that the H.265 decoder outputs incorrect sized frames.
+Decoding H.265 requires the [**HEVC Video Extensions**](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) ($0.99) or **HEVC Video Extensions from Device Manufacturer** (free but not available anymore) app from Microsoft Store. But it has been reported that its output frames has incorrect sizes.
 
-Decoding AV1 requires the [AV1 Video Extension](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) app from Microsoft Store.
+Decoding AV1 requires the [**AV1 Video Extension**](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) (free) app from Microsoft Store.

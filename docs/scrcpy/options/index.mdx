@@ -78,7 +78,7 @@ If an error happened in the device message socket, `options.clipboard` will ente
 
 ## With `@yume-chan/adb-scrcpy`
 
-`@yume-chan/adb-scrcpy` needs to do some additional behavior normalizations, so it has its own options classes. The naming convention is the same as `@yume-chan/scrcpy`, but with a `Adb` prefix. For example, `AdbScrcpyOptions2_1` is the options class for server version 2.1.
+`@yume-chan/adb-scrcpy` needs to do some additional behavior normalizations, so it has its own options classes. The naming convention is the same as `@yume-chan/scrcpy`, but with an `Adb` prefix. For example, `AdbScrcpyOptions2_1` is the options class for server version 2.1.
 
 It's more rare for protocol changes to affect `AdbScrcpyOptionsX_YY`, thus there are fewer `AdbScrcpyOptionsX_YY` classes than `ScrcpyOptionsX_YY` classes, and the versions between them don't always match.
 
@@ -93,8 +93,19 @@ import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
 const options = new AdbScrcpyOptions2_1(
   new ScrcpyOptions2_2({
     videoSource: "camera",
+    // ...
   })
 );
+
+options.clipboard
+  .pipeTo(
+    new WritableStream({
+      write(value) {
+        console.log(value);
+      },
+    })
+  )
+  .catch(console.error);
 ```
 
 `options.clipboard` is also available in `AdbScrcpyOptionsX_YY`, the usage is the same.

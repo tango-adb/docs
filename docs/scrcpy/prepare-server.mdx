@@ -19,7 +19,7 @@ You can download the official server binary from [Scrcpy GitHub releases](https:
 
 Depends on your runtime, bundler and framework, you may need to consume `server.bin` differently.
 
-For frontend meta frameworks (Next.js, Nuxt, Solid Start, etc.), usually there are two ways to include a binary file:
+For full-stack JavaScript frameworks (Next.js, Nuxt, Solid Start, etc.), usually there are two ways to include a binary file:
 
 1. Put it in `public` folder, and reference it using a fixed URL (e.g. `https://your-domain.com/server.bin`)
 2. Import it in a JavaScript source file and let the bundler handle it
@@ -31,7 +31,7 @@ Assume you have downloaded the server binary to `src/server.bin`, and you want t
 <Tabs className="runtime-tabs" groupId="bundler">
     <TabItem label="Webpack 5" value="webpack-5">
 
-```ts transpile
+```ts transpile title="src/index.ts"
 const url = new URL("./server.bin", import.meta.url);
 const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
 ```
@@ -39,7 +39,7 @@ const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
     </TabItem>
     <TabItem label="Vite" value="vite">
 
-```ts transpile
+```ts transpile title="src/index.ts"
 const url = new URL("./server.bin", import.meta.url);
 const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
 ```
@@ -47,7 +47,7 @@ const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
     </TabItem>
     <TabItem label="Node.js" value="node">
 
-```ts transpile
+```ts transpile title="src/index.ts"
 import fs from "fs/promises";
 
 const url = new URL("./server.bin", import.meta.url);
@@ -156,7 +156,7 @@ After installing the package, you can add it to your `package.json`, so every ti
 }
 ```
 
-## Build the server
+## Build the server yourself
 
 You can also build the server binary yourself. This is useful if you want to modify the server, or if you want to use the latest version from Scrcpy Git repository.
 

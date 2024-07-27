@@ -17,7 +17,7 @@ flowchart LR
     subgraph Device
     AS <-->|USB| AD["ADB Daemon"]
     AS <-->|TCP| AD
-    AD <-->|TCP| Server
+    AD <-->|Unix socket| Server
     end
 ```
 
@@ -35,6 +35,12 @@ npm install @yume-chan/scrcpy
 
 It can be used standalone if you can communicate with Scrcpy server using other means.
 
+:::note[Next Step]
+
+[Prepare Server](./prepare-server.mdx)
+
+:::
+
 ## Use with Tango
 
 The `@yume-chan/adb-scrcpy` package combines `@yume-chan/scrcpy` with `@yume-chan/adb` to provides high-level APIs to push the server file, start the server, setup and establish the connection, and communicate with the server.
@@ -46,3 +52,9 @@ It also doesn't use any Web or Node.js APIs.
 ```sh npm2yarn
 npm install @yume-chan/scrcpy @yume-chan/adb-scrcpy
 ```
+
+:::note[Next Step]
+
+[Prepare Server](./prepare-server.mdx)
+
+:::

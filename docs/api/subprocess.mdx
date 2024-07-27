@@ -178,7 +178,7 @@ declare class AdbSubprocess {
 }
 ```
 
-When `command` is `undefined`, the default shell will be spawned.
+When `command` is `undefined`, the default shell is spawned.
 
 The `options` parameter works the same as in `spawn`.
 
@@ -209,6 +209,14 @@ terminal.onData((data) => {
 
 terminal.open(document.getElementById("terminal"));
 ```
+
+:::info[Equivalent ADB command]
+
+```sh
+adb shell
+```
+
+:::
 
 ## Stop process
 
