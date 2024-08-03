@@ -24,12 +24,12 @@ The usage of `AdbDaemonWebUsbDeviceManager` is different in Node.js and Web brow
 <Tabs className="runtime-tabs" groupId="runtime">
 <TabItem value="web" label="Web">
 
-WebUSB API is natively supported in Chromium-based browsers.
+Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
 
 :::info[Electron Support]
 
-* To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API, then follow the below instructions
-* To use Tango in Electron main processes, follow the instructions for Node.js instead
+- To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API, then follow the below instructions
+- To use Tango in Electron main processes, follow the instructions for Node.js instead
 
 :::
 
@@ -37,8 +37,8 @@ WebUSB API is natively supported in Chromium-based browsers.
 
 WebUSB API requires a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts). Basically it means the page must be served over HTTPS or `localhost`.
 
-* If you have a domain name, you can easily get a free SSL certificate from [Let's Encrypt](https://letsencrypt.org/).
-* If you only have an IP address, you can create a self-signed certificate and trust it in every device that will access your server (or ignore the warning every time).
+- If you have a domain name, you can easily get a free SSL certificate from [Let's Encrypt](https://letsencrypt.org/).
+- If you only have an IP address, you can create a self-signed certificate and trust it in every device that will access your server (or ignore the warning every time).
 
 :::
 
@@ -59,7 +59,12 @@ const Manager: AdbDaemonWebUsbDeviceManager | undefined =
 
 :::
 
-Check if `Manager` is `undefined`:
+In two cases, `Manager` may be `undefined`:
+
+1. The current page isn't in a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
+1. The browser does not support WebUSB API
+
+It's your responsibility to make sure the first case doesn't happen. So there is only one reason left:
 
 ```ts transpile
 if (!Manager) {
@@ -68,17 +73,12 @@ if (!Manager) {
 }
 ```
 
-There are two reasons that `Manager` may be `undefined`:
-
-1. The browser does not support WebUSB API
-2. The current page isn't in a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts) (HTTPS or localhost)
-
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-[`usb`](https://www.npmjs.com/package/usb) package provides a WebUSB compatible implementation for Node.js.
+[`usb`](https://www.npmjs.com/package/usb) package provides a WebUSB implementation for Node.js.
 
-It uses libusb library to access USB devices, which should work perfectly on Linux and macOS, but may have some issues on Windows.
+It uses libusb library to access USB devices, which should work perfectly on Linux and macOS, but [may have some issues on Windows](https://github.com/node-usb/node-usb?tab=readme-ov-file#windows).
 
 ```sh npm2yarn
 npm i usb
@@ -92,7 +92,7 @@ import { WebUSB } from "usb";
 
 const WebUsb: WebUSB = new WebUSB({ allowAllDevices: true });
 const Manager: AdbDaemonWebUsbDeviceManager = new AdbDaemonWebUsbDeviceManager(
-  WebUsb,
+  WebUsb
 );
 ```
 
@@ -100,10 +100,10 @@ const Manager: AdbDaemonWebUsbDeviceManager = new AdbDaemonWebUsbDeviceManager(
 
 By default, `WebUSB` from `usb` package has the same permission system as browsers:
 
-* Each device must be authorized separately using `requestDevice` method and a custom `devicesFound` callback
-* `getDevices` method only returns devices that have been authorized
+- Each device must be authorized separately using `requestDevice` method and [a custom `devicesFound` callback](https://github.com/node-usb/node-usb?tab=readme-ov-file#use-webusb-approach-to-find-a-device-with-custom-selection-method)
+- `getDevices` method only returns devices that have been authorized
 
-Passing the `allowAllDevices: true` option disables the permission system and returns all connected devices from `getDevices` methods.
+Passing [`allowAllDevices: true` option](https://github.com/node-usb/node-usb?tab=readme-ov-file#use-webusb-approach-to-list-all-devices) disables the permission system and returns all connected devices from `getDevices` methods.
 
 :::
 

@@ -1,5 +1,7 @@
 # Daemon Transport
 
+**AdbDaemonTransport** connects to [ADB Daemons](../index.mdx#adb-daemon) directly. This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
+
 ```mermaid
 flowchart LR
     subgraph PC
@@ -15,9 +17,7 @@ flowchart LR
     end
 ```
 
-**Daemon Transport** connects to ADB daemons directly. This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
-
-This transport is implemented by the `AdbDaemonTransport` class from `@yume-chan/adb` package.
+This class is included in the core package:
 
 ```sh npm2yarn
 npm i @yume-chan/adb
@@ -25,41 +25,51 @@ npm i @yume-chan/adb
 
 To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize ADB packets. An `AdbDaemonConnection` implementation is required to send and receive those packets, and an `AdbCredentialStore` implementation is required to manage client certificates.
 
-Here are the overall steps to create a Daemon Transport:
-
 ```mermaid
-sequenceDiagram
-    participant C as Client
-    participant T as AdbDaemonTransport
-
-    create participant Conn as AdbDaemonConnection
-    C->>Conn: Create
-
-    create participant Cred as AdbCredentialStore
-    C->>Cred: Create
-
-    C->>+T: Start handshake
-
-    T->>+Conn: Send handshake
-    Conn->>T: Return authentication parameters
-
-    T->>+Cred: Get or create client certificate
-    Cred->>-T: Return client certificate
-
-    T->>Conn: Send authentication packets
-    Conn->>-T: Return authentication result
-
-    T->>-C: Return authenticated connection
-    C->>C: Create Adb instance
+flowchart TD
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonTransport -. requires .-> AdbDaemonConnection
+        AdbDaemonTransport -. requires .-> AdbCredentialStore
+    end
 ```
 
-Tango provides two built-in `AdbDaemonConnection` implementations, and you can also create other custom connections to meet your requirements.
+## Overview
 
-## USB Connection
+Here are the steps to create an `Adb` instance with `AdbDaemonTransport`:
+
+1. User creates an `AdbDaemonConnection` for the desired connection method.
+2. User creates an `AdbCredentialStore` that works on the target platform.
+3. User creates an `AdbDaemonTransport` instance with the connection and credential store.
+    1. The transport instance uses the connection to send and receive handshake packets.
+    2. The transport instance uses the credential store to authenticate with the device.
+4. If authentication is successful, user creates an `Adb` instance with the transport.
+
+## Connections
+
+Tango provides two built-in `AdbDaemonConnection` implementations, and you can also create other custom connections to fulfill your requirements.
+
+### USB Connection
 
 USB connection is the oldest and most common way to connect to Android devices.
 
-[`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` implementation based on [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API). It can use varies WebUSB compatible implementations, including the native implementation in Web browsers, and the [`usb`](https://www.npmjs.com/package/usb) package in Node.js.
+[`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` implementation based on [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API):
+
+* Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
+* Node.js can use the WebUSB implementation in the [`usb`](https://www.npmjs.com/package/usb) package.
+
+```mermaid
+flowchart TD
+    subgraph C ["Runtime"]
+        WebUSB["WebUSB API"] ~~~ WebUSB
+    end
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonConnection ~~~ AdbDaemonConnection
+    end
+    subgraph B ["@yume-chan/adb-daemon-webusb"]
+        AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
+        AdbDaemonWebUsbConnection -. requires .-> WebUSB
+    end
+```
 
 :::note[Next Step]
 
@@ -67,11 +77,11 @@ USB connection is the oldest and most common way to connect to Android devices.
 
 :::
 
-## TCP Connection
+### TCP Connection
 
-ADB over Wi-Fi (a.k.a TCP/IP mode) allows you to connect to Android devices without a USB cable. It can also connect to Google Android Emulators running on the same machine.
+ADB over Wi-Fi (a.k.a TCP/IP mode) uses TCP sockets to communicate with devices over the network. Google Android Emulators are also supported.
 
-There is no Web API for TCP connection, so it's not available on Web platforms. In Node.js, it can be implemented using the built-in `net` module.
+Currently, there is no built-in TCP connection for Web platforms, as TCP sockets are not supported there. This documentation provides a reference implementation for Node.js.
 
 :::note[Next Step]
 
@@ -79,9 +89,19 @@ There is no Web API for TCP connection, so it's not available on Web platforms. 
 
 :::
 
-## Custom Connection
+### Custom Connection
 
-In addition to the built-in connection methods, Tango also accepts custom connection implementations. For example, a WebSocket connection can forward TCP connections from a Node.js server to a Web browser.
+In addition to the built-in connection methods, Tango also accepts custom connection implementations. For example, with a Node.js WebSocket server that forwards packets to devices, a WebSocket connection can connect to that server and enable unsupported connections on Web platforms.
+
+```mermaid
+flowchart TD
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonConnection ~~~ AdbDaemonConnection
+    end
+    subgraph C ["your package"]
+        YourConnection -- implements --> AdbDaemonConnection
+    end
+```
 
 :::note[Next Step]
 

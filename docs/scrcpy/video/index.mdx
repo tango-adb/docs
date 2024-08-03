@@ -47,11 +47,11 @@ interface ScrcpyVideoStreamMetadata {
 }
 ```
 
-- `deviceName`: The device's model name<Version since="v1.22">, or `undefined` if the `sendDeviceMeta` option is `false`.</Version>.
-- `width` and `height`: The size of the first video frame<Version since="v1.22" until='v2.0'>, or `undefined` if the `sendDeviceMeta` option is `false`.</Version><Version since="v2.0">, or `undefined` if the `sendCodecMeta` option is `false`.</Version>.
-- `codec`: The codec returned from the server<Version since="v2.0">, or the codec inferred from options if the `sendCodecMeta` option is `false`.</Version>.
+- `deviceName`: The device's model name<Version since="v1.22">, or `undefined` if `sendDeviceMeta` option is `false`.</Version>.
+- `width` and `height`: Size of the first video frame<Version since="v1.22" until='v2.0'>, or `undefined` if `sendDeviceMeta` option is `false`.</Version><Version since="v2.0">, or `undefined` if `sendCodecMeta` option is `false`.</Version>.
+- `codec`: The codec returned from server<Version since="v2.0">, or the codec inferred from options if `sendCodecMeta` option is `false`.</Version>.
 
-When device orientation changes (or when a foldable device folds/unfolds), video capture will be restarted with the new resolution, but the server won't send the metadata again. To keep track of the current video size, it's recommended to parse them from the video stream itself. The exact code depends on the video codec.
+When device's screen resolution changes (for example, when device rotates, or when a foldable device folds/unfolds), the server restarts video capture with the new resolution. However, it won't send a new metadata packets with the updated size. The only way to keep track of the video resolution is by parsing the video stream directly. The exact code depends on the video codec.
 
 The returned `videoStream` is a `ReadableStream<Uint8Array>` that contains the video stream after the metadata<Version since="v1.22" until="v2.0">, or the input stream as-is if the `sendDeviceMeta` option is `false`.</Version><Version since="v2.0">, or the input stream as-is if both `sendDeviceMeta` and `sendCodecMeta` options are `false`.</Version>.
 
