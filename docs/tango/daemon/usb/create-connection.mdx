@@ -4,14 +4,15 @@ sidebar_position: 5
 
 # Create connection
 
-USB devices can have multiple interfaces, each for a different function. For example, an Android device can have an ADB interface (when USB debugging is enabled), an MTP interface (when file transferring is enabled), and an [AoA](https://source.android.com/docs/core/interaction/accessories/protocol) interface (when accessory mode is enabled).
+As explained [before](./index.mdx#exclusivity), each USB device can have multiple interfaces for different functions, and each interface needs to be exclusively claimed by programs.
 
-To use an interface, it needs to be claimed to gain exclusive access. This means:
+Requesting permission to access a device doesn't automatically claim its interfaces. The `connect` method does that, but not only that. It includes three steps to simplify the usage:
 
-* If Google ADB has already claimed the ADB interface, WebUSB API in Chrome can't claim it again.
-* If one WebUSB [`USBDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice) instance has already claimed an interface, other `USBDevice` instances can't claim it again.
+1. Call WebUSB [`USBDevice#open`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice/open) method to open the device
+2. Call WebUSB [`USBDevice#claimInterface`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice/claimInterface) method to claim the ADB interface
+3. Find the endpoints for the ADB interface and create streams for them
 
-Requesting permission to a device doesn't automatically request the exclusive access. The `connect` method wraps WebUSB's [`USBDevice#open`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice/open) and [`USBDevice#claimInterface`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice/claimInterface) methods, and converts between raw bytes and ADB packets.
+It returns a pair of streams, one for sending and one for receiving ADB packets.
 
 ```ts transpile
 import { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
@@ -23,11 +24,29 @@ const connection: ReadableWritablePair<
 > = await device.connect();
 ```
 
-The connection might fail due to various reasons, such as:
+If the interface is already claimed by another program (or another `USBDevice` instance), `connect` will throw an `NetworkError`. You can catch it and show a message to the user to ask them to close the conflicting program.
 
-1. Another process (e.g. Google ADB, another browser) already has the exclusive access to the interface. Google ADB might be indirectly started by other programs, such as Android Studio, Visual Studio with Mobile development workloads, Godot Editor, Scrcpy, etc.
-2. Another `USBDevice` instance already has the exclusive access to the interface. Such as another instance of your app, or another app that uses Tango or WebUSB.
-3. The device is disconnected between `requestDevice` and `connect`.
+```ts transpile
+function connect(device: AdbDaemonWebUsbDevice) {
+  try {
+    return await device.connect();
+  } catch (error) {
+    // `usb` package for Node.js doesn't throw a real `DOMException`
+    // This check is compatible with both Chrome and `usb` package
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "name" in error &&
+      error.name === "NetworkError"
+    ) {
+      alert(
+        "The device is already in use by another program. Please close the program and try again."
+      );
+    }
+    throw error;
+  }
+}
+```
 
 :::note[Next Step]
 
