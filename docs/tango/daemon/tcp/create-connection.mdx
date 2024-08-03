@@ -199,6 +199,8 @@ export class AdbDaemonDirectSocketsDevice implements AdbDaemonDevice {
 The following code creates a connection:
 
 ```ts transpile
+import type { ReadableWritablePair } from "@yume-chan/stream-extra";
+
 const device: AdbDaemonDirectSocketsDevice = new AdbDaemonDirectSocketsDevice({
   host: "192.168.50.30",
   port: 5555,

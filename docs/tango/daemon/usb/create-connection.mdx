@@ -15,13 +15,15 @@ Requesting permission to access a device doesn't automatically claim its interfa
 It returns a pair of streams, one for sending and one for receiving ADB packets.
 
 ```ts transpile
-import { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
-import { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import type { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
 
+// highlight-start
 const connection: ReadableWritablePair<
   AdbPacketData,
   Consumable<AdbPacketInit>
 > = await device.connect();
+// highlight-end
 ```
 
 If the interface is already claimed by another program (or another `USBDevice` instance), `connect` will throw an `NetworkError`. You can catch it and show a message to the user to ask them to close the conflicting program.
@@ -33,6 +35,7 @@ function connect(device: AdbDaemonWebUsbDevice) {
   } catch (error) {
     // `usb` package for Node.js doesn't throw a real `DOMException`
     // This check is compatible with both Chrome and `usb` package
+    // highlight-start
     if (
       typeof error === "object" &&
       error !== null &&
@@ -43,6 +46,7 @@ function connect(device: AdbDaemonWebUsbDevice) {
         "The device is already in use by another program. Please close the program and try again."
       );
     }
+    // highlight-end
     throw error;
   }
 }
