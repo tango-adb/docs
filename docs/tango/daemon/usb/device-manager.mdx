@@ -7,7 +7,7 @@ import TabItem from "@theme/TabItem";
 
 # Create device manager
 
-WebUSB provides APIs for discovering and communicating with USB devices. The `AdbDaemonWebUsbDeviceManager` class wraps the WebUSB API to work with ADB devices only.
+WebUSB provides APIs for discovering and communicating with USB devices. The `AdbDaemonWebUsbDeviceManager` class wraps the WebUSB API to only work with ADB devices.
 
 ## Usage
 
@@ -20,7 +20,7 @@ Chromium-based browsers support WebUSB natively. Chrome for Android is supported
 
 :::info[Electron Support]
 
-- To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API, then follow the below instructions
+- To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API in Electron, then follow the instructions below
 - To use Tango in Electron main processes, follow the instructions for Node.js instead
 
 :::
@@ -47,14 +47,18 @@ const Manager: AdbDaemonWebUsbDeviceManager | undefined =
 
 :::info
 
-`AdbDaemonWebUsbDeviceManager.BROWSER` is a shortcut for `navigator.usb ? new AdbDaemonWebUsbDeviceManager(navigator.usb) : undefined`.
+`AdbDaemonWebUsbDeviceManager.BROWSER` is a shorthand of:
+
+```ts
+navigator.usb ? new AdbDaemonWebUsbDeviceManager(navigator.usb) : undefined
+```
 
 :::
 
 In two cases, `Manager` may be `undefined`:
 
-1. The current page isn't in a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
-1. The browser does not support WebUSB API
+1. Current page isn't in a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
+1. Current browser does not support WebUSB API
 
 It's your responsibility to make sure the first case doesn't happen. So there is only one reason left:
 

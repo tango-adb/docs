@@ -2,10 +2,12 @@
 sidebar_position: 3
 ---
 
+# Request device permission
+
+{/* spell: ignore RNDIS */}
+
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
-
-# Request device permission
 
 :::note
 
@@ -17,11 +19,25 @@ This page only applies to browsers. For Node.js, you can skip to the [next step]
 
 In Web browsers, each website needs to request the permission to access each device separately using WebUSB's [`USB#requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice) method.
 
-`USB#requestDevice` method requires [user activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation), which means it can only be called in response to a mouse click or keyboard press event.
+### User activation
+
+`USB#requestDevice` method requires [user activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation), it must be called in response to a mouse click or keyboard press event.
+
+### Device picker
 
 After calling `USB#requestDevice`, the browser shows a list of connected devices to the user. The user can select one (and only one) device from the list, or cancel the picker without selecting any device.
 
+You can filter the devices shown in the picker, but otherwise you can't control the picker's appearance or behavior.
+
+### Return value
+
 It will return an `USBDevice` instance representing the selected device, or throws an `DOMException` with `name` set to `NotFoundError` if the user cancelled the picker.
+
+:::note
+
+This code is for demonstration purposes only. You should use `AdbDaemonWebUsbDeviceManager#requestDevice` described below in Tango.
+
+:::
 
 ```ts transpile
 document.getElementById("button").addEventListener("click", () => {
@@ -49,31 +65,25 @@ document.getElementById("button").addEventListener("click", () => {
 });
 ```
 
+### Permission persistence
+
 The permission will be persisted by the browser, so from next time, the website can access that device without calling `requestDevice` again. The user can revoke the permission in "Settings -> Site Permissions -> USB devices" at any time.
 
-### Android USB mode affects permissions
+### USB mode affects permissions
 
-In USB specification, one device can have multiple **interfaces**. Each interface represents a self-contained feature. For example, a USB headset can have one interface for audio input and one interface for audio output.
+When Android devices works in USB peripheral mode, they can have multiple USB interfaces, like MTP (file transfer), ADB, RNDIS (reverse tethering), MIDI, etc.
 
-One device can also have multiple **configurations**. Each configuration is a set of interfaces. It can turn on or off some features by switching between configurations.
+When any interface is turned on or off from system UI, the device will disconnect and reconnect to the USB host and report a different set of interfaces.
 
-Android devices have multiple interfaces, like MTP mode for file transfer, ADB mode for debugging, and so on. And each interface can be turned on or off in its system UI. However, Android devices doesn't use multiple USB configurations.
+As a result, in Web browsers, the same Android device with different sets of interfaces will be treated as different devices, and have different permissions. The website might need to request permission again when Android device switches to another mode.
 
-This might partially because Windows doesn't support switching USB configurations unless a custom driver is installed. So, when switching USB modes, Android devices will disconnect and reconnect to the computer, and tell the computer that it's a different device with different interfaces.
-
-:::note
-
-In contrast, Apple mobile devices (iPods, iPhones and iPads) use multiple USB configurations. In the default configuration, they only have one interface for transferring files using MTP, Only when iTunes and its special driver is installed, they can switch to another configuration with an extra interface for syncing with iTunes.
+:::info
 
 :::
 
-As a result, in Web browsers, each USB modes of an Android device has separate permissions. After switching to a new USB mode, the website needs to request permission again.
-
 ## Request permission in Tango
 
-Tango represents each device as an `AdbDaemonWebUsbDevice` instance, which includes the `USBDevice` instance and some additional information.
-
-You can manually construct an `AdbDaemonWebUsbDevice` instance from a `USBDevice` instance, but it's easier to use the `AdbDaemonWebUsbDeviceManager#requestDevice` method that does it for you.
+`AdbDaemonWebUsbDeviceManager#requestDevice` method provides a more convenient way to request permission for Android devices with ADB interface enabled.
 
 ```ts
 declare class AdbDaemonWebUsbDeviceManager {
@@ -81,7 +91,12 @@ declare class AdbDaemonWebUsbDeviceManager {
 }
 ```
 
-Same as `USB#requestDevice`, it requires user activation. However, it returns `undefined` instead of throwing an error if the user cancelled the picker.
+It calls `USB#requestDevice` internally, thus the [user activation](#user-activation), [device picker](#device-picker), and [permission persistence](#permission-persistence) behaviors are the same as `USB#requestDevice`.
+
+The only difference is the return value:
+
+* When the user selects a device, it returns an `AdbDaemonWebUsbDevice` instance, which includes the raw `USBDevice` handle and additional information required by later steps.
+* If the user cancels the picker, it returns `undefined`, instead of throwing an error.
 
 ```ts transpile
 import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
@@ -138,9 +153,9 @@ The `filters` option defaults to `[ADB_DEFAULT_DEVICE_FILTER]`, which matches th
 
 ### `exclusionFilters`
 
-It's also possible to exclude some devices from the picker by passing an `exclusionFilters` option. It works in reverse: if a device matches any filter in `exclusionFilters`, it will be excluded from the picker.
+It's also possible to exclude specific devices from the picker using the `exclusionFilters` option. It works in reverse: if a device matches any filter in `exclusionFilters`, it will be excluded from the picker.
 
-It can be used to exclude devices that are already paired, or exclude certain devices that's not compatible.
+It can be used to exclude devices that are already paired, or exclude certain devices that are incompatible.
 
 :::info
 
@@ -151,7 +166,6 @@ Support for exclusive filters was added in Chrome 105. It will be ignored in old
 ### Examples
 
 To select a specific manufacturer and model:
-
 
 ```ts transpile
 import {

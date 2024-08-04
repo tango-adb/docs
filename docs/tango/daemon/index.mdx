@@ -5,15 +5,18 @@
 ```mermaid
 flowchart LR
     subgraph PC
-    CA["JavaScript Client"] <--> Tango
+        CA["Client A"] <--> TA["Daemon Transport A"]
+        CB["Client B"] <--> TB["Daemon Transport B"]
     end
-    subgraph Devices
-    Tango <-->|USB| A["Device A"]
-    Tango <-->|TCP| B["Device B"]
+    subgraph A["Device B"]
+        TB <-->|USB| AD["ADB Daemon"]
+    end
+    subgraph B["Device A"]
+        TA <-->|TCP| BD["ADB Daemon"]
     end
     subgraph PC
-    S["Google ADB Server"] x-.-x|USB| A
-    O["Other Tango Instance"] x-.-x|USB| A
+        S["Google ADB Server"] x-.-x|USB| AD
+        O["Daemon Transport C"] x-.-x|USB| AD
     end
 ```
 
@@ -23,7 +26,7 @@ This class is included in the core package:
 npm i @yume-chan/adb
 ```
 
-To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize ADB packets. An `AdbDaemonConnection` implementation is required to send and receive those packets, and an `AdbCredentialStore` implementation is required to manage client certificates.
+To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize Daemon Protocol packets. An `AdbDaemonConnection` implementation is required to send and receive those packets, and an `AdbCredentialStore` implementation is required to manage client certificates.
 
 ```mermaid
 flowchart TD
@@ -79,7 +82,7 @@ flowchart TD
 
 ### TCP Connection
 
-ADB over Wi-Fi (a.k.a TCP/IP mode) uses TCP sockets to communicate with devices over the network. Google Android Emulators are also supported.
+ADB over Wi-Fi (a.k.a TCP/IP mode) uses TCP sockets to communicate with devices over the network. Google Android Emulators are also supported. The data protocol is completely same as USB connection, just on a different transport layer.
 
 Currently, there is no built-in TCP connection for Web platforms, as TCP sockets are not supported there. This documentation provides a reference implementation for Node.js.
 
@@ -94,12 +97,15 @@ Currently, there is no built-in TCP connection for Web platforms, as TCP sockets
 In addition to the built-in connection methods, Tango also accepts custom connection implementations. For example, with a Node.js WebSocket server that forwards packets to devices, a WebSocket connection can connect to that server and enable unsupported connections on Web platforms.
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph A ["@yume-chan/adb"]
-        AdbDaemonConnection ~~~ AdbDaemonConnection
+        AdbDaemonTransport ~~~ AdbDaemonTransport
     end
     subgraph C ["your package"]
-        YourConnection -- implements --> AdbDaemonConnection
+        AdbDaemonTransport <--> YourConnection
+    end
+    subgraph D ["Device"]
+        YourConnection <-->|Custom Protocol| Daemon["ADB Daemon"]
     end
 ```
 
