@@ -27,7 +27,7 @@ If you have any questions, feel free to open a discussion on [GitHub](https://ww
 
 ## Installation
 
-Tango is split into multiple packages to support different runtimes. First, install the two core packages:
+Tango is split into multiple packages to support different runtime environments. First, install the two core packages:
 
 1. [`@yume-chan/adb`](https://www.npmjs.com/package/@yume-chan/adb): The platform-independent ADB client implementation
 2. [`@yume-chan/stream-extra`](https://www.npmjs.com/package/@yume-chan/stream-extra): Type definitions and utilities for [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
@@ -104,7 +104,7 @@ We expect it to be a separate package if it uses third-party libraries, but we h
 
 :::
 
-Due to platform API limitations, not all connections are supported on all platforms:
+Due to runtime API limitations, not all connections are supported on all environments:
 
 | Connection             | Web                                               | Node.js         |
 | ---------------------- | ------------------------------------------------- | --------------- |
@@ -137,7 +137,7 @@ flowchart TD
 
 ### Server Transport
 
-As mentioned above, USB connections don't allow multiple clients to access one device. To solve that problem, Google ADB uses a server program that forwards ADB commands to devices for multiple clients.
+As mentioned above, USB connections don't allow multiple clients to access one device. Google ADB solves this problem by using a server program  (also called "host") that forwards ADB commands to devices for multiple clients.
 
 ```mermaid
 flowchart LR
@@ -155,7 +155,7 @@ flowchart LR
     end
 ```
 
-`AdbServerClient` class is a TypeScript re-implementation of Google ADB Client. It connects to Google ADB Server using TCP sockets, and can create `AdbServerTransport`s for each device.
+The protocol between ADB Client and Server is different from the protocol between ADB Server and Daemon. `AdbServerClient` class is a TypeScript re-implementation of Google ADB Client. It connects to Google ADB Server using TCP sockets, and can create `AdbServerTransport`s for each device.
 
 ```mermaid
 flowchart TD
@@ -165,7 +165,7 @@ flowchart TD
     end
 ```
 
-To support different platforms, `AdbServerClient` uses an `AdbServerConnector` implementation to create those TCP sockets. Currently, there is no built-in connector for Web platforms, as TCP sockets are not supported there. Tango provides a Node.js implementation using its `net` module, and also accepts custom connector implementations for other platforms.
+To support different runtime environments, `AdbServerClient` uses an `AdbServerConnector` implementation to create those TCP sockets. Currently, there is no built-in connector for Web platforms, as TCP sockets are not supported there. Tango provides a Node.js implementation using its `net` module, and also accepts custom connector implementations for other runtime environments.
 
 ```mermaid
 flowchart TD
@@ -188,13 +188,13 @@ flowchart TD
 
 ### Custom Transport
 
-Tango also accepts custom transport implementations. For example, a mock transport can be used in unit tests, and a WebSocket transport can allow multiple clients to access one device over the Internet.
+Tango also accepts custom transport implementations. For example, a mock transport that returns fixed data can be used in unit tests, and a WebSocket transport can wrap a built-in transport and allow multiple clients to access the device over the Internet.
 
 ADB is a stream multiplexing protocol. Invoking an command opens a new logical stream, also called an ADB Socket. `Adb` class relies on an `AdbTransport` implementation to open and manage those ADB Sockets. It doesn't care that Daemon Transport and Server Transport actually use completely different data protocols and connection methods to achieve that.
 
 :::info
 
-The difference between a custom transport and a custom Daemon Transport connection or Server Transport connector is that, the former handles raw request and response data for ADB commands, while the latter always has those data in an encoded format.
+The difference between a custom transport and a custom [Daemon Transport connection](./daemon/custom-connection.mdx) or [Server Transport connector](./server/client.mdx#create-connector) is that, the former handles raw request and response data for ADB commands, while the latter always has those data in an encoded format.
 
 For example, to write a unit test for an ADB command, a custom transport only needs to return the expected response data, but a Daemon Transport connection must encode that response using Daemon protocol, which then gets decoded by Daemon Transport.
 
@@ -216,6 +216,6 @@ flowchart LR
 
 :::note[Next Step]
 
-[Create custom transport](./custom-transport.mdx)
+[Create custom transport](./custom-transport/index.mdx)
 
 :::

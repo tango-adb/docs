@@ -82,7 +82,9 @@ However, transport ID is the only truly unique identifier, so it's recommended t
 ```ts transpile
 import type { AdbServerClient } from "@yume-chan/adb";
 
+// highlight-start
 const devices: AdbServerClient.Device[] = await client.getDevices();
+// highlight-end
 if (devices.length === 0) {
   alert("No device connected");
   return;
@@ -97,5 +99,7 @@ The `authenticating` field indicates whether the device is currently authenticat
 
 ```ts transpile
 const devices: AdbServerClient.Device[] = await client.getDevices();
+// highlight-start
 const authenticatedDevices = devices.filter(device => !device.authenticating);
+// highlight-end
 ```

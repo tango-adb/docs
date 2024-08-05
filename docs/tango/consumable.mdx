@@ -6,7 +6,7 @@ sidebar_position: 9
 
 Web Streams API doesn't provide a way to track where the data is, for example:
 
-```ts
+```ts showLineNumbers
 const readable = new ReadableStream({
   start(controller) {
     controller.enqueue(new Uint8Array([1, 2, 3]));
@@ -39,7 +39,7 @@ In `readable`, `controller.enqueue` is a synchronous operation, the data source 
 
 The `Consumable` class is a wrapper around a value of type `T`. It allows the consumer to tell the producer when the value is no longer needed.
 
-```ts
+```ts showLineNumbers
 import { Consumable } from "@yume-chan/stream-extra";
 
 function useData(data: Consumable<Uint8Array>) {
@@ -56,7 +56,7 @@ async function produceData() {
 
 Let's use the `Consumable` pattern to re-write the previous example:
 
-```ts
+```ts showLineNumbers
 import {
   Consumable,
   ReadableStream,
@@ -117,23 +117,54 @@ It doesn't completely eliminate allocations, but a `Uint8Array` can be much larg
 
 `Consumable#tryConsume` method is a helper method to consume the value by calling a callback:
 
-```ts
-import { Consumable } from "@yume-chan/stream-extra";
-
-function useData(data: Consumable<Uint8Array>) {
-  data.tryConsume((value) => {
-    console.log(value);
-  });
+```ts showLineNumbers
+declare class Consumable<T> {
+  tryConsume<U>(callback: (value: T) => U): U;
 }
 ```
 
-`tryConsume` invokes the callback immediately with the inner value, and mark the `Consumable` as consumed when the callback completes (returns or throws). If the callback returns a `Promise`, `tryConsume` will wait for the `Promise` to be settled.
+`tryConsume` invokes the callback immediately with the inner value, and mark the `Consumable` as consumed when the callback completes (returns or throws). If the callback returns a `Promise`, `tryConsume` waits for the `Promise` to be settled and then mark the `Consumable` as consumed.
+
+```ts transpile
+import { Consumable } from "@yume-chan/stream-extra";
+
+function useData(data: Consumable<Uint8Array>) {
+  // highlight-start
+  data.tryConsume((value) => {
+    console.log(value);
+  });
+  // highlight-end
+}
+
+function useDataAsync(data: Consumable<Uint8Array>) {
+  // highlight-start
+  data.tryConsume(async (value) => {
+    // Can be async
+    await delay(1000);
+    console.log(value);
+  });
+  // highlight-end
+}
+```
+
+It returns the result of the callback:
+
+```ts showLineNumbers
+import { Consumable } from "@yume-chan/stream-extra";
+
+const consumable = new Consumable(new Uint8Array([1, 2, 3]));
+const result = consumable.tryConsume((value) => {
+  return 42;
+});
+
+console.log(result); // 42
+```
 
 ### Improve debugging experience
 
 Normally, when piping data around streams, Chrome DevTools doesn't track the data flow, so the call stack is always empty:
 
-```ts
+```ts showLineNumbers
 import { ReadableStream, WritableStream } from "@yume-chan/stream-extra";
 
 new ReadableStream({
@@ -183,7 +214,7 @@ new ReadableStream({
 
 Most streams are actually accepting `MaybeConsumable<T>`, which means they can accept both `T` and `Consumable<T>`:
 
-```ts
+```ts showLineNumbers
 import {
   Consumable,
   WritableStream,
@@ -201,7 +232,7 @@ await writer.write(new Uint8Array([1, 2, 3])); // also works
 
 This allows a blob stream to be directly piped into a `WritableStream`:
 
-```ts
+```ts showLineNumbers
 declare const blob: File | Blob;
 
 blob.stream().pipeTo(writable);
@@ -214,9 +245,20 @@ You can choose to use `Consumable<T>` when either:
 
 ### `tryConsume`
 
-`MaybeConsumable` namespace also provides a helper method `tryConsume`. It's a static method so it accepts both `T` and `Consumable<T>`.
+`MaybeConsumable` namespace also provides a helper method `tryConsume`. The `value` argument can be either `T` or `Consumable<T>`.
 
-```ts
+```ts showLineNumbers
+declare namespace MaybeConsumable {
+  export function tryConsume<T, R>(
+    value: T,
+    callback: (value: T extends Consumable<infer U> ? U : T) => R
+  ): R;
+}
+```
+
+If the `value` is a `Consumable`, it behaves the same as [`Consumable#tryConsume`](#tryconsume). If it's not, it just invokes the callback immediately with the value.
+
+```ts showLineNumbers
 import { MaybeConsumable } from "@yume-chan/stream-extra";
 
 MaybeConsumable.tryConsume(new Uint8Array([1, 2, 3]), (value) => {
@@ -229,6 +271,13 @@ MaybeConsumable.tryConsume(
     console.log(value); // Uint8Array [4, 5, 6]
   }
 );
-```
 
-If the `value` is a `Consumable`, it behaves the same as [`Consumable#tryConsume`](#tryconsume). If it's not, it just invokes the callback immediately with the value.
+await MaybeConsumable.tryConsume(
+  new Consumable(new Uint8Array([7, 8, 9])),
+  async (value) => {
+    // Can be async
+    await delay(1000);
+    console.log(value); // Uint8Array [7, 8, 9]
+  }
+);
+```

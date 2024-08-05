@@ -4,13 +4,13 @@ sidebar_position: 4
 
 # Create transport
 
-The `AdbServerClient#createTransport` method will create an `AdbTransport` for the specified device. The device must have already been authenticated.
+The `AdbServerClient#createTransport` method creates an `AdbTransport` for the specified device. The device must have already been authenticated.
 
 The target device can be selected using a `DeviceSelector` object.
 
 :::note
 
-See [Device selector](./selector.mdx) page for more information about `DeviceSelector`.
+See [Device selector](./selector.mdx) page for how to create a selector.
 
 :::
 
@@ -21,6 +21,8 @@ declare class AdbServerClient {
   ): Promise<AdbTransport>;
 }
 ```
+
+This process is asynchronous, because `AdbServerClient` needs to fetch some extra information about the device from ADB Server.
 
 The returned `AdbTransport` object can be used to create an `Adb` instance.
 

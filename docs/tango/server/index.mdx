@@ -3,56 +3,31 @@
 ```mermaid
 flowchart LR
     subgraph PC
-    CA["JavaScript Client A"] <--> TA["Tango Instance A"]
-    CB["JavaScript Client B"] <--> TB["Tango Instance B"]
+    CA["Client A"] <--> TA["Server Transport A"]
+    CB["Client B"] <--> TB["Server Transport B"]
     TA & TB <-->|TCP| S["Google ADB Server"]
     CC["Other Native Client"] <-->|TCP| S
     end
-    subgraph Devices
-    S <-->|USB| A["Device A"]
-    S <-->|TCP| B["Device B"]
+    subgraph A["Device B"]
+        S <-->|USB| AD["ADB Daemon"]
+    end
+    subgraph B["Device A"]
+        S <-->|TCP| BD["ADB Daemon"]
     end
 ```
 
-As mentioned in [Create USB connection](../daemon/usb/create-connection.mdx), a USB device can only be exclusively accessed by one process at a time. This means if multiple ADB clients are trying to connect to the same device, only one of them will succeed.
+As mentioned in [USB Connection](../daemon/usb/index.mdx#exclusivity), a USB device can only be exclusively accessed by one program at a time. This means if multiple ADB clients want to access the same device, only one of them can succeed.
 
-Google ADB solves this problem by starting a server (also called "host") to manage the USB devices, and all ADB clients connect to the server instead of the device directly. The server will forward the packets from clients to the device, and forward the packets from the device to the clients.
+Google ADB solves this problem by starting a server (also called "host") to manage the USB devices, and all ADB clients connect to the server, instead of the device directly. The server forwards ADB commands to devices for those clients.
 
-The protocol between ADB client and server is different from the protocol between ADB server and device (daemon). Tango provides a client implementation for the client-server protocol, but since the server usually listens on a TCP port, Tango requires a server connector object to handle the data communication.
+The protocol between ADB Client and Server is different from the protocol between ADB Server and Daemon. `AdbServerClient` class is a TypeScript re-implementation of Google ADB Client. It connects to Google ADB Server using TCP sockets, and can create `AdbServerTransport`s for each device.
 
-Here are the overall steps to create a server connection:
+## Overview
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant A as AdbServerClient
+Here are the overall steps to create an `Adb` instance from `AdbServerClient`:
 
-    create participant Conn as AdbServerClient.ServerConnector
-    C->>Conn: Create
-
-    participant G as ADB Server
-    participant D as Device
-
-    C->>+A: Get device list
-    A->>A: Create server command
-    A->>+Conn: Send command
-    Conn->>+G: Forward command
-
-    G->>-Conn: Return response
-    Conn->>-A: Forward response
-    A->>A: Parse response
-    A->>-C: Return device list
-
-    C->>+A: Connect to device
-    A->>A: Create server command
-    A->>+Conn: Send command
-    Conn->>+G: Forward command
-    G->>G: Create device command
-    G->>+D: Send command
-    D->>-G: Return response
-    G->>G: Parse response
-    G->>-Conn: Return response
-    Conn->>-A: Forward response
-    A->>A: Parse response
-    A->>-C: Return device instance
-```
+1. User creates an `AdbServerClient.ServerConnector` that works on the target runtime environment.
+2. User creates an `AdbServerClient` instance with the connector.
+3. User queries the device list and selects an already authenticated device.
+4. User creates an `AdbServerTransport` instance for the selected device.
+5. User creates an `Adb` instance with the transport object.

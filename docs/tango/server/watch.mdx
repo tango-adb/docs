@@ -14,7 +14,7 @@ declare class AdbServerClient {
 }
 ```
 
-The returned generator will yield the current device list when it's changed. By using an async generator instead of a callback, it can throw errors when something goes wrong.
+The returned generator will yield the updated device list when it's changed. By using an async generator instead of a callback, it can throw errors when something goes wrong.
 
 ```ts
 for await (const devices of client.trackDevices()) {
@@ -39,7 +39,7 @@ Note that unlike many other `AbortSignal` consumers, `trackDevices` will return 
 
 ## Find changed devices
 
-Although the generator yields the current device list, it doesn't tell which device is connected or disconnected. You need to diff the device list yourself.
+Although the generator yields the current device list, it doesn't directly tell you which device is connected or disconnected. You need to diff the device list yourself.
 
 ```ts
 let lastDevices: AdbServerClient.Device[] = [];
