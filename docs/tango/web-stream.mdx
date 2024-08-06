@@ -4,6 +4,8 @@ sidebar_position: 5
 
 # Web Streams Basics
 
+{/* cspell: ignore interoperating */}
+
 [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) are from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API). They represent a stream of data that can be read from or written to asynchronously.
 
 ## `@yume-chan/stream-extra` package
@@ -57,22 +59,26 @@ const stream: ReadableStream<number> = new ReadableStream<number>({
   },
 });
 
+// highlight-start
 setTimeout(() => {
   controller.enqueue(1);
   controller.enqueue(2);
   controller.enqueue(3);
   controller.close();
 }, 1000);
+// highlight-end
 ```
 
 ### `pull` and backpressure
 
-However, this is not a good practice. If the `ReadableStream` produces data faster than downstream `WritableStream` can consume, the buffered data will take more and more memory. To know when you can enqueue data, you can use the `pull` method:
+However, continuing enqueuing data in `start` is not a good practice. If the `ReadableStream` produces data faster than the consumer can consume (or there is no consumer attached), the buffered data will take more and more memory.
+
+The `pull` method in `ReadableStreamSource` is called when the internal buffer size is below the high water mark. You can use this method to control the data produce speed:
 
 ```ts transpile
 let value = 0;
 const stream: ReadableStream<number> = new ReadableStream<number>({
-  start(controller) {},
+  // highlight-start
   pull(controller) {
     controller.enqueue(value);
     value += 1;
@@ -80,8 +86,30 @@ const stream: ReadableStream<number> = new ReadableStream<number>({
       controller.close();
     }
   },
+  // highlight-end
 });
 ```
+
+The high water mark is the suggested maximum buffer size, enqueuing data above this size will still work. The high water mark is specified when creating the `ReadableStream`:
+
+```ts transpile
+const stream: ReadableStream<number> = new ReadableStream<number>(
+  {
+    pull(controller) {
+      controller.enqueue(value);
+      value += 1;
+      if (value > 30) {
+        controller.close();
+      }
+    },
+  },
+  // highlight-start
+  { highWaterMark: 10 }
+  // highlight-end
+);
+```
+
+In this example, the high water mark is 10, so the `pull` method will immediately be called 10 times, and then be called again when the consumer consumes some data.
 
 In practice, usually you are converting some other data source to streams. How can you limit the data produce speed depends on the data source.
 

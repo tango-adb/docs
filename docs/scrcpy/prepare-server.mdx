@@ -142,7 +142,7 @@ const server: Buffer = await fs.readFile(BIN);
 
 After installing the package, you can add it to your `package.json`, so every time you run `npm install`, the script will be executed automatically.
 
-```json title="package.json"
+```js title="package.json"
 {
   "name": "...",
   "devDependencies": {
@@ -164,8 +164,8 @@ The easiest way is to use [Android Studio](https://developer.android.com/studio)
 
 1. Clone Scrcpy
 
-   ```sh
-   git clone https://github.com/Genymobile/scrcpy.git
+   ```sh title="Shell"
+   $ git clone https://github.com/Genymobile/scrcpy.git
    ```
 
 2. Open the root folder in Android Studio
