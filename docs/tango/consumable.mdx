@@ -1,30 +1,40 @@
 ---
-sidebar_position: 9
+sidebar_position: 3
 ---
 
 # Consumable pattern
+
+The `Consumable` pattern is intended to be used with [Web Streams API](https://streams.spec.whatwg.org/). It allows the consumer to tell the producer when the value is no longer needed.
+
+## Problem
 
 Web Streams API doesn't provide a way to track where the data is, for example:
 
 ```ts showLineNumbers
 const readable = new ReadableStream({
   start(controller) {
+    // highlight-start
     controller.enqueue(new Uint8Array([1, 2, 3]));
     controller.enqueue(new Uint8Array([4, 5, 6]));
+    // highlight-end
     controller.close();
   },
 });
 
 const transform = new TransformStream({
   transform(chunk, controller) {
+    // highlight-start
     console.log("transform", chunk);
     controller.enqueue(chunk);
+    // highlight-end
   },
 });
 
 const writable = new WritableStream({
   write(chunk) {
+    // highlight-start
     console.log("write", chunk);
+    // highlight-end
   },
 });
 
@@ -111,7 +121,7 @@ new ReadableStream({
 
 Here, we create a `Consumable` for each `enqueue` operation, and `await` for the `consumed` promise to be settled before modifying the buffer.
 
-It doesn't completely eliminate allocations, but a `Uint8Array` can be much larger than a `Consumable`, so it's still beneficial.
+It doesn't completely eliminate allocations, but if the size of `Consumable` objects is smaller than the `Uint8Array` you're enqueuing (which is the usual case), it's still beneficial.
 
 ## `tryConsume`
 

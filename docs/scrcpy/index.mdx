@@ -4,6 +4,16 @@ sidebar_position: 1
 
 # Quick Start
 
+:::info[Welcome]
+
+Welcome to Tango ADB's developer documentation! :tada:
+
+Tango includes a TypeScript re-implementation of Scrcpy client for Web browsers and Node.js.
+
+If you are looking for the Scrcpy application where you can mirror and control your Android devices, [here](https://github.com/Genymobile/scrcpy) is the official repository.
+
+:::
+
 [Scrcpy](https://github.com/Genymobile/scrcpy) is an open-source tool to mirror Android screen to desktop, and control it from desktop. It has two parts:
 
 * A client written in C: Uses SDL for cross-platform display and input, and FFmpeg for video decoding. It spawns Google ADB client to set up a reverse tunnel, start server on device, and connect to it.
@@ -21,7 +31,7 @@ flowchart LR
     end
 ```
 
-Tango provides a TypeScript implementation of the client API, so that it can run in browsers and Node.js. It's fully compatible with the original Scrcpy server, so latest features and bug fixes are available immediately. It doesn't provide any UI components, so you need to create your own UI.
+Tango's Scrcpy client implementation is fully compatible with the original Scrcpy server, so latest features and bug fixes are available immediately. It doesn't provide any UI components, so you need to create your own UI.
 
 ## Standalone Usage
 
