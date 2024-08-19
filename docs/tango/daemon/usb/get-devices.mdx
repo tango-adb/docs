@@ -25,21 +25,24 @@ WebUSB `USB#getDevices` method can be used to get all connected devices (that th
 To only get ADB devices, `AdbDaemonWebUsbDeviceManager#getDevices` method also accepts a `filters` option, to only return devices that match the specified criteria.
 
 ```ts
-interface AdbDeviceFilter {
-  classCode: number;
-  subclassCode: number;
-  protocolCode: number;
-  vendorId?: number | undefined;
-  productId?: number | undefined;
-  serialNumber?: string | undefined;
-}
-
 declare class AdbDaemonWebUsbDeviceManager {
   getDevices(filters?: AdbDeviceFilter[]): Promise<AdbDaemonWebUsbDevice[]>;
 }
 ```
 
-The `filters` option defaults to `[ADB_DEFAULT_DEVICE_FILTER]`, which matches the ADB interface. In most cases, you can just call `AdbDaemonWebUsbDeviceManager#getDevices` without any arguments:
+:::note
+
+See [Device filter](./device-filter.mdx) for more information about how does the filter work and how to define a filter.
+
+:::
+
+The `filters` option defaults to `[ADB_DEFAULT_DEVICE_FILTER]`, which matches the ADB interface. Unless your ADB devices uses a different identifier, or you want to select a specific device, you can just call `AdbDaemonWebUsbDeviceManager#getDevices` without any arguments:
+
+:::info
+
+Some lazy manufacturers use the same `serialNumber` for all devices. So even if `serialNumber` is specified, it's still possible that multiple devices will be returned.
+
+:::
 
 ```ts transpile
 import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
@@ -54,18 +57,6 @@ if (!devices.length) {
 
 const device: AdbDaemonWebUsbDevice = devices[0];
 ```
-
-:::note
-
-See [Device filter](./device-filter.mdx) for more information about how does the filter work and how to define a filter.
-
-:::
-
-:::info
-
-Some lazy manufacturers use the same `serialNumber` for all devices. So even if `serialNumber` is specified, it's still possible that multiple devices will be returned.
-
-:::
 
 ### Examples
 

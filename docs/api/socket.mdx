@@ -12,7 +12,7 @@ This page describes how to use an ADB socket. See [this page](../tango/custom-tr
 
 ADB is a multiplexing protocol, each logical stream is called a socket. A socket is a duplex stream that can be read from and written to.
 
-Each socket also has a service name, which  similar to the hostname and port number in a TCP socket, or the URL in an HTTP request
+Each socket also has a service name, which is similar to the hostname and port number in a TCP socket, or the URL in an HTTP request
 
 In Tango, a socket is represented by an `AdbSocket` object, while each transport may extend it with additional properties.
 
@@ -142,7 +142,7 @@ While the service name usually points to a service on the ADB daemon, it can als
 
 ### Google ADB
 
-In Google ADB, forward tunnels must be associated with a local address, and the client needs connect to that address to have the connection forwarded to the device.
+In Google ADB, forward tunnels must be associated with a local socket address, and the client needs connect to that address to have the connection forwarded to the device.
 
 ```mermaid
 sequenceDiagram
@@ -163,21 +163,21 @@ sequenceDiagram
   B->>C: Forward connection to tcp:1234
 ```
 
-In Tango, only the last step is needed. The `createSocket` method can be used to connect to the device address directly.
+In Tango, only the last step is needed. The `createSocket` method can be used to directly connect to the device socket address.
 
 ### Daemon Transport
 
 `adb forward` series of commands are implemented by Google ADB Server. When using [Daemon Transport](../tango/daemon/index.mdx), there is no Google ADB Server, so no support for those commands.
 
-If your target runtime environment supports listening on a TCP port, you can simulate the behavior of `adb forward` by listening on a TCP port and forwarding the connection to `createSocket`.
+If your target runtime environment supports listening on a TCP port, you can simulate the behavior of `adb forward` by listening on a TCP port, and call `connectSocket` for each incoming connection.
 
 ### Server Transport
 
 Support for `adb forward` series of commands in [Server Transport](../tango/server/index.mdx) has not been implemented yet.
 
-### Address family
+### Device Address
 
-Supported address families includes:
+The device address is in the format of `<type>:<address>`. ADB Daemon can forward the connection to various types of addresses:
 
 - `tcp:<port>`: TCP `localhost:<port>` on device
 - `local:<path>`: Unix local domain socket on device

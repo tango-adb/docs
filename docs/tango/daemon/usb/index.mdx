@@ -93,11 +93,17 @@ flowchart TD
     end
     I1 ~~~ I2
     subgraph I2 ["Interface 2"]
-        E3["Endpoint 3"]
-        E4["Endpoint 4"]
-        E5["Endpoint 5"]
+        E3["Endpoint 1"]
+        E4["Endpoint 2"]
+        E5["Endpoint 3"]
     end
 ```
+
+:::info
+
+Those two "Endpoint 1"s are different endpoints, because they are in different interfaces. They can be read or written at the same time.
+
+:::
 
 ADB interface defines one endpoint for sending data and another for receiving data.
 
