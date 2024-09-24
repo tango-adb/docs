@@ -36,12 +36,13 @@ Use `AdbScrcpyClient.start()` method with an option class to start the server. I
 
 ```ts transpile
 import {
-  AdbScrcpyClient,
-  AdbScrcpyOptions2_1,
-  DEFAULT_SERVER_PATH,
-  ScrcpyOptions2_1,
+    AdbScrcpyClient,
+    AdbScrcpyOptions2_1
 } from "@yume-chan/adb-scrcpy";
-import SCRCPY_SERVER_VERSION from "@yume-chan/scrcpy/bin/version.js";
+import {
+    DEFAULT_SERVER_PATH,
+    ScrcpyOptions2_1
+} from "@yume-chan/scrcpy";
 
 const options = new AdbScrcpyOptions2_1(
   ScrcpyOptions2_1({
@@ -53,7 +54,7 @@ const client: AdbScrcpyClient = await AdbScrcpyClient.start(
   adb,
   DEFAULT_SERVER_PATH,
   // If server binary was downloaded manually, must provide the correct version
-  SCRCPY_SERVER_VERSION,
+  VERSION,
   options
 );
 
