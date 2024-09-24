@@ -15,9 +15,11 @@ ADB Server has its own sets of commands. `AdbServerClient` class is a TypeScript
 
 [Direct Socket API](https://github.com/WICG/direct-sockets) is a new Web API that provides TCP and UDP sockets. The `TCPSocket` class from this API can be used to create a TCP connection to ADB Servers.
 
-However, as of July 2024, it's still not clear how Direct Socket API will be implemented.
+However, as of September 2024, it's still not clear how Direct Socket API will be implemented. The current proposal requires the Web app to be bundled and signed by the developer, then manually installed by users. This is not a practical solution for general Web apps.
 
-The current proposal requires the Web app to be bundled and signed by the developer, then manually installed by users. This is not a practical solution for general Web apps.
+Another method to get TCP sockets on Web platform is to use a native "bridge" app to convert TCP sockets to WebSocket. They are usually called "WebSockify" softwares.
+
+We provide a more sophisticated bridge app, which also bundles and starts Google ADB if it's not available of not running. The source code is at https://github.com/tango-adb/bridge-rs.
 
 </TabItem>
 <TabItem value="node" label="Node.js">

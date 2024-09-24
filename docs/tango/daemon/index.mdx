@@ -1,6 +1,8 @@
 # Daemon Transport
 
-**AdbDaemonTransport** connects to [ADB Daemons](../index.mdx#adb-daemon) directly. This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
+**AdbDaemonTransport** connects to ADB Daemons directly. This means it can run on devices without Google ADB (for example, on Web platforms where connecting to Google ADB Server is not supported, or on mobile devices where Google ADB is not available).
+
+This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
 
 ```mermaid
 flowchart LR
@@ -19,6 +21,8 @@ flowchart LR
         O["Daemon Transport C"] x-.-x|USB| AD
     end
 ```
+
+## Installation
 
 This class is included in the core package:
 
@@ -49,11 +53,50 @@ Here are the steps to create an `Adb` instance with `AdbDaemonTransport`:
 
 ## Connections
 
-Tango provides two built-in `AdbDaemonConnection` implementations, and you can also create other custom connections to fulfill your requirements.
+Daemon Transport has three connection methods:
+
+- **USB**: Uses USB API to communicate with devices connected via USB.
+- **ADB over Wi-Fi** a.k.a TCP/IP Mode: Uses TCP sockets to communicate with devices over the network.
+- **Wireless Debugging**: Added in Android 11. Uses TLS over TCP sockets and a new authentication process.
+
+:::info
+
+The Wireless Debugging connection is not implemented yet, as it needs a full TLS implementation.
+
+We expect it to be a separate package if it uses third-party libraries, but we haven't found a suitable library yet. Any help is appreciated!
+
+:::
+
+Due to runtime API limitations, not all connections are supported on all environments:
+
+| Connection         | Web                                               | Node.js   |
+| ------------------ | ------------------------------------------------- | --------- |
+| **USB**            | Supported on Chromium-based browsers <sup>1</sup> | Supported |
+| **ADB over Wi-Fi** | Not supported                                     | Supported |
+
+<sup>1</sup> Chrome for Android is supported, but Chrome for iOS is based on
+Safari and not supported.
+
+`AdbDaemonTransport` also accepts custom connection implementations. For example, with a Node.js WebSocket server that forwards packets to devices, a WebSocket connection can connect to that server and enable unsupported connections on Web platforms.
+
+```mermaid
+flowchart TD
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonTransport -. requires .-> AdbDaemonConnection
+    end
+    subgraph B ["@yume-chan/adb-daemon-webusb"]
+        AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
+    end
+    subgraph C ["your package"]
+        YourConnection -- implements --> AdbDaemonConnection
+    end
+```
 
 ### USB Connection
 
 USB connection is the oldest and most common way to connect to Android devices.
+
+Because USB connections are exclusive, Daemon Transport can't access a USB device at the same time with Google ADB or other ADB clients. To do that, use the [Server Transport](../server/index.mdx).
 
 [`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` implementation based on [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API):
 
