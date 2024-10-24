@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 6
 ---
 
 # Device selector
@@ -142,9 +142,7 @@ For example, `{ transportId: 1n, serial: '1234567890ABCDEF' }` will select the d
 
 ## Use `AdbServerClient.Device`
 
-Because `AdbServerClient.Device` has a `transportId` field, it can also be used as a `DeviceSelector`.
-
-It will select the device with the specified transport ID.
+Because `AdbServerClient.Device` has a `transportId` field, it can also be used as a `DeviceSelector`. As explained [above](#transportid), this is the best (more reliable) way to select a device.
 
 Example:
 

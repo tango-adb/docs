@@ -72,3 +72,11 @@
 div[role="tabpanel"] > div:nth-child(1) > div > .prism-code {
   border-radius: 0;
 }
+
+.theme-doc-sidebar-item-link-level-2, .theme-doc-sidebar-item-category-level-2 {
+  font-size: 0.95em;
+}
+
+.theme-doc-sidebar-item-link-level-3 {
+  font-size: 0.9em;
+}

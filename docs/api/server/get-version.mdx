@@ -1,0 +1,31 @@
+---
+sidebar_position: 1
+---
+
+# `getVersion`
+
+```ts
+declare class AdbServerClient {
+  getVersion(): Promise<number>;
+}
+```
+
+The protocol between ADB client and server has its own version number. This is not Android version (like `13.0`), nor ADB protocol version (like `0x10000001`), nor platform tools version (like `34.0.1`).
+
+This is the version you see in the error message when you use a wrong ADB client to connect to a server:
+
+```text
+adb server version (39) doesn't match this client (41); killing...
+```
+
+Tango doesn't check the version number, although not thoroughly tested, most of the commands should work on any version of ADB server.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb version
+```
+
+If it prints `Android Debug Bridge version 1.0.41`, the protocol version is `41`.
+
+:::

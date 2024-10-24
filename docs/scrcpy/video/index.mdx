@@ -16,11 +16,11 @@ Otherwise, the video stream contains additional metadata and frame information. 
 
 ## With `@yume-chan/scrcpy`
 
-If you have a `ReadableStream<Uint8Array>` that reads from the video socket, use `options` to parse the metadata and create a packet stream.
+If you have a `ReadableStream<Uint8Array>` that reads from the video socket, the corresponding `ScrcpyOptionsX_YY` class can be used to parse the metadata and create a packet stream.
 
 ### `parseVideoStreamMetadata`
 
-The first step is to parse the one-time metadata from the video stream. This method will return the metadata and a new stream that contains the remaining data.
+The first step is to parse the preceding metadata from the video stream. This method will return the metadata and a new stream that contains the remaining data.
 
 ```ts transpile
 import { ScrcpyOptions2_1, ScrcpyVideoStreamPacket } from "@yume-chan/scrcpy";

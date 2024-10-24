@@ -6,7 +6,7 @@ sidebar_position: 2
 
 :::note
 
-This page describes how to use an ADB socket. See [this page](../tango/custom-transport/socket.mdx) for how to implement it in a custom transport.
+This page describes how to use an ADB socket. See [this page](/tango/custom-transport/socket.mdx) for how to implement it in a custom transport.
 
 :::
 
@@ -89,7 +89,7 @@ If the remaining data is not needed, `stream.cancel()` (or `stream.getReader().c
 
 The `writable` property on the socket is a `WritableStream` that accepts both `Uint8Array` and `Consumable<Uint8Array>` chunks.
 
-See the [Consumable pattern](../tango/consumable.mdx) page for more information about `Consumable`.
+See the [Consumable pattern](/tango/consumable.mdx) page for more information about `Consumable`.
 
 To write to the stream, usually you will get a writer from it and call the `write` method.
 
@@ -167,13 +167,13 @@ In Tango, only the last step is needed. The `createSocket` method can be used to
 
 ### Daemon Transport
 
-`adb forward` series of commands are implemented by Google ADB Server. When using [Daemon Transport](../tango/daemon/index.mdx), there is no Google ADB Server, so no support for those commands.
+`adb forward` series of commands are implemented by Google ADB Server. When using [Daemon Transport](/tango/daemon/index.mdx), there is no Google ADB Server, so no support for those commands.
 
 If your target runtime environment supports listening on a TCP port, you can simulate the behavior of `adb forward` by listening on a TCP port, and call `connectSocket` for each incoming connection.
 
 ### Server Transport
 
-Support for `adb forward` series of commands in [Server Transport](../tango/server/index.mdx) has not been implemented yet.
+Support for `adb forward` series of commands in [Server Transport](/tango/server/index.mdx) has not been implemented yet.
 
 ### Device Address
 

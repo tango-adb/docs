@@ -120,9 +120,9 @@ const transport: AdbDaemonTransport = await AdbDaemonTransport.authenticate({
 
 If the private key is not yet trusted by the device, a dialog will be shown on device screen to let users confirm the connection.
 
-## Create ADB instance
+## Create an Adb instance
 
-While transports contains the lower-level logic to communicate with devices, the `Adb` class provides a higher-level abstraction over ADB protocol and ADB commands.
+The transport object only contains the lower-level logic to communicate with devices, the `Adb` class provides a higher-level abstraction over ADB protocol and ADB commands.
 
 This step only initialize some internal states, but does not actually send any packets to the device.
 
@@ -136,6 +136,6 @@ const adb: Adb = new Adb(transport);
 
 :::note[Next Step]
 
-See [API](../../api/index.mdx) page for all supported ADB commands.
+See [API](/api/index.mdx) section for all supported ADB commands.
 
 :::

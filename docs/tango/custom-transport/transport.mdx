@@ -39,7 +39,7 @@ Other fields:
 
 `addReverseTunnel`, `removeReverseTunnel`, `clearReverseTunnels` methods manage reverse tunnels.
 
-When [`AdbReverseCommand#add`](../../api/reverse/add.mdx) is called, Tango not only sends a command to ADB Daemon to create the socket listener on device, but also calls `addReverseTunnel` method with `add`'s arguments.
+When [`AdbReverseCommand#add`](/api/adb/reverse/add.mdx) is called, Tango not only sends a command to ADB Daemon to create the socket listener on device, but also calls `addReverseTunnel` method with `add`'s arguments.
 
 The transport should register the reverse tunnel, so when ADB Daemon creates a socket to the address, the corresponding `handler` method can be retrieved and invoked. How does the transport receives the incoming socket is also up to the implementation.
 

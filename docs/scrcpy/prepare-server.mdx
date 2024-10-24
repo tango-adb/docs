@@ -26,7 +26,7 @@ For full-stack JavaScript frameworks (Next.js, Nuxt, Solid Start, etc.), usually
 
 We recommend the second approach, because it's more flexible, less error-prone, and has better cache control.
 
-Assume you have downloaded the server binary to `src/server.bin`, and you want to embed it into your app:
+Assume you have saved the server binary to `src/server.bin`:
 
 <Tabs className="runtime-tabs" groupId="bundler">
     <TabItem label="Webpack 5" value="webpack-5">
@@ -57,6 +57,8 @@ const server: Buffer = await fs.readFile(url);
     </TabItem>
 
 </Tabs>
+
+Note that bundlers usually handle imports based on the file extension. `.bin` extension usually triggers asset handling by default, if you saved the server binary with another extension, you may need to check your bundler's documentation for how to configure it.
 
 ## Use `@yume-chan/fetch-scrcpy-server`
 
@@ -170,9 +172,12 @@ The easiest way is to use [Android Studio](https://developer.android.com/studio)
 
 2. Open the root folder in Android Studio
 3. (Optional) Change `Build Variant` to `release` from `Build` -> `Select Build Variant` menu item
-4. Select `Build` -> `Make Project` menu item
+5. Select `Build` -> `Make Project` menu item
 
-The server binary will be written to `server/build/outputs/apk/debug/server-debug.apk` (`debug` variant) or `server/build/outputs/apk/release/server-release-unsigned.apk` (`release` variant).
+You may be prompted to accept the license agreement for installing extra Android SDK components.
+
+
+After successful building, The server binary will be written to `server/build/outputs/apk/debug/server-debug.apk` (`debug` variant) or `server/build/outputs/apk/release/server-release-unsigned.apk` (`release` variant). You can copy it into your project, the exact file name doesn't matter, as long as you reference it by the correct name following [import the server binary](#import-the-server-binary).
 
 :::note
 
