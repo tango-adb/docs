@@ -35,19 +35,20 @@ const commandLineArguments: string[] = options.serialize();
 Use `AdbScrcpyClient.start()` method with an option class to start the server. It automatically sets up port forwarding, launches the server, and connects to it.
 
 ```ts transpile
-import {
-    AdbScrcpyClient,
-    AdbScrcpyOptions2_1
-} from "@yume-chan/adb-scrcpy";
-import {
-    DEFAULT_SERVER_PATH,
-    ScrcpyOptions2_1
-} from "@yume-chan/scrcpy";
+import type { Adb } from "@yume-chan/adb";
+import { AdbScrcpyClient, AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
+import type { ScrcpyControlMessageWriter } from "@yume-chan/scrcpy";
+import { DEFAULT_SERVER_PATH, ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const VERSION: string;
 
 const options = new AdbScrcpyOptions2_1(
-  ScrcpyOptions2_1({
+  new ScrcpyOptions2_1({
     // options
-  })
+  }),
 );
 
 const client: AdbScrcpyClient = await AdbScrcpyClient.start(
@@ -55,26 +56,44 @@ const client: AdbScrcpyClient = await AdbScrcpyClient.start(
   DEFAULT_SERVER_PATH,
   // If server binary was downloaded manually, must provide the correct version
   VERSION,
-  options
+  options,
 );
 
-const stdout: ReadableStream<string> = client.stdout;
+// Print output of Scrcpy server
+void client.stdout.pipeTo(
+  new WritableStream<string>({
+    write(chunk) {
+      console.log(chunk);
+    },
+  }),
+);
 
-// `undefined` if `video: false` option was given
-if (client.videoSteam) {
+// `undefined` if `video: false` option was specified
+if (client.videoStream) {
   const { metadata: videoMetadata, stream: videoPacketStream } =
     await client.videoStream;
+  console.log(videoMetadata.codec);
+  void videoPacketStream.pipeTo(
+    new WritableStream({
+      write(chunk) {
+        console.log(chunk.type);
+        // handle video stream (see next chapter)
+      },
+    }),
+  );
 }
 
-// `undefined` if `audio: false` option was given
+// `undefined` if `audio: false` option was specified
 if (client.audioStream) {
   const metadata = await client.audioStream;
   switch (metadata.type) {
     case "disabled":
-      // Audio not supported by device
+      // Audio forwarding not supported by device
+      // The video stream still works
       break;
     case "errored":
       // Other error when initializing audio
+      // The video stream still works
       break;
     case "success":
       // Audio packets in the codec specified in options
@@ -84,26 +103,36 @@ if (client.audioStream) {
   }
 }
 
-// `undefined` if `control: false` option was given
+// `undefined` if `control: false` option was specified
 const controller: ScrcpyControlMessageWriter | undefined = client.controller;
-const clipboardStream: ReadableStream<string> = options.clipboard;
 
-clipboardStream
-  .pipeTo(
+// `undefined` if `control: false` or `clipboardAutosync: false` option was specified
+options.clipboard
+  ?.pipeTo(
     new WritableStream<string>({
       write(chunk) {
         // Handle device clipboard change
         console.log(chunk);
       },
-    })
+    }),
   )
   .catch((error) => {
     console.error(error);
   });
 
 // to stop the server
-client.close();
+await client.close();
 ```
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
 
 ## With Tango
 
@@ -117,6 +146,8 @@ declare const adb: Adb;
 const process = await adb.subprocess.spawn(
   "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1"
 );
+
+// Print output of Scrcpy server
 await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
   new WritableStream<string>({
     write(chunk) {
@@ -125,3 +156,13 @@ await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
   })
 );
 ```
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
