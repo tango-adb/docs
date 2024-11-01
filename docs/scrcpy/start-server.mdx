@@ -37,7 +37,10 @@ Use `AdbScrcpyClient.start()` method with an option class to start the server. I
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
 import { AdbScrcpyClient, AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
-import type { ScrcpyControlMessageWriter } from "@yume-chan/scrcpy";
+import type {
+  ScrcpyControlMessageWriter,
+  ScrcpyMediaStreamPacket,
+} from "@yume-chan/scrcpy";
 import { DEFAULT_SERVER_PATH, ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
 import type { ReadableStream } from "@yume-chan/stream-extra";
 import { WritableStream } from "@yume-chan/stream-extra";
@@ -156,6 +159,8 @@ await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
   })
 );
 ```
+
+Then you need to connect to Scrcpy server yourself using [reverse tunnel](/api/adb/reverse/index.mdx) or [`adb.createSocket()`](/api/adb/socket.mdx#example).
 
 :::danger[READ ALL STREAMS!]
 
