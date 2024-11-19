@@ -140,41 +140,6 @@ Forward tunnel allows you to connect to a socket address on the device from Tang
 
 While the service name usually points to a service on the ADB daemon, it can also be a socket address on the device.
 
-### Google ADB
-
-In Google ADB, forward tunnels must be associated with a local socket address, and the client needs connect to that address to have the connection forwarded to the device.
-
-```mermaid
-sequenceDiagram
-  box gray PC
-    participant A as Program
-    participant B as ADB Server
-    participant D as TCP Listener
-  end
-
-  box gray Device
-    participant C as ADB Daemon
-  end
-
-  A->>B: forward tcp:2345 tcp:1234
-  B->>D: Create TCP listener on tcp:2345
-  A->>D: Connect to tcp:2345
-  D->>B: Lookup forward address
-  B->>C: Forward connection to tcp:1234
-```
-
-In Tango, only the last step is needed. The `createSocket` method can be used to directly connect to the device socket address.
-
-### Daemon Transport
-
-`adb forward` series of commands are implemented by Google ADB Server. When using [Daemon Transport](/tango/daemon/index.mdx), there is no Google ADB Server, so no support for those commands.
-
-If your target runtime environment supports listening on a TCP port, you can simulate the behavior of `adb forward` by listening on a TCP port, and call `connectSocket` for each incoming connection.
-
-### Server Transport
-
-Support for `adb forward` series of commands in [Server Transport](/tango/server/index.mdx) has not been implemented yet.
-
 ### Device Address
 
 The device address is in the format of `<type>:<address>`. ADB Daemon can forward the connection to various types of addresses:
@@ -213,3 +178,38 @@ nc 127.0.0.1 1234
 ```
 
 :::
+
+### There is no `adb forward` command
+
+In Google ADB, forward tunnels must be associated with a local socket address, and the client needs connect to that address to have the connection forwarded to the device.
+
+```mermaid
+sequenceDiagram
+  box gray PC
+    participant A as Program
+    participant B as ADB Server
+    participant D as TCP Listener
+  end
+
+  box gray Device
+    participant C as ADB Daemon
+  end
+
+  A->>B: forward tcp:2345 tcp:1234
+  B->>D: Create TCP listener on tcp:2345
+  A->>D: Connect to tcp:2345
+  D->>B: Lookup forward address
+  B->>C: Forward connection to tcp:1234
+```
+
+In Tango, only the last step is needed. `createSocket` method uses low-level ADB protocol to create forward tunnel directly.
+
+#### Daemon Transport
+
+`adb forward` series of commands are implemented by Google ADB Server. When using [Daemon Transport](/tango/daemon/index.mdx), there is no Google ADB Server, so no support for those commands.
+
+If your target runtime environment supports listening on a TCP port, you can simulate the behavior of `adb forward` by listening on a TCP port, and call `connectSocket` for each incoming connection.
+
+#### Server Transport
+
+It's possible to add `adb forward` series of commands to [`AdbServerClient`](../index.mdx#adbserverclient-from-yume-chanadb) class, it just has not been done. Contributions are welcomed!
