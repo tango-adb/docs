@@ -164,7 +164,7 @@ export class WebSocketStream {
       opened = true;
 
       this.#opened.resolve({
-        extensions: "",
+        extensions: this.#socket.extensions,
         protocol: this.#socket.protocol,
         readable: new ReadableStream({
           start: (controller) => {

@@ -76,7 +76,7 @@ import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
 const decoder = new TinyH264Decoder();
 document.body.appendChild(decoder.renderer);
 
-videoPacketStream // from above
+videoPacketStream // from previous step
   .pipeTo(decoder.writable)
   .catch(() => {});
 ```
