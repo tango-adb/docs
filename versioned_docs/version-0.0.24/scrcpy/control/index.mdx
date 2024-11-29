@@ -1,0 +1,68 @@
+# Control device
+
+Scrcpy supports various input events, including mouse, touch, keyboard, and physical buttons. The client sends input events to the server, which injects them into the device.
+
+There are three ways to create or send control messages, they provide the same set of methods:
+
+- [Keyboard event](./keyboard.mdx): Simulate key presses.
+- [Text input](./text.mdx): Inject text by simulating key presses.
+- [Touch event](./touch.mdx): Simulate mouse or finger touches.
+- [Mouse scroll event](./scroll.mdx): Simulate mouse wheel scrolling.
+- [Back or screen on](./back-or-screen-on.mdx): Simulate back button or turn on the screen.
+- [Screen power mode](./screen-power.mdx): Turn off the screen without locking the device.
+- Expand notification panel: Expand the notification panel.
+- Expand settings panel: Expand the quick settings panel.
+- Collapse panels: Collapse the notification and quick settings panels.
+- [Rotate device](./rotate.mdx): Change the device orientation.
+- Set clipboard: Set the device clipboard (only supports plain text).
+
+## Using `@yume-chan/scrcpy`
+
+### Using `ScrcpyControlMessageSerializer`
+
+The `ScrcpyControlMessageSerializer` class provides methods to serialize events into Scrcpy messages. It's up to the caller to send the serialized message to the server.
+
+The message format differs between Scrcpy versions, so a `ScrcpyOptionsX_YY` instance is required when creating the serializer.
+
+```ts transpile
+import { ScrcpyControlMessageSerializer } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_21({});
+const serializer = new ScrcpyControlMessageSerializer(options);
+const message: Uint8Array = serializer.rotateDevice();
+```
+
+### Using `ScrcpyControlMessageWriter`
+
+`ScrcpyControlMessageWriter` class connects a `WritableStream<Uint8Array>` to a `ScrcpyControlMessageSerializer`. It writes serialized messages to the stream.
+
+```ts transpile
+import { ScrcpyControlMessageWriter } from "@yume-chan/scrcpy";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+const stream = new WritableStream<Uint8Array>();
+const options = new ScrcpyOptions1_21({});
+const writer = new ScrcpyControlMessageWriter(stream.getWriter(), options);
+
+await writer.rotateDevice();
+```
+
+It has the same set of methods as `ScrcpyControlMessageSerializer`, plus a `write` method to write arbitrary data to the stream.
+
+```ts transpile
+await writer.write(new Uint8Array([0x01, 0x02, 0x03]));
+```
+
+Make sure to write the whole message at once, otherwise it might be interleaved with other messages.
+
+## Using `@yume-chan/adb-scrcpy`
+
+When control is not disabled (`control: false` not exist in options), `AdbScrcpyClient.controller` is a `ScrcpyControlMessageWriter` that connects to the server's control socket.
+
+```ts transpile
+if (client.controller) {
+  await client.controller.rotateDevice();
+}
+```
+
+`AdbScrcpyClient` also hooks up the device message socket to the options object, so `setClipboard` method can be used directly.

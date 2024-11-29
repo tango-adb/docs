@@ -1,0 +1,278 @@
+---
+sidebar_position: 2
+---
+
+# Versions and features
+
+This page only lists features implemented in each version of the server (e.g., capture video and audio) and whether they are supported by Tango. Some versions are skipped since they don't contain server-side changes.
+
+Some features in Scrcpy are solely implemented by the client (e.g. simulate multi-touch using keyboard modifiers), so they are not listed here.
+
+Generally, the latest version should be used, as they contain bug fixes and new features. However, if you're using Scrcpy on old devices, an older version might be more stable.
+
+## Legends
+
+- (5/10): 5 out of 10 features in this version are supported
+- ✅: Supported
+- ⛔: Not supported
+- (**Breaking**): A breaking change. Some new options are not marked as breaking changes even if they contain protocol changes, as the old client can still work with the new server when the new options are not used.
+
+## v2.4 (0/2)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v2.4)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v2.5           | `ScrcpyOptions2_3`          | `AdbScrcpyOptions2_1`           |
+| v2.4           | `ScrcpyOptions2_3`          | `AdbScrcpyOptions2_1`           |
+
+### New options
+
+- ⛔ UHID Keyboard (`--keyboard=uhid`/`-K`)
+- ⛔ UHID Mouse (`--mouse=uhid`/`-M`)
+
+:::note
+
+Although we contributed the UHID feature to Scrcpy, the final implementation is different from our internal code.
+
+Implement these features in Tango is not a priority, as we are using the internal implementation.
+
+:::
+
+## v2.3 (1/1)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v2.3)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v2.3.1         | `ScrcpyOptions2_3`          | `AdbScrcpyOptions2_1`           |
+| v2.3           | `ScrcpyOptions2_3`          | `AdbScrcpyOptions2_1`           |
+
+### New options
+
+- ✅ FLAC audio codec (`--audio-codec=flac`)
+
+## v2.2 (8/10)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v2.2)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v2.2           | `ScrcpyOptions2_2`          | `AdbScrcpyOptions2_1`           |
+
+### New options
+
+- ✅ Renamed `--display` to `--display-id`
+- Mirror cameras
+  - ✅ `--video-source=camera`
+  - ✅ `--camera-id`
+  - ✅ `--camera-facing`
+  - ✅ `--camera-ar`
+  - ✅ `--camera-size`
+  - ✅ `--camera-fps`
+  - ✅ `--camera-high-speed`
+- List cameras
+  - ⛔ `--list-cameras` (output parsing not implemented)
+  - ⛔ `--list-camera-sizes` (output parsing not implemented)
+
+:::note
+
+Although we contributed the camera feature to Scrcpy, the final implementation is different from our internal code.
+
+Implement these features in Tango is not a priority, as we are using the internal implementation.
+
+:::
+
+## v2.1 (2/2)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v2.1)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v2.1.1         | `ScrcpyOptions2_1`          | `AdbScrcpyOptions2_1`           |
+| v2.1           | `ScrcpyOptions2_1`          | `AdbScrcpyOptions2_1`           |
+
+### New options
+
+- ✅ Option to disable screen capture (only mirror audio) (`--no-video`)
+- ✅ Capture microphone (`--audio-source=mic`)
+
+## v2.0 (15/15)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v2.0)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v2.0           | `ScrcpyOptions2_0`          | `AdbScrcpyOptions2_0`           |
+
+### New options
+
+- ✅ Unique ID for each instance (`--scid`)
+- New video codecs
+  - ✅ `--video-codec=h265`
+  - ✅ `--video-codec=av1`
+- Rename video codec options
+  - ✅ `--bitrate` -> `--video-bitrate`
+  - ✅ `--codec-options` -> `--video-codec-options`
+  - ✅ `--encoder` -> `--video-encoder`
+- Capture internal audio
+  - ✅ `--no-audio`
+  - ✅ `--audio-codec=opus`
+  - ✅ `--audio-codec=aac`
+  - ✅ `--audio-codec=raw`
+  - ✅ `--audio-bitrate`
+  - ✅ `--audio-codec-options`
+  - ✅ `--audio-encoder`
+- ✅ List encoders (`--list-encoders`)
+- ✅ Official option to list displays (`--list-displays`)
+
+### Protocol changes
+
+- ✅ (**Breaking**) Fix `--forward-all-clicks` for Chrome
+
+## v1.25 (1/1)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.25)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.25          | `ScrcpyOptions1_25`         | `AdbScrcpyOptions1_22`          |
+
+### Protocol changes
+
+- ✅ (**Breaking**) High-precision scrolling
+
+## v1.24 (1/1)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.24)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.24          | `ScrcpyOptions1_24`         | `AdbScrcpyOptions1_22`          |
+
+### New options
+
+- ✅ Option to not wake up device on connection (`--no-power-on`)
+
+## v1.23 (2/2)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.23)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.23          | `ScrcpyOptions1_23`         | `AdbScrcpyOptions1_22`          |
+
+### New options
+
+- ✅ Option to not clean up on exit (`--no-cleanup`)
+
+### Protocol changes
+
+- ✅ (**Breaking**) Metadata for video key frames
+
+## v1.22 (5/5)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.22)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.22          | `ScrcpyOptions1_22`         | `AdbScrcpyOptions1_22`          |
+
+### New options
+
+- ✅ Option to not try lower resolution on encoder error (`--no-downsize-on-error`)
+- ✅ Option to not send device metadata
+- ✅ Option to not send dummy byte
+
+### Protocol changes
+
+- ✅ (**Breaking**) Skip control socket when control is disabled
+- ✅ (**Breaking**) Pass buttons to scroll events
+
+## v1.21 (3/3)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.21)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.21          | `ScrcpyOptions1_21`         | `AdbScrcpyOptions1_16`          |
+
+### New options
+
+- ✅ Option to disable clipboard synchronization (`--no-clipboard-autosync`)
+
+### Protocol changes
+
+- ✅ (**Breaking**) New server argument format
+- ✅ (**Breaking**) Response for set clipboard request
+
+## v1.18 (5/5)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.18)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.20          | `ScrcpyOptions1_18`         | `AdbScrcpyOptions1_16`          |
+| v1.19          | `ScrcpyOptions1_18`         | `AdbScrcpyOptions1_16`          |
+| v1.18          | `ScrcpyOptions1_18`         | `AdbScrcpyOptions1_16`          |
+
+### New options
+
+- ✅ Lock video orientation to initial value (`--lock-video-orientation=initial`)
+- ✅ Option to lock device on exit (`--power-off-on-close`)
+
+### Protocol changes
+
+- ✅ (**Breaking**) Command to expand settings panel
+- ✅ (**Breaking**) List video encoder output format change
+- ✅ (**Breaking**) Support long-press back button
+
+## v1.17 (1/1)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.17)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.17          | `ScrcpyOptions1_17`         | `AdbScrcpyOptions1_16`          |
+
+### New options
+
+- ✅ Option for video encoder (`--encoder`)
+
+## v1.15 and lower (20/20)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v1.15)
+
+| Scrcpy version | `@yume-chan/scrcpy` version | `@yume-chan/adb-scrcpy` version |
+| -------------- | --------------------------- | ------------------------------- |
+| v1.16          | `ScrcpyOptions1_16`         | `AdbScrcpyOptions1_16`          |
+| v1.15.1        | `ScrcpyOptions1_16`         | `AdbScrcpyOptions1_16`          |
+| v1.15          | `ScrcpyOptions1_16`         | `AdbScrcpyOptions1_16`          |
+| Older versions | Not supported               | Not supported                   |
+
+### New options
+
+- ✅ Option to keep screen off (`--turn-screen-off`)
+- ✅ Stay awake while plugged in (`--stay-awake`)
+- ✅ Max video resolution (`--max-size`)
+- ✅ Max video bitrate (`--bitrate`)
+- ✅ Max video frame rate (`--max-fps`)
+- ✅ Lock video orientation (`--lock-video-orientation`)
+- ✅ Crop video (`--crop`)
+- ✅ Video codec options (`--codec-options`)
+- ✅ Option to not send frame metadata
+- ✅ Choose display to mirror (`--display`)
+  - ✅ List displays (`--display=-1`)
+- ✅ Enable show touches (`--show-touches`)
+
+### Protocol changes
+
+- ✅ Parse video stream
+- ✅ Use forward tunnel (`--tunnel-forward`)
+- Control
+  - ✅ Option to disable control (mirror-only) (`--no-control`)
+  - ✅ Inject touch events
+  - ✅ Inject key events
+  - ✅ Inject back/power button
+  - ✅ Inject mouse wheel events
+  - ✅ Set device clipboard

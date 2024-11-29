@@ -1,0 +1,70 @@
+---
+sidebar_position: 1
+---
+
+# Quick Start
+
+:::info[Welcome]
+
+Welcome to Tango ADB's developer documentation! :tada:
+
+Tango includes a TypeScript re-implementation of Scrcpy client for Web browsers and Node.js.
+
+If you are looking for the Scrcpy application where you can mirror and control your Android devices, [here](https://github.com/Genymobile/scrcpy) is the official repository.
+
+:::
+
+[Scrcpy](https://github.com/Genymobile/scrcpy) is an open-source tool to mirror Android screen to desktop, and control it from desktop. It has two parts:
+
+* A client written in C: Uses SDL for cross-platform display and input, and FFmpeg for video decoding. It spawns Google ADB client to set up a reverse tunnel, start server on device, and connect to it.
+* A server written in Java: Runs on Android devices (but it's not an Android app), uses Android system APIs to capture screen/audio, send them to client, and inject input events. The server is started by client using ADB, thus having much more privileges than regular apps.
+
+```mermaid
+flowchart LR
+    subgraph PC
+    Client <-->|TCP| AS["ADB Server"]
+    end
+    subgraph Device
+    AS <-->|USB| AD["ADB Daemon"]
+    AS <-->|TCP| AD
+    AD <-->|Unix socket| Server
+    end
+```
+
+Tango's Scrcpy client implementation is fully compatible with the original Scrcpy server, so latest features and bug fixes are available immediately. It doesn't provide any UI components, so you need to create your own UI.
+
+## Standalone Usage
+
+The core package `@yume-chan/scrcpy` provides low-level APIs to serialize and deserialize Scrcpy protocol messages. It can't push the server file to device, start the server, or directly communicate with a server.
+
+It doesn't use any Web or Node.js APIs, so it can be used in any JavaScript environment.
+
+```sh npm2yarn
+npm install @yume-chan/scrcpy
+```
+
+It can be used standalone if you can communicate with Scrcpy server using other means.
+
+:::note[Next Step]
+
+[Prepare Server](./prepare-server.mdx)
+
+:::
+
+## Use with Tango
+
+The `@yume-chan/adb-scrcpy` package combines `@yume-chan/scrcpy` with `@yume-chan/adb` to provides high-level APIs to push the server file, start the server, setup and establish the connection, and communicate with the server.
+
+However, it doesn't provide any UI components. You need to create your own UI to display the screen and handle input events.
+
+It also doesn't use any Web or Node.js APIs.
+
+```sh npm2yarn
+npm install @yume-chan/scrcpy @yume-chan/adb-scrcpy
+```
+
+:::note[Next Step]
+
+[Prepare Server](./prepare-server.mdx)
+
+:::

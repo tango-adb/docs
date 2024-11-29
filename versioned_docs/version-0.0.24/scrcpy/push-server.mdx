@@ -1,0 +1,127 @@
+---
+sidebar_position: 4
+---
+
+# Push Server
+
+The server file needs to be copied to the device and executed on it. It will listen on a UNIX domain socket and wait for connections from the client.
+
+The default path of the server file on device is `/data/local/tmp/scrcpy-server.jar`. Before version 2.3, the path of Scrcpy server binary is hard-coded in the server itself. So you must push it to this exact path, otherwise the clean up steps won't delete the server file.
+
+:::info[Equivalent ADB command]
+
+```bash
+adb push scrcpy-server.jar /data/local/tmp/scrcpy-server.jar
+```
+
+:::
+
+## With `@yume-chan/scrcpy`
+
+`@yume-chan/scrcpy` only provides APIs to serialize and deserialize Scrcpy protocol messages. It doesn't provide any APIs to interact with the device.
+
+## With `@yume-chan/adb-scrcpy`
+
+`@yume-chan/adb-scrcpy` package provides a `pushServer` function as a shortcut for the Tango [`AdbSync#write`](/api/adb/sync/write.mdx) call.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const server: ArrayBuffer;
+
+await AdbScrcpyClient.pushServer(
+  adb,
+  new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(server));
+      controller.close();
+    },
+  })
+);
+```
+
+By default, it pushes to `/data/local/tmp/scrcpy-server.jar`. The optional third argument allows specifying a different path.
+
+```ts transpile
+await AdbScrcpyClient.pushServer(
+  adb,
+  new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(server));
+      controller.close();
+    },
+  }),
+  "/data/local/tmp/scrcpy-server.jar"
+);
+```
+
+If the server binary is downloaded using `fetch`, it's also possible to use the response stream directly. In theory, this is more efficient because the downloading and pushing is run in parallel. However, in practice, because how small the server binary is, it doesn't make much difference. If the cache is not properly configured, this will download the server binary every time, so it might be even slower.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const url: URL;
+
+const response = await fetch(url);
+
+await AdbScrcpyClient.pushServer(
+  adb,
+  // The `ReadableStream` type in TypeScript `lib.dom.d.ts` is not compatible with Tango's Web Streams API typings
+  response.body as never as ReadableStream<Uint8Array>
+);
+```
+
+## With Tango
+
+The above code is a shortcut for the following code:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const server: ArrayBuffer;
+
+const sync = await adb.sync();
+try {
+  await sync.write({
+    filename: "/data/local/tmp/scrcpy-server.jar",
+    file: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(server));
+        controller.close();
+      },
+    }),
+  });
+} finally {
+  await sync.dispose();
+}
+```
+
+Or using `fetch`:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const url: URL;
+
+const response = await fetch(url);
+
+const sync = await adb.sync();
+try {
+  await sync.write({
+    filename: "/data/local/tmp/scrcpy-server.jar",
+    // The `ReadableStream` type in TypeScript `lib.dom.d.ts` is not compatible with Tango's Web Streams API typings
+    file: response.body as never as ReadableStream<Uint8Array>,
+  });
+} finally {
+  await sync.dispose();
+}
+```

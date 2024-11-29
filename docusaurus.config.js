@@ -236,6 +236,12 @@ export default {
           label: "Internal",
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownItemsAfter: [{ to: '/versions', label: 'All versions' }],
+          dropdownActiveClassDisabled: true,
+        },
+        {
           href: "https://github.com/yume-chan/ya-webadb",
           label: 'Source code',
           position: "right",

@@ -1,0 +1,60 @@
+---
+sidebar_position: 5
+---
+
+# Watch devices
+
+Google ADB Server can also notify clients when devices are connected or disconnected. So you don't need to poll the server to get the latest device list.
+
+```ts
+declare class AdbServerClient {
+  trackDevices(
+    signal?: AbortSignal
+  ): AsyncGenerator<AdbServerClient.Device[], void, void>;
+}
+```
+
+The returned generator will yield the updated device list when it's changed. By using an async generator instead of a callback, it can throw errors when something goes wrong.
+
+```ts
+for await (const devices of client.trackDevices()) {
+  console.log(devices);
+}
+```
+
+## `signal`
+
+An `AbortSignal` object can be passed to stop watching devices.
+
+```ts
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 10000);
+
+for await (const devices of client.trackDevices(controller.signal)) {
+  console.log(devices);
+}
+```
+
+Note that unlike many other `AbortSignal` consumers, `trackDevices` will return normally when the signal is aborted, instead of throwing `signal.reason`.
+
+## Find changed devices
+
+Although the generator yields the current device list, it doesn't directly tell you which device is connected or disconnected. You need to diff the device list yourself.
+
+```ts
+let lastDevices: AdbServerClient.Device[] = [];
+for await (const devices of client.trackDevices()) {
+  const connected = devices.filter(
+    (device) =>
+      !lastDevices.some((last) => last.transportId === device.transportId)
+  );
+  const disconnected = lastDevices.filter(
+    (last) => !devices.some((device) => device.transportId === last.transportId)
+  );
+
+  console.log("Connected:", connected);
+  console.log("Disconnected:", disconnected);
+
+  lastDevices = devices;
+}
+```

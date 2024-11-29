@@ -1,0 +1,104 @@
+---
+sidebar_position: 4
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Get all connected devices
+
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
+
+After the user has granted permission to access the device, the next time the user visits the page, the Web app can access the device directly without asking for permission again.
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Previously, we have disabled the permission system in `usb` package's WebUSB implementation, so it will return all devices that are currently connected.
+
+</TabItem>
+</Tabs>
+
+WebUSB `USB#getDevices` method can be used to get all connected devices (that the user has granted permission to access). However, it might return non-ADB devices as well.
+
+To only get ADB devices, `AdbDaemonWebUsbDeviceManager#getDevices` method also accepts a `filters` option, to only return devices that match the specified criteria.
+
+```ts
+declare class AdbDaemonWebUsbDeviceManager {
+  getDevices(filters?: AdbDeviceFilter[]): Promise<AdbDaemonWebUsbDevice[]>;
+}
+```
+
+:::note
+
+See [Device filter](./device-filter.mdx) for more information about how does the filter work and how to define a filter.
+
+:::
+
+The `filters` option defaults to `[ADB_DEFAULT_DEVICE_FILTER]`, which matches the ADB interface. Unless your ADB devices uses a different identifier, or you want to select a specific device, you can just call `AdbDaemonWebUsbDeviceManager#getDevices` without any arguments:
+
+:::info
+
+Some lazy manufacturers use the same `serialNumber` for all devices. So even if `serialNumber` is specified, it's still possible that multiple devices will be returned.
+
+:::
+
+```ts transpile
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+// highlight-start
+const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices();
+// highlight-end
+if (!devices.length) {
+  alert("No device connected");
+  return;
+}
+
+const device: AdbDaemonWebUsbDevice = devices[0];
+```
+
+### Examples
+
+To select a specific manufacturer and model:
+
+```ts transpile
+import {
+  AdbDaemonWebUsbDevice,
+  ADB_DEFAULT_DEVICE_FILTER,
+} from "@yume-chan/adb-daemon-webusb";
+
+// highlight-start
+const devices: AdbDaemonWebUsbDevice[] = await Manager.getDevices([
+  {
+    ...ADB_DEFAULT_DEVICE_FILTER,
+    vendorId: 0x18d1,
+    productId: 0x4ee2,
+  },
+]);
+// highlight-end
+```
+
+To allow multiple manufacturers/models:
+
+```ts transpile
+import {
+  AdbDaemonWebUsbDevice,
+  ADB_DEFAULT_DEVICE_FILTER,
+} from "@yume-chan/adb-daemon-webusb";
+
+// highlight-start
+const device: AdbDaemonWebUsbDevice | undefined = await Manager.getDevices([
+  {
+    ...ADB_DEFAULT_DEVICE_FILTER,
+    vendorId: 0x18d1,
+    productId: 0x4ee2,
+  },
+  {
+    ...ADB_DEFAULT_DEVICE_FILTER,
+    vendorId: 0x04e8,
+    productId: 0x6860,
+  },
+]);
+// highlight-end
+```

@@ -1,0 +1,159 @@
+# Daemon Transport
+
+**AdbDaemonTransport** connects to ADB Daemons directly. This means it can run on devices without Google ADB (for example, on Web platforms where connecting to Google ADB Server is not supported, or on mobile devices where Google ADB is not available).
+
+This is the lowest-level transport, it controls all the steps, including authentication, message encoding and decoding, and connection management.
+
+```mermaid
+flowchart LR
+    subgraph PC
+        CA["Client A"] <--> TA["Daemon Transport A"]
+        CB["Client B"] <--> TB["Daemon Transport B"]
+    end
+    subgraph A["Device B"]
+        TB <-->|USB| AD["ADB Daemon"]
+    end
+    subgraph B["Device A"]
+        TA <-->|TCP| BD["ADB Daemon"]
+    end
+    subgraph PC
+        S["Google ADB Server"] x-.-x|USB| AD
+        O["Daemon Transport C"] x-.-x|USB| AD
+    end
+```
+
+## Installation
+
+This class is included in the core package:
+
+```sh npm2yarn
+npm i @yume-chan/adb
+```
+
+To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize Daemon Protocol packets. An `AdbDaemonConnection` implementation is required to send and receive those packets, and an `AdbCredentialStore` implementation is required to manage client certificates.
+
+```mermaid
+flowchart TD
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonTransport -. requires .-> AdbDaemonConnection
+        AdbDaemonTransport -. requires .-> AdbCredentialStore
+    end
+```
+
+## Overview
+
+Here are the steps to create an `Adb` instance with `AdbDaemonTransport`:
+
+1. User creates an `AdbDaemonConnection` for the desired connection method.
+2. User creates an `AdbCredentialStore` that works on the target runtime environment.
+3. User creates an `AdbDaemonTransport` instance with the connection and credential store.
+    1. The transport instance uses the connection to send and receive handshake packets.
+    2. The transport instance uses the credential store to authenticate with the device.
+4. If authentication is successful, user creates an `Adb` instance with the transport object.
+
+## Connections
+
+Daemon Transport has three connection methods:
+
+- **USB**: Uses USB API to communicate with devices connected via USB.
+- **ADB over Wi-Fi** a.k.a TCP/IP Mode: Uses TCP sockets to communicate with devices over the network.
+- **Wireless Debugging**: Added in Android 11. Uses TLS over TCP sockets and a new authentication process.
+
+:::info
+
+The Wireless Debugging connection is not implemented yet, as it needs a full TLS implementation.
+
+We expect it to be a separate package if it uses third-party libraries, but we haven't found a suitable library yet. Any help is appreciated!
+
+:::
+
+Due to runtime API limitations, not all connections are supported on all environments:
+
+| Connection         | Web                                               | Node.js   |
+| ------------------ | ------------------------------------------------- | --------- |
+| **USB**            | Supported on Chromium-based browsers <sup>1</sup> | Supported |
+| **ADB over Wi-Fi** | Not supported                                     | Supported |
+
+<sup>1</sup> Chrome for Android is supported, but Chrome for iOS is based on
+Safari and not supported.
+
+`AdbDaemonTransport` also accepts custom connection implementations. For example, with a Node.js WebSocket server that forwards packets to devices, a WebSocket connection can connect to that server and enable unsupported connections on Web platforms.
+
+```mermaid
+flowchart TD
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonTransport -. requires .-> AdbDaemonConnection
+    end
+    subgraph B ["@yume-chan/adb-daemon-webusb"]
+        AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
+    end
+    subgraph C ["your package"]
+        YourConnection -- implements --> AdbDaemonConnection
+    end
+```
+
+### USB Connection
+
+USB connection is the oldest and most common way to connect to Android devices.
+
+Because USB connections are exclusive, Daemon Transport can't access a USB device at the same time with Google ADB or other ADB clients. To do that, use the [Server Transport](../server/index.mdx).
+
+[`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` implementation based on [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API):
+
+* Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
+* Node.js can use the WebUSB implementation in the [`usb`](https://www.npmjs.com/package/usb) package.
+
+```mermaid
+flowchart TD
+    subgraph C ["Runtime"]
+        WebUSB["WebUSB API"] ~~~ WebUSB
+    end
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonConnection ~~~ AdbDaemonConnection
+    end
+    subgraph B ["@yume-chan/adb-daemon-webusb"]
+        AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
+        AdbDaemonWebUsbConnection -. requires .-> WebUSB
+    end
+```
+
+:::note[Next Step]
+
+[Create USB connection](./usb/index.mdx)
+
+:::
+
+### TCP Connection
+
+ADB over Wi-Fi (a.k.a TCP/IP mode) uses TCP sockets to communicate with devices over the network. Google Android Emulators are also supported. The data protocol is completely same as USB connection, just on a different transport layer.
+
+Currently, there is no built-in TCP connection for Web platforms, as TCP sockets are not supported there. This documentation provides a reference implementation for Node.js.
+
+:::note[Next Step]
+
+[Create TCP connection](./tcp/enable.mdx)
+
+:::
+
+### Custom Connection
+
+In addition to the built-in connection methods, Tango also accepts custom connection implementations. For example, with a Node.js WebSocket server that forwards packets to devices, a WebSocket connection can connect to that server and enable unsupported connections on Web platforms.
+
+```mermaid
+flowchart LR
+    subgraph A ["@yume-chan/adb"]
+        AdbDaemonTransport ~~~ AdbDaemonTransport
+    end
+    subgraph C ["your package"]
+        AdbDaemonTransport <--> YourConnection
+    end
+    subgraph D ["Device"]
+        YourConnection <-->|Custom Protocol| Daemon["ADB Daemon"]
+    end
+```
+
+:::note[Next Step]
+
+[Create custom connection](./custom-connection.mdx)
+
+:::

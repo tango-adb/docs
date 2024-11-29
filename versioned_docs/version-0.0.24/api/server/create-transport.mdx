@@ -1,0 +1,28 @@
+---
+sidebar_position: 9
+---
+
+# `createTransport`
+
+```ts
+declare class AdbServerTransport implements AdbTransport {}
+
+declare class AdbServerClient {
+  createTransport(
+    device: AdbServerClient.DeviceSelector
+  ): Promise<AdbServerTransport>;
+}
+```
+
+Creates an `AdbTransport` object for the device. It's not one server command, it uses multiple server commands internally to implement the transport.
+
+The returned transport object can be used to construct an `Adb` instance:
+
+```ts transpile
+import { Adb } from "@yume-chan/adb";
+
+const transport: AdbServerTransport = await client.createTransport({
+  transportId: 123n,
+});
+const adb: Adb = new Adb(transport);
+```

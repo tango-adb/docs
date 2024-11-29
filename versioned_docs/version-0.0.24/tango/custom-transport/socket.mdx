@@ -1,0 +1,120 @@
+---
+sidebar_position: 1
+---
+
+# Socket
+
+:::note
+
+This page describes how to implement an ADB Socket. See [this page](/api/adb/socket.mdx) for how to use it.
+
+:::
+
+Each ADB socket is basically a pair of `ReadableStream<Uint8Array>` and `WritableStream<MaybeConsumable<Uint8Array>>`.
+
+```ts
+import type { MaybeConsumable } from "@yume-chan/stream-extra";
+
+interface AdbSocket {
+  get service(): string;
+  get closed(): Promise<void>;
+
+  readable: ReadableStream<Uint8Array>;
+  writable: WritableStream<MaybeConsumable<Uint8Array>>;
+
+  close(): void | Promise<void>;
+}
+```
+
+:::note
+
+See [Web Streams Basics](../web-stream/index.mdx) page for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+
+:::
+
+## `service`
+
+`service` is specified when creating the socket. It identifies the service that the socket is connected to, similar to the hostname and port number in a TCP socket, or the URL in an HTTP request. The other end decides how to handle the socket based on the service name.
+
+When user creates a socket using `Adb#createSocket`, the service name is specified by the user, and sent to the device for processing.
+
+In reverse tunnel situations, the device can also create sockets. The service name is the local address of the reverse tunnel. The transport needs to find the corresponding handler for the reverse tunnel and dispatch the socket to it.
+
+## `readable`
+
+`readable` contains the data sent from the other side. It's a `ReadableStream<Uint8Array>`, which means it's a stream of `Uint8Array`s. ADB socket is a stream protocol, so chunks can be arbitrarily split or combined.
+
+The consumer can call `readable.cancel()` to signal the lost of interest in the data. The implementation must throw away all future data. Calling `controller.enqueue()` after `readable.cancel()` is called will throw an error.
+
+Calling `readable.cancel()` doesn't close the socket, and `writable` can still be used to send data to the device.
+
+## `writable`
+
+`writable` is used to send data to the other side. The `Consumable` pattern allows the data producer to know when the data is consumed, and the buffer can be reused. The implementation must only mark the `Consumable` as consumed when the data is actually sent to the other side, or has been copied to another buffer for sending.
+
+:::note
+
+See [Consumable pattern](../consumable.mdx) page for what `Consumable` is and why it's used.
+
+The implementation can use [`MaybeConsumable#tryConsume`](../consumable.mdx#tryconsume-1) method to simplify handling the value.
+
+:::
+
+Similar to `readable.cancel()`, `writable.close()` does not close the socket. The implementation can ignore this call. The `WritableStream` itself will prevent further writes.
+
+## Close socket
+
+The socket can be closed by either the user by calling `close()`, or by the device. No matter which side initiates the close, the socket is only truly closed when the other side acknowledges the close. The implementation should resolve the `closed` promise when the socket is truly closed.
+
+`close()` method itself doesn't need to wait for the socket to be closed. It can return immediately after sending the close signal to the other side.
+
+## Example
+
+This is a mock socket that sends a fixed response when connected:
+
+```ts transpile
+import { AdbSocket } from "@yume-chan/adb";
+import {
+  Consumable,
+  ReadableStream,
+  WritableStream,
+} from "@yume-chan/stream-extra";
+import { PromiseResolver } from "@yume-chan/async";
+import type { ValueOrPromise } from "@yume-chan/struct";
+
+class MockSocket implements AdbSocket {
+  service: string;
+  readable: ReadableStream<Uint8Array>;
+  writable: WritableStream<Consumable<Uint8Array>>;
+
+  #closed = new PromiseResolver<void>();
+  get closed() {
+    return this.#closed.promise;
+  }
+
+  constructor(service: string, response: Uint8Array) {
+    this.service = service;
+
+    this.readable = new ReadableStream({
+      start(controller) {
+        controller.enqueue(response);
+        controller.close();
+      },
+    });
+
+    this.writable = new WritableStream({
+      write(chunk) {
+        if (this.#closed.state === 'resolved') {
+          throw new Error("Socket closed");
+        } else {
+          console.log(chunk);
+        }
+      },
+    });
+  }
+
+  close(): ValueOrPromise<void> {
+    this.#closed.resolve();
+  }
+}
+```
