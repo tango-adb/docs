@@ -222,7 +222,7 @@ new ReadableStream({
 
 ## `MaybeConsumable<T>`
 
-Most streams are actually accepting `MaybeConsumable<T>`, which means they can accept both `T` and `Consumable<T>`:
+The `MaybeConsumable<T>` type is a shorthand for `T | Consumable<T>`. For convenience, most `WritableStream`s in Tango accepts both `T` and `Consumable<T>`:
 
 ```ts showLineNumbers
 import {
@@ -240,7 +240,7 @@ await writer.write(new Uint8Array([1, 2, 3])); // also works
 // highlight-end
 ```
 
-This allows a blob stream to be directly piped into a `WritableStream`:
+This also allows a blob stream to be directly piped into them:
 
 ```ts showLineNumbers
 declare const blob: File | Blob;
@@ -248,7 +248,7 @@ declare const blob: File | Blob;
 blob.stream().pipeTo(writable);
 ```
 
-You can choose to use `Consumable<T>` when either:
+You might choose to use `Consumable<T>` when either:
 
 - You need to re-use the buffer, so you want to track when it's consumed.
 - You want to improve debugging experience by synthesizing a call stack.
@@ -290,4 +290,35 @@ await MaybeConsumable.tryConsume(
     console.log(value); // Uint8Array [7, 8, 9]
   }
 );
+```
+
+### `WritableStream`
+
+The `MaybeConsumable.WritableStream<T>` class combines `WritableStream<T>` and `tryConsume` to help you correctly handle the data.
+
+```ts
+import { MaybeConsumable } from "@yume-chan/stream-extra";
+
+const writable = new MaybeConsumable.WritableStream<Uint8Array>({
+  // `write` can be `async`
+  async write(chunk) {
+    console.log(chunk); // You can only use `chunk` in `write` callback
+  },
+});
+```
+
+You must not use the `chunk` outside the `write` callback, unless you make a copy yourself. It might be overwritten with other data after your `write` callback returns.
+
+For example, `WebSocket`'s `send` method will copy the data into an internal transmission buffer, so it's safe to use that in `write`:
+
+```ts transpile
+import { MaybeConsumable } from "@yume-chan/stream-extra";
+
+declare const socket: WebSocket;
+
+const writable = new MaybeConsumable.WritableStream<Uint8Array>({
+  write(chunk) {
+    socket.send(chunk);
+  },
+});
 ```

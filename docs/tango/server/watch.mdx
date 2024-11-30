@@ -4,57 +4,91 @@ sidebar_position: 5
 
 # Watch devices
 
-Google ADB Server can also notify clients when devices are connected or disconnected. So you don't need to poll the server to get the latest device list.
+Google ADB Server has a hidden command to notify the client about device added and removed, so you don't need to poll the device list.
 
 ```ts
+import { AddEventListener } from "@yume-chan/event";
+import { DeviceObserver } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+export declare interface AdbServerDeviceObserver
+  extends DeviceObserver<AdbServerClient.Device> {
+  onError: AddEventListener<Error>;
+  onDeviceAdd: AddEventListener<AdbServerClient.Device[], unknown>;
+  onDeviceRemove: AddEventListener<AdbServerClient.Device[], unknown>;
+  onListChange: AddEventListener<AdbServerClient.Device[], unknown>;
+  current: AdbServerClient.Device[];
+
+  stop(): Promise<void>;
+}
+
 declare class AdbServerClient {
-  trackDevices(
-    signal?: AbortSignal
-  ): AsyncGenerator<AdbServerClient.Device[], void, void>;
+  trackDevices(): Promise<AdbServerDeviceObserver>;
 }
 ```
 
-The returned generator will yield the updated device list when it's changed. By using an async generator instead of a callback, it can throw errors when something goes wrong.
+:::info[Equivalent ADB command]
 
-```ts
-for await (const devices of client.trackDevices()) {
-  console.log(devices);
-}
+There is no equivalent ADB command.
+
+:::
+
+## Create an observer
+
+The `AdbServerClient#trackDevices` method returns an `AdbServerDeviceObserver` object, which can be used to monitor device addition and removal.
+
+```ts transpile
+import { AdbServerClient } from "@yume-chan/adb";
+
+declare const client: AdbServerClient;
+
+const observer = await client.trackDevices();
 ```
 
-## `signal`
+## `onError`
 
-An `AbortSignal` object can be passed to stop watching devices.
+The `onError` event is fired when an error occurs, like the connection to Google ADB Server is lost.
 
-```ts
-const controller = new AbortController();
-setTimeout(() => controller.abort(), 10000);
-
-for await (const devices of client.trackDevices(controller.signal)) {
-  console.log(devices);
-}
+```ts transpile
+observer.onError((error) => {
+  console.error(error);
+});
 ```
 
-Note that unlike many other `AbortSignal` consumers, `trackDevices` will return normally when the signal is aborted, instead of throwing `signal.reason`.
+## `onDeviceAdd` and `onDeviceRemove`
 
-## Find changed devices
+The `onDeviceAdd` and `onDeviceRemove` events are fired when a device is added or removed. The event argument is an array of `AdbServerClient.Device` objects that have been added or removed.
 
-Although the generator yields the current device list, it doesn't directly tell you which device is connected or disconnected. You need to diff the device list yourself.
+```ts transpile
+observer.onDeviceAdd((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
 
-```ts
-let lastDevices: AdbServerClient.Device[] = [];
-for await (const devices of client.trackDevices()) {
-  const connected = devices.filter(
-    (device) =>
-      !lastDevices.some((last) => last.transportId === device.transportId)
-  );
-  const disconnected = lastDevices.filter(
-    (last) => !devices.some((device) => device.transportId === last.transportId)
-  );
-
-  console.log("Connected:", connected);
-  console.log("Disconnected:", disconnected);
-
-  lastDevices = devices;
-}
+observer.onDeviceRemove((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
 ```
+
+## `onListChange` and `current`
+
+The `current` field contains all the devices that are currently connected. Devices already connected when the observer is created won't fire the `onDeviceAdd` event, but they will be included in the `current` field.
+
+When it changes, the `onListChange` event will fire with the new list. Note that with this device observer, each time the device list changes, the `current` field will be updated to a new array.
+
+```ts transpile
+for (const device of observer.current) {
+  console.log(device.serial);
+}
+
+observer.onListChange((devices) => {
+  console.log(devices === observer.current); // true
+});
+```
+
+## Stop the observer
+
+The `stop` method removes all the event listeners and releases all the resources. The device observer instance is no longer usable after calling `stop`.

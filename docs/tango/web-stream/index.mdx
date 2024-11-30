@@ -173,7 +173,7 @@ This is usually how you consume a `ReadableStream`.
 
 :::note
 
-Browser's native `ReadableStream` can only `pipeTo` the native `WriteableStream`, this is for performance reasons.
+Browser's native `ReadableStream`s can only `pipeTo` native `WriteableStream`s, this allows the runtime to optimize the performance, but also means you can't mix streams from different packages (like polyfills).
 
 :::
 

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 2
 ---
 
 # Request device permission
@@ -15,7 +15,7 @@ This page only applies to browsers. For Node.js, you can skip to the [next step]
 
 :::
 
-## Request permission in WebUSB
+## With WebUSB
 
 In Web browsers, each website needs to request the permission to access each device separately using WebUSB's [`USB#requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice) method.
 
@@ -27,7 +27,7 @@ In Web browsers, each website needs to request the permission to access each dev
 
 After calling `USB#requestDevice`, the browser shows a list of connected devices to the user. The user can select one (and only one) device from the list, or cancel the picker without selecting any device.
 
-You can filter the devices shown in the picker, but otherwise you can't control the picker's appearance or behavior.
+You can filter the devices shown in the picker using the [`filters` and `exclusionFilters` options](./device-filter.mdx), but otherwise you can't control the picker's appearance or behavior.
 
 ### Return value
 
@@ -77,53 +77,14 @@ When any interface is turned on or off from system UI, the device will disconnec
 
 As a result, in Web browsers, the same Android device with different sets of interfaces will be treated as different devices, and have different permissions. The website might need to request permission again when Android device switches to another mode.
 
-## Request permission in Tango
+## With Tango
 
 `AdbDaemonWebUsbDeviceManager#requestDevice` method provides a more convenient way to request permission for Android devices with ADB interface enabled.
 
 ```ts
-declare class AdbDaemonWebUsbDeviceManager {
-  requestDevice(): Promise<AdbDaemonWebUsbDevice | undefined>;
-}
-```
-
-It calls `USB#requestDevice` internally, thus the [user activation](#user-activation), [device picker](#device-picker), and [permission persistence](#permission-persistence) behaviors are the same as `USB#requestDevice`.
-
-The only difference is the return value:
-
-* When the user selects a device, it returns an `AdbDaemonWebUsbDevice` instance, which includes the raw `USBDevice` handle and additional information required by later steps.
-* If the user cancels the picker, it returns `undefined`, instead of throwing an error.
-
-```ts transpile
-import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
-
-document.getElementById("button").addEventListener("click", () => {
-  // highlight-start
-  const device: AdbDaemonWebUsbDevice | undefined =
-    await Manager.requestDevice();
-  // highlight-end
-  if (!device) {
-    alert("No device selected");
-    return;
-  }
-});
-```
-
-## Filter devices in the picker
-
-```ts
-interface AdbDeviceFilter {
-  classCode: number;
-  subclassCode: number;
-  protocolCode: number;
-  vendorId?: number | undefined;
-  productId?: number | undefined;
-  serialNumber?: string | undefined;
-}
-
 namespace AdbDaemonWebUsbDeviceManager {
   interface RequestDeviceOptions {
-    filters?: AdbDeviceFilter[] | undefined;
+    filters?: USBDeviceFilter[] | undefined;
     exclusionFilters?: USBDeviceFilter[] | undefined;
   }
 }
@@ -135,76 +96,36 @@ declare class AdbDaemonWebUsbDeviceManager {
 }
 ```
 
-:::note
+It calls `USB#requestDevice` internally, thus the [user activation](#user-activation), [device picker](#device-picker), and [permission persistence](#permission-persistence) behaviors are the same as `USB#requestDevice`.
 
-See [Device filter](./device-filter.mdx) for more information about how does the filter work and how to define a filter.
+### Options
 
-:::
+The [`options` parameter](./device-filter.mdx) allows filtering the devices shown in the picker. By default, it only includes devices with ADB interface enabled.
 
-### `filters`
+### Return value
 
-The `filters` option defaults to `[ADB_DEFAULT_DEVICE_FILTER]`, which matches the ADB interface. If you want to filter devices by vendor ID, product ID, or serial number, you can specify a custom filter array.
+The only difference is the return value:
 
-`filters` can be `undefined`, but it can't be an empty array. If you want to allow all devices, use `undefined` or `[ADB_DEFAULT_DEVICE_FILTER]`.
-
-### `exclusionFilters`
-
-It's also possible to exclude specific devices from the picker using the `exclusionFilters` option. It works in reverse: if a device matches any filter in `exclusionFilters`, it will be excluded from the picker.
-
-It can be used to exclude devices that are already paired, or exclude certain devices that are incompatible.
-
-:::info
-
-Support for exclusive filters was added in Chrome 105. It will be ignored in older versions.
-
-:::
-
-### Examples
-
-To select a specific manufacturer and model:
+- When the user selects a device, it creates and returns an `AdbDaemonWebUsbDevice` instance, which includes the raw `USBDevice` handle and additional information required by later steps.
+- If the user cancels the picker, it returns `undefined`, instead of throwing an error.
 
 ```ts transpile
 import {
   AdbDaemonWebUsbDevice,
-  ADB_DEFAULT_DEVICE_FILTER,
+  AdbDaemonWebUsbDeviceManager,
 } from "@yume-chan/adb-daemon-webusb";
 
-const device: AdbDaemonWebUsbDevice | undefined = await Manager.requestDevice({
+declare const Manager: AdbDaemonWebUsbDeviceManager;
+
+document.getElementById("button").addEventListener("click", () => {
   // highlight-start
-  filters: [
-    {
-      ...ADB_DEFAULT_DEVICE_FILTER,
-      vendorId: 0x18d1,
-      productId: 0x4ee2,
-    },
-  ],
+  const device: AdbDaemonWebUsbDevice | undefined =
+    await Manager.requestDevice();
   // highlight-end
-});
-```
-
-To allow multiple manufacturers/models:
-
-```ts transpile
-import {
-  AdbDaemonWebUsbDevice,
-  ADB_DEFAULT_DEVICE_FILTER,
-} from "@yume-chan/adb-daemon-webusb";
-
-const device: AdbDaemonWebUsbDevice | undefined = await Manager.requestDevice({
-  // highlight-start
-  filters: [
-    {
-      ...ADB_DEFAULT_DEVICE_FILTER,
-      vendorId: 0x18d1,
-      productId: 0x4ee2,
-    },
-    {
-      ...ADB_DEFAULT_DEVICE_FILTER,
-      vendorId: 0x04e8,
-      productId: 0x6860,
-    },
-  ],
-  // highlight-end
+  if (!device) {
+    alert("No device selected");
+    return;
+  }
 });
 ```
 

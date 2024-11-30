@@ -1,16 +1,16 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Device filter
 
-WebUSB [`requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice#filters) method requires a `filters` option to select which devices to show in the picker.
+Without specifying the `options` parameter, WebUSB [`requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice#filters) method will show all connected devices in the picker.
 
-Tango extended the filter concept to select which USB interface is used for communication with the ADB daemon.
+This obviously isn't the best user experience. Luckily, it accepts `filters` and `exclusionFilters` options to select which devices to show in the picker.
 
-## Filters in WebUSB API
+## `USBDeviceFilter`
 
-WebUSB defines a `USBDeviceFilter` interface to be used in [`requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice#filters) method. It has the following fields:
+The `filters` and `exclusionFilters` options are `USBDeviceFilter` objects, which have the following fields:
 
 ```ts
 interface USBDeviceFilter {
@@ -23,13 +23,25 @@ interface USBDeviceFilter {
 }
 ```
 
-Some fields must be specified in pairs to be valid:
+Some fields must be specified in pairs:
 
 - When `productId` is specified, `vendorId` must also be specified.
 - When `protocolCode` is specified, `subclassCode` must also be specified.
 - When `subclassCode` is specified, `classCode` must also be specified.
 
-If a filter has multiple fields, the device must match all fields to be included. For example, this filter only allows a specific manufacturer and model pair:
+If a `USBDeviceFilter` has multiple fields, the device must match all fields to be included. If `classCode`, `subclassCode` or `protocolCode` fields are present, they require the device to have at least one matching interface.
+
+:::info
+
+Some lazy manufacturers use the same `serialNumber` for all devices. So even if `serialNumber` is specified, it's still possible that multiple devices will be returned.
+
+:::
+
+## `filters` option
+
+If the `options` parameter is specified, the `filters` field is required. It is an array of `USBDeviceFilter` objects, devices must match at least one filter to be included in the picker.
+
+For example, to only allows a specific manufacturer and model pair:
 
 ```ts
 const device: USBDevice = await navigator.usb.requestDevice({
@@ -44,7 +56,7 @@ const device: USBDevice = await navigator.usb.requestDevice({
 });
 ```
 
-`filters` is an array, so multiple filters can be specified. If any filter matches, the device will be included. For example, to allow multiple manufacturers/models:
+To allow multiple manufacturers/models:
 
 ```ts
 const device: USBDevice = await navigator.usb.requestDevice({
@@ -63,46 +75,61 @@ const device: USBDevice = await navigator.usb.requestDevice({
 });
 ```
 
-## Filters in Tango
+## `exclusionFilters` option
 
-Because we need to know which interface to use for communication with ADB daemon, the `classCode`, `subclassCode`, and `protocolCode` fields are required. Usually they are `0xFF`, `0x42`, and `0x01` respectively, but can be different if your device has a different configuration.
+The `exclusionFilters` option is also an array of `UsbDeviceFilter`s similar to `filters`, but it excludes devices that match any filter in the array. It has a higher priority than `filters`.
 
-```ts
-interface AdbDeviceFilter {
-  classCode: number;
-  subclassCode: number;
-  protocolCode: number;
-  vendorId?: number | undefined;
-  productId?: number | undefined;
-  serialNumber?: string | undefined;
-}
-```
+:::info
 
-The `ADB_DEFAULT_DEVICE_FILTER` constant contains the above default values. It can be merged into your filter object:
-
-```ts transpile
-import {
-  type AdbDeviceFilter,
-  ADB_DEFAULT_DEVICE_FILTER,
-} from "@yume-chan/adb-daemon-webusb";
-
-const filters: AdbDeviceFilter[] = [
-  // highlight-start
-  {
-    ...ADB_DEFAULT_DEVICE_FILTER,
-    vendorId: 0x18d1,
-    productId: 0x4ee2,
-  },
-  // highlight-end
-];
-```
-
-:::note[Upcoming changes]
-
-In next version, `ADB_DEFAULT_DEVICE_FILTER` will be automatically merged into the specified filters, so you don't need to do it manually.
-
-The `AdbDeviceFilter` type will be removed, and the `filters` option will use `USBDeviceFilter` type directly (all fields are optional).
-
-Empty `filters` array will be treated as `[ADB_DEFAULT_DEVICE_FILTER]`, so `undefined`, `[]`, `[{}]` and `[ADB_DEFAULT_INTERFACE_FILTER]` will all have the same effect.
+Support for exclusive filters was added in Chrome 105. It will be ignored in older versions.
 
 :::
+
+For example, to exclude devices that are already paired:
+
+```ts transpile
+declare const devices: USBDevice[];
+
+const device: USBDevice = await navigator.usb.requestDevice({
+  filters: [
+    {
+      vendorId: 0x18d1,
+    },
+  ],
+  // highlight-start
+  exclusionFilters: devices.map((device) => ({
+    serialNumber: device.serialNumber,
+  })),
+  // highlight-end
+});
+```
+
+Because the `filters` option is required, to only use the `exclusionFilters` option, the `filters` array can be empty:
+
+```ts transpile
+manager.requestDevice({
+  // highlight-start
+  filters: [],
+  // highlight-end
+  exclusionFilters: [
+    {
+      vendorId: 0x18d1,
+    },
+  ],
+});
+```
+
+## Filters in Tango
+
+Tango also uses the `USBDeviceFilter` interface for selecting devices, but the `classCode`, `subclassCode`, and `protocolCode` fields in `filters` option have an extra meaning: they specifies which interface to use for communication with ADB daemon.
+
+Google ADB defines those values as `{ classCode: 0xFF, subclassCode: 0x42, protocolCode: 1 }`. If a `USBDeviceFilter` in the `filters` option doesn't have those fields, this default values will be used. If you have a special device with different configurations, you need to specify the correct values.
+
+Because the presence of the default value, Tango allows the `filters` option to be omitted. So all the following lines are equivalent:
+
+```ts
+manager.requestDevice();
+manager.requestDevice({ filters: undefined });
+manager.requestDevice({ filters: [] });
+manager.requestDevice({ filters: [{}] });
+```

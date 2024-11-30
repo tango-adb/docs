@@ -12,7 +12,7 @@ You may also interested in [custom transports](../custom-transport/index.mdx), w
 
 :::
 
-We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.mdx) class in USB connection and [`AdbDaemonDirectSocketsDevice`](./tcp/create-connection.mdx#adbdaemondirectsocketsdevice) class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of [`ReadableStream<AdbPacket>`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream<Consumable<AdbPacket>>`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to work, that's what the `connect` method in those `Device` classes returns.
+We have seen [`AdbDaemonWebUsbDevice`](./usb/get-devices.mdx) class in USB connection and [`AdbDaemonDirectSocketsDevice`](./tcp/create-connection.mdx#adbdaemondirectsocketsdevice) class in TCP connection, but they are high-level abstractions for managing devices. In fact, `AdbDaemonTransport` only needs a pair of [`ReadableStream<AdbPacket>`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream<MaybeConsumable<AdbPacket>>`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to work, that's what the `connect` method in those `Device` classes returns.
 
 :::note
 
@@ -109,20 +109,22 @@ const readable = new PushReadableStream((controller) => {
 
 ## Create WriteableStream
 
-The write side needs to be a `WritableStream` of `Consumable<AdbPacketInit>`:
+The write side needs to be a `WritableStream` of `MaybeConsumable<AdbPacketInit>`:
 
-`Consumable<AdbPacketInit>` allows the data producer to reuse the `payload` buffer, which reduces memory allocations and GC overhead to improve performance. The consumer must call `consume` after using the value (written to a socket, copied to another buffer, etc.) to notify the producer that the value can be reused.
+`MaybeConsumable<AdbPacketInit>` allows the data producer to reuse the `payload` buffer, which reduces memory allocations and GC overhead to improve performance. You must call `consume` after using the value (written to a socket, copied to another buffer, etc.) to notify the producer that the value can be reused. See [consumable pattern](../consumable.mdx) page for more details.
+
+Tango provides the `MaybeConsumable.WritableStream<T>` class to help you implement a `WritableStream<MaybeConsumable<T>>` correctly:
 
 ```ts transpile
 import { AdbPacketInit } from "@yume-chan/adb";
-import { WritableStream, Consumable } from "@yume-chan/stream-extra";
+import { MaybeConsumable } from "@yume-chan/stream-extra";
 
 declare function writeToSink(packet: AdbPacketInit | undefined): void;
 
-const writeable = new WritableStream<Consumable<AdbPacketInit>>({
+const writeable = new MaybeConsumable.WritableStream<AdbPacketInit>({
   write(chunk) {
-    writeToSink(chunk.value);
-    chunk.consume();
+    // `writeToSink` must not use `chunk` after it returns
+    writeToSink(chunk);
   },
   end() {
     writeToSink(undefined);
@@ -132,15 +134,15 @@ const writeable = new WritableStream<Consumable<AdbPacketInit>>({
 
 ## Create stream pair
 
-`AdbDaemonTransport` requires a `ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>>`, which is a plain object with `readable` and `writable` fields containing the above two streams:
+`AdbDaemonTransport` requires a `ReadableWritablePair<AdbPacketData, MaybeConsumable<AdbPacketInit>>`, which is a plain object with `readable` and `writable` fields containing the above two streams:
 
 ```ts transpile
 import { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
-import { ReadableWritablePair, Consumable } from "@yume-chan/stream-extra";
+import { ReadableWritablePair, MaybeConsumable } from "@yume-chan/stream-extra";
 
 const connection: ReadableWritablePair<
   AdbPacketData,
-  Consumable<AdbPacketInit>
+  MaybeConsumable<AdbPacketInit>
 > = {
   readable,
   writable,
@@ -152,30 +154,17 @@ const connection: ReadableWritablePair<
 The core package also has helper methods to convert streams between `Uint8Array` and `AdbPacket`:
 
 ```ts transpile
+import { AdbPacket, AdbPacketData } from "@yume-chan/adb";
 import {
-  AdbPacket,
-  AdbPacketInit,
-  AdbPacketData,
-  AdbPacketSerializeStream,
-} from "@yume-chan/adb";
-import {
-  WrapReadableStream,
-  WrapWritableStream,
   ReadableStream,
   StructDeserializeStream,
-  MaybeConsumable,
 } from "@yume-chan/stream-extra";
 
 declare const rawReadable: ReadableStream<Uint8Array>;
 
-const readable: ReadableStream<AdbPacketData> = new WrapReadableStream(
-  rawReadable
-).pipeThrough(new StructDeserializeStream(AdbPacket));
-
-declare const rawWritable: WritableStream<Uint8Array>;
-
-const writable: WritableStream<MaybeConsumable<AdbPacketInit>> =
-  new WrapWritableStream(rawWritable)
-    .bePipedThroughFrom(new MaybeConsumable.UnwrapStream())
-    .bePipedThroughFrom(new AdbPacketSerializeStream());
+const readable: ReadableStream<AdbPacketData> = rawReadable.pipeThrough(
+  new StructDeserializeStream(AdbPacket)
+);
 ```
+
+Note that it's not safe to unwrap a `MaybeConsumable.WritableStream`, you must consume the data in the `write` callback, or copy the data to be used later.

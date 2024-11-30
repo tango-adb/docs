@@ -5,10 +5,23 @@ sidebar_position: 5
 # `trackDevices`
 
 ```ts
+import { AddEventListener } from "@yume-chan/event";
+import { DeviceObserver } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+export declare interface AdbServerDeviceObserver
+  extends DeviceObserver<AdbServerClient.Device> {
+  onError: AddEventListener<Error>;
+  onDeviceAdd: AddEventListener<AdbServerClient.Device[], unknown>;
+  onDeviceRemove: AddEventListener<AdbServerClient.Device[], unknown>;
+  onListChange: AddEventListener<AdbServerClient.Device[], unknown>;
+  current: AdbServerClient.Device[];
+
+  stop(): Promise<void>;
+}
+
 declare class AdbServerClient {
-  trackDevices(
-    signal?: AbortSignal
-  ): AsyncGenerator<AdbServerClient.Device[], void, void>;
+  trackDevices(): Promise<AdbServerDeviceObserver>;
 }
 ```
 

@@ -234,3 +234,9 @@ In the `WritableStream`, we check `bufferedAmount` in a loop to avoid sending to
 ## Usage
 
 After you get the `ReadableStream` and `WritableStream` from `WebSocketStream`, you can [pipe them through `TransformStream`s](./index.mdx#transformstream) to convert them to streams of other types.
+
+For example, to convert to a custom daemon connection, see [convert between raw bytes](../daemon/custom-connection.mdx#convert-between-raw-bytes)
+
+## Use `MaybeConsumable`
+
+[custom daemon connection](../daemon/custom-connection.mdx) and [custom transport](../custom-transport/index.mdx) both requires `WritableStream<MaybeConsumable<T>>` instead of plain `WritableStream<T>`. Since it's unsafe to unwrap a `MaybeConsumable<T>`, you need to replace the `WritableStream` above with [`MaybeConsumable.WritableStream`](../consumable.mdx#writablestream).
