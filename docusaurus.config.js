@@ -238,7 +238,7 @@ export default {
         {
           type: 'docsVersionDropdown',
           position: 'right',
-          dropdownItemsAfter: [{ to: '/versions', label: 'All versions' }],
+          dropdownItemsAfter: [],
           dropdownActiveClassDisabled: true,
         },
         {
