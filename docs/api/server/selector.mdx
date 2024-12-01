@@ -6,7 +6,7 @@ sidebar_position: 6
 
 Many methods of `AdbServerClient` require a `DeviceSelector` to specify which device to operate on. This type is a union of several types, each of which represents a different way to select a device.
 
-```ts
+```ts showLineNumbers
 namespace AdbServerClient {
   type DeviceSelector =
     | { transportId: bigint }

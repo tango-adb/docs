@@ -4,7 +4,13 @@ sidebar_position: 7
 
 # Connect to server
 
-Scrcpy uses multiple [Unix domain sockets](https://www.man7.org/linux/man-pages/man7/unix.7.html) to transmit video, audio, and control messages between client and server.
+Scrcpy uses multiple [Unix domain sockets](https://www.man7.org/linux/man-pages/man7/unix.7.html) to transmit video, audio, and control messages between client and server. However, because most of time you connect to it over ADB Server tunnels, you don't need to deal with Unix domain sockets directly, and it's also usable on Windows.
+
+:::info
+
+Scrcpy official documentation also has a section about this: https://github.com/Genymobile/scrcpy/blob/master/doc/develop.md#connection
+
+:::
 
 It supports two connection modes:
 

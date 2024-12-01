@@ -160,7 +160,7 @@ await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
 );
 ```
 
-Then you need to connect to Scrcpy server yourself using [reverse tunnel](/api/adb/reverse/index.mdx) or [`adb.createSocket()`](/api/adb/socket.mdx#example).
+Then you need to [connect to Scrcpy server](./connect-server.mdx) yourself.
 
 :::danger[READ ALL STREAMS!]
 

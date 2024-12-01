@@ -15,11 +15,11 @@ For example, to write a unit test for an ADB command, a custom transport only ne
 ```mermaid
 flowchart LR
     subgraph A ["@yume-chan/adb"]
-        AA ~~~ AA
-        AB ~~~ AB
-        AC ~~~ AC
-        TA ~~~ TA
-        TB ~~~ TB
+        AA
+        AB
+        AC
+        TA
+        TB
     end
     AA["Adb A"] <-->|ADB Socket| TA["Daemon Transport"] <-->|Daemon Protocol| CA["Daemon Connection"] <--> DA["Device A"]
     AB["Adb B"] <-->|ADB Socket| TB["Server Transport"] <-->|Server Protocol| CB["Server Connection"] <--> DB["Device B"]

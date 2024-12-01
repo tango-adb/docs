@@ -44,9 +44,9 @@ flowchart TD
 
 Here are the steps to create an `Adb` instance with `AdbDaemonTransport`:
 
-1. User creates an `AdbDaemonConnection` for the desired connection method.
-2. User creates an `AdbCredentialStore` that works on the target runtime environment.
-3. User creates an `AdbDaemonTransport` instance with the connection and credential store.
+1. Creates an `AdbDaemonConnection` for the desired connection method.
+2. Creates an `AdbCredentialStore` that works on the target runtime environment.
+3. Creates an `AdbDaemonTransport` instance with the connection and credential store.
     1. The transport instance uses the connection to send and receive handshake packets.
     2. The transport instance uses the credential store to authenticate with the device.
 4. If authentication is successful, user creates an `Adb` instance with the transport object.
@@ -106,10 +106,10 @@ Because USB connections are exclusive, Daemon Transport can't access a USB devic
 ```mermaid
 flowchart TD
     subgraph C ["Runtime"]
-        WebUSB["WebUSB API"] ~~~ WebUSB
+        WebUSB["WebUSB API"]
     end
     subgraph A ["@yume-chan/adb"]
-        AdbDaemonConnection ~~~ AdbDaemonConnection
+        AdbDaemonConnection
     end
     subgraph B ["@yume-chan/adb-daemon-webusb"]
         AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
@@ -142,7 +142,7 @@ In addition to the built-in connection methods, Tango also accepts custom connec
 ```mermaid
 flowchart LR
     subgraph A ["@yume-chan/adb"]
-        AdbDaemonTransport ~~~ AdbDaemonTransport
+        AdbDaemonTransport
     end
     subgraph C ["your package"]
         AdbDaemonTransport <--> YourConnection

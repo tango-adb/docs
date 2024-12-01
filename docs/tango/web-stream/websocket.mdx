@@ -89,35 +89,39 @@ To convert `WebSocket` to `WebSocketStream`, we need to hook the events and meth
 
 ```mermaid
 flowchart LR
-    subgraph WebSocket
-        onopen
-        subgraph a[" "]
-            onmessage
-            onerror
-            onclose
-            send
-            WebSocketClose["close"]
-        end
-    end
-
     subgraph WritableStream
         write
         close
     end
 
-    subgraph ReadableStream
-        onmessage --> controller.enqueue
-        onerror --> controller.error
-        onclose --> controller.close
+    subgraph WebSocket
+        onopen
+        subgraph a[" "]
+        onmessage
+        onerror
+        onclose
+        send
+        WebSocketClose["close"]
+        end
     end
 
-    WritableStream ~~~ WebSocket
+    subgraph ReadableStream
+        controller.enqueue
+        controller.error
+        controller.close
+    end
 
-    write --> send
-    close --> WebSocketClose
+    WritableStream ~~~ onopen
 
     onopen -. creates .-> ReadableStream
     onopen -. creates .-> WritableStream
+
+    onmessage --> controller.enqueue
+    onerror --> controller.error
+    onclose --> controller.close
+
+    write --> send
+    close --> WebSocketClose
 ```
 
 Here is full implementation:

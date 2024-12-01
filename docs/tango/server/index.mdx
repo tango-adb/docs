@@ -49,8 +49,8 @@ flowchart TD
 
 Here are the overall steps to create an `Adb` instance from `AdbServerClient`:
 
-1. User creates an `AdbServerClient.ServerConnector` that works on the target runtime environment.
-2. User creates an `AdbServerClient` instance with the connector.
-3. User queries the device list and selects an already authenticated device.
-4. User creates an `AdbServerTransport` instance for the selected device.
-5. User creates an `Adb` instance with the transport object.
+1. Creates an `AdbServerClient.ServerConnector` that works on the target runtime environment.
+2. Creates an `AdbServerClient` instance with the connector.
+3. Queries the device list and selects an already authenticated device.
+4. Creates an `AdbServerTransport` instance for the selected device.
+5. Creates an `Adb` instance with the transport object.

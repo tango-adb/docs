@@ -68,24 +68,92 @@ try {
 }
 ```
 
-## Usage
+## Create a decoder
+
+```ts
+export declare namespace TinyH264Decoder {
+  interface Options {
+    /**
+     * Optional render target canvas element or offscreen canvas.
+     * If not provided, a new `<canvas>` (when DOM is available)
+     * or a `OffscreenCanvas` will be created.
+     */
+    canvas?: HTMLCanvasElement | OffscreenCanvas | undefined;
+  }
+}
+
+export declare class TinyH264Decoder implements ScrcpyVideoDecoder {
+  static readonly capabilities: Record<string, ScrcpyVideoDecoderCapability>;
+
+  get renderer(): HTMLCanvasElement | OffscreenCanvas;
+  get sizeChanged(): import("@yume-chan/event").AddEventListener<
+    {
+      width: number;
+      height: number;
+    },
+    unknown
+  >;
+
+  get framesRendered(): number;
+  get framesSkipped(): number;
+
+  get writable(): WritableStream<ScrcpyMediaStreamPacket>;
+
+  constructor(options?: TinyH264Decoder.Options);
+
+  dispose(): void;
+}
+```
+
+TinyH264 decoder can render to an HTML `<canvas>` element, or an `OffscreenCanvas` object.
+
+### Using an existing canvas
+
+When using MVVM frameworks like React.js, it might be simpler to attach the decoder to an existing element, for example:
+
+```ts transpile
+import React from "react";
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+
+export function Renderer(props: {
+  videoStream: ReadableStream<ScrcpyMediaStreamPacket>;
+}) {
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+
+  React.useEffect(() => {
+    const decoder = new TinyH264Decoder({ canvas: canvasRef.current });
+    void props.videoStream.pipeTo(decoder.writable).catch(() => {});
+  }, []);
+
+  return (
+    <div className="container">
+      <canvas ref={canvasRef} />
+    </div>
+  );
+}
+```
+
+### Create a new canvas
+
+If the `canvas` option is not provided, it automatically creates an `<canvas>` element if there is DOM API, or an `OffscreenCanvas` otherwise. The created renderer target can be retrieved from the `renderer` property.
 
 ```ts transpile
 import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
 
 const decoder = new TinyH264Decoder();
-document.body.appendChild(decoder.renderer);
+document.body.appendChild(decoder.renderer as HTMLCanvasElement);
 
 videoPacketStream // from previous step
   .pipeTo(decoder.writable)
   .catch(() => {});
 ```
 
-The `renderer` field is a `HTMLCanvasElement` that displays the video frames. You can append it to any element in the DOM.
+The newly created `renderer` needs to be inserted into the page to display the video.
 
-### Handle size changes
+## Handle size changes
 
-When the device orientation changes, Scrcpy server will recreate a new video encoder with the new size. The decoder can handle this automatically, and update the canvas size.
+When the device orientation changes, Scrcpy server will recreate a new video encoder with the new size. The decoder will parse the new video configuration, and update the canvas size automatically.
 
 However, the video size is also useful for other purposes, like [injecting touch events](../control/touch.mdx). The `sizeChanged` event will be emitted when the video size changes:
 
@@ -95,7 +163,7 @@ decoder.sizeChanged(({ width, height }) => {
 });
 ```
 
-### Rendering metrics
+## Rendering metrics
 
 The decoder will try to render every frame when it arrives, to minimize latency.
 

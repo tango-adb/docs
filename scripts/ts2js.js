@@ -1,22 +1,29 @@
 // Adopted from https://github.com/sapphiredev/documentation-plugins/tree/main/packages/ts2esm2cjs
 
 import { format } from "prettier";
-import { transpileModule, NewLineKind, ModuleKind, ModuleResolutionKind, ScriptTarget } from "typescript";
+import { transpileModule, NewLineKind, ModuleKind, ModuleResolutionKind, ScriptTarget, JsxEmit } from "typescript";
 import { visit } from "unist-util-visit";
 
 async function tsToJs(code) {
     const escaped = code.replace(/\n\n/g, "\n/* :newline: */");
-    const { outputText } = transpileModule(escaped, {
+    const { outputText, diagnostics } = transpileModule(escaped, {
         reportDiagnostics: true,
         compilerOptions: {
             newLine: NewLineKind.LineFeed,
             removeComments: false,
+            jsx: JsxEmit.Preserve,
             pretty: true,
             module: ModuleKind.ESNext,
             moduleResolution: ModuleResolutionKind.Bundler,
             target: ScriptTarget.ESNext,
         },
     });
+
+    if (diagnostics.length) {
+        for (const diagnostic of diagnostics) {
+            console.warn(diagnostic.messageText)
+        }
+    }
 
     return await format(outputText.replace(/\/\* :newline: \*\//g, "\n"), {
         parser: "typescript",

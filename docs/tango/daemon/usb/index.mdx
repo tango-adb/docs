@@ -8,10 +8,10 @@
 ```mermaid
 flowchart TD
     subgraph C ["Runtime"]
-        WebUSB["WebUSB API"] ~~~ WebUSB
+        WebUSB["WebUSB API"]
     end
     subgraph A ["@yume-chan/adb"]
-        AdbDaemonConnection ~~~ AdbDaemonConnection
+        AdbDaemonConnection
     end
     subgraph B ["@yume-chan/adb-daemon-webusb"]
         AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection

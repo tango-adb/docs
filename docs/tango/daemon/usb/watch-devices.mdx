@@ -14,7 +14,6 @@ import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
 export declare class AdbDaemonWebUsbDeviceObserver
   implements DeviceObserver<AdbDaemonWebUsbDevice>
 {
-  onError: AddEventListener<Error>;
   onDeviceAdd: AddEventListener<AdbDaemonWebUsbDevice[], unknown>;
   onDeviceRemove: AddEventListener<AdbDaemonWebUsbDevice[], unknown>;
   onListChange: AddEventListener<AdbDaemonWebUsbDevice[], unknown>;
@@ -65,19 +64,17 @@ For example, to only receive events for a specific manufacturer and model:
 ```ts transpile
 import { AdbDaemonWebUsbDeviceObserver } from "@yume-chan/adb-daemon-webusb";
 
-const observer = new AdbDaemonWebUsbDeviceObserver(navigator.usb, [
-  {
-    // highlight-start
-    vendorId: 0x18d1,
-    productId: 0x4ee2,
-    // highlight-end
-  },
-]);
+const observer = new AdbDaemonWebUsbDeviceObserver(navigator.usb, {
+  filters: [
+    {
+      // highlight-start
+      vendorId: 0x18d1,
+      productId: 0x4ee2,
+      // highlight-end
+    },
+  ],
+});
 ```
-
-## `onError`
-
-The `onError` event is from the base interface. WebUSB device observer won't fire any `onError` events.
 
 ## `onDeviceAdd` and `onDeviceRemove`
 
