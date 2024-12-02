@@ -1,3 +1,6 @@
+import { PrismTheme, themes as prismThemes } from "prism-react-renderer";
+import type { Config } from "@docusaurus/types";
+import type * as Preset from "@docusaurus/preset-classic";
 import remarkPluginNpm2yarn from "@docusaurus/remark-plugin-npm2yarn";
 import { themes } from "prism-react-renderer";
 import { fileURLToPath } from "url";
@@ -7,7 +10,7 @@ function resolve(path) {
     return fileURLToPath(new URL(path, import.meta.url));
 }
 
-const lightTheme = {
+const lightTheme: PrismTheme = {
     ...themes.github,
     styles: [
         ...themes.github.styles,
@@ -99,7 +102,7 @@ const lightTheme = {
     ],
 };
 
-const darkTheme = {
+const darkTheme: PrismTheme = {
     plain: {
         color: "#D4D4D4",
         backgroundColor: "#212121",
@@ -170,8 +173,7 @@ const darkTheme = {
     ],
 };
 
-/** @type {import('@docusaurus/types').Config} */
-export default {
+const config: Config = {
     markdown: {
         mdx1Compat: {
             admonitions: false,
@@ -183,26 +185,67 @@ export default {
 
     title: "Tango ADB Development Guide",
     tagline: "Documentation for Tango ADB library",
+    favicon: "img/logo.svg",
+
     url: "https://docs.tangoapp.dev",
     baseUrl: "/",
     trailingSlash: true,
-    onBrokenLinks: "throw",
-    onBrokenMarkdownLinks: "warn",
-    favicon: "img/logo.svg",
+
     organizationName: "tango-adb",
     projectName: "docs",
+
+    onBrokenLinks: "throw",
+    onBrokenMarkdownLinks: "warn",
+
+    i18n: {
+        defaultLocale: "en",
+        locales: ["en"],
+    },
+
+    presets: [
+        [
+            "@docusaurus/preset-classic",
+            {
+                docs: {
+                    sidebarPath: resolve("./sidebars.js"),
+                    routeBasePath: "/",
+                    // Please change this to your repo.
+                    editUrl: "https://github.com/tango-adb/docs/edit/main/",
+                    remarkPlugins: [ts2js, [remarkPluginNpm2yarn, { sync: true }]],
+                    showLastUpdateTime: true,
+                    lastVersion: "current",
+                    versions: {
+                        current: {
+                            label: "1.0.0",
+                            path: "/",
+                        },
+                    },
+                },
+                theme: {
+                    customCss: resolve("./src/css/custom.css"),
+                },
+                gtag: {
+                    trackingID: "GTM-WLPBQBK4",
+                },
+                sitemap: {
+                    lastmod: "datetime",
+                    changefreq: "daily",
+                },
+            } satisfies Preset.Options,
+        ],
+    ],
+
     themes: [
         "@docusaurus/theme-mermaid",
         [
             require.resolve("@easyops-cn/docusaurus-search-local"),
-      /** @type {Record<string, unknown>} */ (
-        /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */ ({
-                    docsRouteBasePath: "/",
-                    highlightSearchTermsOnTargetPage: true,
-                })
-            ),
+            {
+                docsRouteBasePath: "/",
+                highlightSearchTermsOnTargetPage: true,
+            } satisfies import("@easyops-cn/docusaurus-search-local").PluginOptions,
         ],
     ],
+
     themeConfig: {
         mermaid: {
             options: {
@@ -211,10 +254,12 @@ export default {
                         top: 8,
                         bottom: 8,
                     },
-                }
-            }
+                },
+            },
         },
 
+        // Replace with your project's social card
+        image: "img/docusaurus-social-card.jpg",
         navbar: {
             title: "Tango ADB",
             logo: {
@@ -247,14 +292,14 @@ export default {
                     label: "Internal",
                 },
                 {
-                    type: 'docsVersionDropdown',
-                    position: 'right',
+                    type: "docsVersionDropdown",
+                    position: "right",
                     dropdownItemsAfter: [],
                     dropdownActiveClassDisabled: true,
                 },
                 {
                     href: "https://github.com/yume-chan/ya-webadb",
-                    label: 'Source code',
+                    label: "Source code",
                     position: "right",
                 },
             ],
@@ -296,33 +341,12 @@ export default {
             copyright: `Copyright © 2021-${new Date().getFullYear()} Tango ADB. Built with Docusaurus.`,
         },
         prism: {
+            // theme: prismThemes.github,
+            // darkTheme: prismThemes.dracula,
             theme: lightTheme,
             darkTheme: darkTheme,
         },
-    },
-    presets: [
-        [
-            "@docusaurus/preset-classic",
-            {
-                docs: {
-                    sidebarPath: resolve("./sidebars.js"),
-                    routeBasePath: "/",
-                    // Please change this to your repo.
-                    editUrl: "https://github.com/tango-adb/docs/edit/main/",
-                    remarkPlugins: [ts2js, [remarkPluginNpm2yarn, { sync: true }]],
-                    showLastUpdateTime: true,
-                },
-                theme: {
-                    customCss: resolve("./src/css/custom.css"),
-                },
-                gtag: {
-                    trackingID: "GTM-WLPBQBK4",
-                },
-                sitemap: {
-                    lastmod: 'datetime',
-                    changefreq: 'daily'
-                }
-            },
-        ],
-    ],
+    } satisfies Preset.ThemeConfig,
 };
+
+export default config;
