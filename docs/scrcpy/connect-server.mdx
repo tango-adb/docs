@@ -51,6 +51,40 @@ Tango encapsulates the reverse tunnel feature into a callback-based API:
 
 The `AdbScrcpyClient.start` method uses reverse tunnels by default. It sets up the reverse tunnel and waits for the correct amount of connections automatically.
 
+However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an `AdbReverseNotSupportedError`, `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
+
+If you are using a custom transport that doesn't support reverse tunnel, you can set `tunnelForward: true` option explicitly:
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_0({
+  tunnelForward: true,
+});
+```
+
+Or you can throw an `AdbReverseNotSupportedError` in your custom transport:
+
+```ts transpile
+import { AdbReverseNotSupportedError } from "@yume-chan/adb";
+
+export class YourTransport implements AdbTransport {
+  /// other methods
+
+  addReverseTunnel() {
+    throw new AdbReverseNotSupportedError();
+  }
+
+  removeReverseTunnel() {
+    throw new AdbReverseNotSupportedError();
+  }
+
+  clearReverseTunnels() {
+    throw new AdbReverseNotSupportedError();
+  }
+}
+```
+
 ## Forward tunnel
 
 This mode can be used as a fallback when reverse tunnel is not supported. In forward tunnel mode, the server listens on the Unix domain socket address, and the client creates multiple connections to it.
@@ -91,12 +125,12 @@ You also need retry the connection until the correct amount of sockets are creat
 ### With `@yume-chan/adb-scrcpy`
 
 When `tunnelForward: true` option is specified, `AdbScrcpyClient` automatically uses forward tunnel mode to connect to Scrcpy server.
-{/*
+{/\*
 Besides that, if reverse tunnel is not supported (when `reverse.add` method throws an `AdbReverseNotSupportedError`), `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
 
 If you don't want to or can't implement reverse tunnel commands in your custom transport, you can set `tunnelForward: true` option explicitly, or also throw an `AdbReverseNotSupportedError` in these methods:
 
-```ts
+````ts
 import { AdbReverseNotSupportedError, AdbTransport } from "@yume-chan/adb";
 
 class YourTransport implements AdbTransport {
@@ -115,3 +149,4 @@ class YourTransport implements AdbTransport {
   }
 }
 ``` */}
+````

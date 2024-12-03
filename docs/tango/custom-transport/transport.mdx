@@ -14,7 +14,7 @@ export interface AdbTransport {
 
   addReverseTunnel(
     handler: AdbIncomingSocketHandler,
-    address?: string,
+    address?: string
   ): string | Promise<string>;
 
   removeReverseTunnel(address: string): void | Promise<void>;
@@ -96,7 +96,7 @@ class MockTransport implements AdbTransport {
 
   addReverseTunnel(
     handler: AdbIncomingSocketHandler,
-    address?: string | undefined,
+    address?: string | undefined
   ): ValueOrPromise<string> {
     throw new Error("Method not implemented.");
   }
