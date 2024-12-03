@@ -26,27 +26,23 @@ const connection: ReadableWritablePair<
 // highlight-end
 ```
 
-If the interface is already claimed by another program (or another `USBDevice` instance), `connect` will throw an `NetworkError`. You can catch it and show a message to the user to ask them to close the conflicting program.
+If the interface is already claimed by another program (or another `USBDevice` instance), `connect` will throw an `DeviceBusyError`. You can catch it and show a message to the user to ask them to close the conflicting program.
 
 ```ts transpile
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
 function connect(device: AdbDaemonWebUsbDevice) {
   try {
     return await device.connect();
   } catch (error) {
-    // `usb` package for Node.js doesn't throw a real `DOMException`
-    // This check is compatible with both Chrome and `usb` package
     // highlight-start
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "name" in error &&
-      error.name === "NetworkError"
-    ) {
+    if (error instanceof AdbDaemonWebUsbDevice.DeviceBusyError) {
       alert(
         "The device is already in use by another program. Please close the program and try again."
       );
     }
     // highlight-end
+    // It might also throw other errors
     throw error;
   }
 }
