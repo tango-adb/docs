@@ -6,11 +6,27 @@ import Version from "../version-span";
 
 # Handle video stream
 
-The video socket from Scrcpy server contains the encoded video frames. However, its format depends on the Scrcpy server version and the specified option values.
+The video socket from Scrcpy server contains the encoded video frames. Normally, it contains a leading metadata, and multiple configuration and data (video frame) packets, but the exact format depends on the Scrcpy server version and the specified option values.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> Metadata
+    Metadata --> Configuration
+
+    Configuration --> Data
+    Data --> Data
+    Data --> Configuration: Restart encoder
+
+    Data --> [*]
+```
 
 ## Raw mode
 
-Since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, the server directly returns the encoded video stream without any encapsulations. In this mode, the video stream can be decoded or saved directly.
+Since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, the server directly returns the encoded video stream without any encapsulations.
+
+In this mode, the video stream only contains codec-specific data. Tango doesn't support parsing the video stream in this mode, but it can be decoded by FFmpeg, or saved directly.
 
 Otherwise, the video stream contains additional metadata and frame information. The following methods can be used to parse and handle the video stream.
 
