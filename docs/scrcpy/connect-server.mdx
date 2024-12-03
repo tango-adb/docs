@@ -124,29 +124,4 @@ You also need retry the connection until the correct amount of sockets are creat
 
 ### With `@yume-chan/adb-scrcpy`
 
-When `tunnelForward: true` option is specified, `AdbScrcpyClient` automatically uses forward tunnel mode to connect to Scrcpy server.
-{/\*
-Besides that, if reverse tunnel is not supported (when `reverse.add` method throws an `AdbReverseNotSupportedError`), `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
-
-If you don't want to or can't implement reverse tunnel commands in your custom transport, you can set `tunnelForward: true` option explicitly, or also throw an `AdbReverseNotSupportedError` in these methods:
-
-````ts
-import { AdbReverseNotSupportedError, AdbTransport } from "@yume-chan/adb";
-
-class YourTransport implements AdbTransport {
-  // other properties and methods...
-
-  addReverseTunnel() {
-    throw new AdbReverseNotSupportedError();
-  }
-
-  removeReverseTunnel() {
-    throw new AdbReverseNotSupportedError();
-  }
-
-  clearReverseTunnels() {
-    throw new AdbReverseNotSupportedError();
-  }
-}
-``` */}
-````
+When `tunnelForward: true` option is specified, `AdbScrcpyClient` uses forward tunnel mode to connect to Scrcpy server.
