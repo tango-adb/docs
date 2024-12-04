@@ -20,8 +20,8 @@ The following TypeScript enums have been converted to plain objects to improve t
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
 <tr>
-<td >0.0.24</td>
-<td >1.0.0</td>
+<td>0.0.24</td>
+<td>1.0.0</td>
 </tr>
 </thead>
 <tbody>
@@ -51,8 +51,8 @@ const name = AdbCommand[AdbCommand.Connect]; // Error
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
 <tr>
-<td >0.0.24</td>
-<td >1.0.0</td>
+<td>0.0.24</td>
+<td>1.0.0</td>
 </tr>
 </thead>
 <tbody>
@@ -92,13 +92,44 @@ Removed `AdbDeviceFilter` and `ADB_DEFAULT_DEVICE_FILTER`.
 
 [`AdbDaemonWebUsbDeviceManager#requestDevice`](./daemon/usb/request-device.mdx) now accepts normal `USBDeviceFilter` objects, and automatically merges default ADB interface filters into each of them if necessary.
 
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td>0.0.24</td>
+<td>1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+const device = await manager.requestDevice({
+  filters: [{ ...ADB_DEFAULT_DEVICE_FILTER, vendorId: 0x1234 }],
+});
+```
+
+</td>
+<td>
+
+```ts
+const device = await manager.requestDevice({
+  filters: [{ vendorId: 0x1234 }],
+});
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
 Changed [`AdbDaemonWebUsbDeviceManager#getDevices`](./daemon/usb/get-devices.mdx) method to also accept `exclusionFilters`.
 
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
 <tr>
-<td >0.0.24</td>
-<td >1.0.0</td>
+<td>0.0.24</td>
+<td>1.0.0</td>
 </tr>
 </thead>
 <tbody>
@@ -129,8 +160,8 @@ The exported type `AdbDaemonWebUsbDeviceWatcher` has been replaced by [`AdbDaemo
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
 <tr>
-<td >0.0.24</td>
-<td >1.0.0</td>
+<td>0.0.24</td>
+<td>1.0.0</td>
 </tr>
 </thead>
 <tbody>
@@ -162,7 +193,14 @@ observer.stop();
 </tbody>
 </table>
 
-Added `AdbDaemonWebUsbDeviceManager#trackDevices` method that creates an `AdbDaemonWebUsbDeviceWatcher` instance. It mirrors `AdbServerClient#trackDevices`.
+Added `AdbDaemonWebUsbDeviceManager#trackDevices` method that creates an `AdbDaemonWebUsbDeviceObserver` instance. It mirrors `AdbServerClient#trackDevices`.
+
+```ts showLineNumbers
+const observer1 = new AdbDaemonWebUsbDeviceObserver(navigator.usb, {
+  filters: [{ vendorId: 0x1234 }],
+});
+const observer2 = manager.trackDevices();
+```
 
 ## `@yume-chan/adb-scrcpy`
 
@@ -186,15 +224,70 @@ Added `Intent#addStringExtra` method. Thanks [@cedricdevriendt](https://github.c
 
 All options to `HidMouse.serializeInputReport` are now optional.
 
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td>0.0.24</td>
+<td>1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+const report = HidMouse.serializeInputReport({
+  movementX: 10,
+  movementY: -5,
+  buttons: 0,
+  scrollX: 0,
+  scrollY: 0,
+});
+```
+
+</td>
+<td>
+
+```ts
+const report = HidMouse.serializeInputReport({
+  movementX: 10,
+  movementY: -5,
+});
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `@yume-chan/scrcpy`
 
 The whole package has been completely rewritten. Options classes now shares code using ES modules, instead of inheritance, so if you only imports one options classes, only the related code will be included in the bundle.
 
 Removed `ScrcpyOptionsX_XX#defaults`. Now there is only `ScrcpyOptionsX_XX.Defaults`.
 
-Added `ScrcpyOptionsX_XX.Init` type for the options types.
+Added `ScrcpyOptionsX_XX.Init` type aliases for the options types.
 
 Set `ScrcpyOptionsX_XX#clipboard` to `undefined` if it's disabled by options, and allows `ScrcpyOptionsX_XX#clipboard#cancel` to ignore future messages.
+
+```ts showLineNumbers
+const options = new ScrcpyOptions3_0({
+  control: false,
+});
+options.clipboard; // undefined
+```
+
+```ts showLineNumbers
+const options = new ScrcpyOptions3_0({
+  clipboardAutosync: false,
+});
+options.clipboard; // undefined
+```
+
+```ts showLineNumbers
+const options = new ScrcpyOptions3_0();
+await options.clipboard.cancel();
+```
 
 Support Scrcpy UHID messages via `ScrcpyOptionsX_XX#uHidOutput` (from v2.4), `ScrcpyControlMessageSerializer#uHidCreate` (from v2.4), `ScrcpyControlMessageSerializer#uHidInput` (from v2.4) and `ScrcpyControlMessageSerializer#uHidDestroy` (from v2.7).
 
