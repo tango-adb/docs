@@ -1,0 +1,235 @@
+# Upgrade from 0.0.24
+
+The version 1.0.0 contains many breaking changes, mainly to improve developer experience and reduce bundling size by improve tree-shaking.
+
+Here are all the changes, grouped by package:
+
+## `@yume-chan/adb`
+
+The following TypeScript enums have been converted to plain objects to improve tree-shaking in Rollup. Type aliases that represents the union of their values has been added to keep source-compatibility. But you can't directly convert the value back to its name any more:
+
+- `AdbShellProtocolId`
+- `AdbSyncSendV2Flags`
+- `LinuxFileType`
+- `AdbSyncStatErrorCode` (use `AdbSyncStatErrorName` to convert values back to names)
+- `AdbAuthType`
+- `AdbCommand`
+- `AdbBannerKey`
+- `AdbFeature`
+
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td >0.0.24</td>
+<td >1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+const value = AdbCommand.Connect; // 0
+const name = AdbCommand[AdbCommand.Connect]; // "Connect"
+```
+
+</td>
+<td>
+
+```ts
+const value = AdbCommand.Connect; // 0
+const name = AdbCommand[AdbCommand.Connect]; // Error
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
+[`AdbServerClient#trackDevices`](./server/watch.mdx) now returns an `AdbServerClient.DeviceObserver` instead of an async generator.
+
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td >0.0.24</td>
+<td >1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+for await (const devices of client.trackDevices(signal)) {
+  console.log(devices);
+}
+```
+
+</td>
+<td>
+
+```ts
+const observer = client.trackDevices();
+observer.onDeviceAdd((devices) => {
+  console.log(devices);
+});
+observer.onDeviceRemove((devices) => {
+  console.log(devices);
+});
+observer.stop();
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
+`AdbServerClient.ServerConnector#connect` now needs to return a `WritableStream<MaybeConsumable<Uint8Array>>` instead of a [`WritableStream<Uint8Array>`](./web-stream/index.mdx#writeablestream). It's unsafe to automatically unwrap [`MaybeConsumable`](./consumable.mdx#writablestream)s, the old version was causing corruptions when [pushing files](../api/adb/sync/write.mdx).
+
+## `@yume-chan/adb-daemon-webusb`
+
+Removed `AdbDeviceFilter` and `ADB_DEFAULT_DEVICE_FILTER`.
+
+[`AdbDaemonWebUsbDeviceManager#requestDevice`](./daemon/usb/request-device.mdx) now accepts normal `USBDeviceFilter` objects, and automatically merges default ADB interface filters into each of them if necessary.
+
+Changed [`AdbDaemonWebUsbDeviceManager#getDevices`](./daemon/usb/get-devices.mdx) method to also accept `exclusionFilters`.
+
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td >0.0.24</td>
+<td >1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+const devices = await manager.getDevices([{ vendorId: 0x1234 }]);
+```
+
+</td>
+<td>
+
+```ts
+const devices = await manager.getDevices({
+  filters: [{ vendorId: 0x1234 }],
+  exclusionFilters: [{ vendorId: 0x5678 }],
+});
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
+The exported type `AdbDaemonWebUsbDeviceWatcher` has been replaced by [`AdbDaemonWebUsbDeviceObserver`](./daemon/usb/watch-devices.mdx). It shares the same interface as `AdbServerClient.DeviceObserver` to improve consistency and ease of use.
+
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td >0.0.24</td>
+<td >1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+const watcher = new AdbDaemonWebUsbDeviceWatcher((serial) => {
+  console.log(serial); // string for added device, undefined for removed device
+}, navigator.usb);
+```
+
+</td>
+<td>
+
+```ts
+const observer = manager.trackDevices();
+observer.onDeviceAdd((devices) => {
+  console.log(devices);
+});
+observer.onDeviceRemove((devices) => {
+  console.log(devices);
+});
+observer.stop();
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
+Added `AdbDaemonWebUsbDeviceManager#trackDevices` method that creates an `AdbDaemonWebUsbDeviceWatcher` instance. It mirrors `AdbServerClient#trackDevices`.
+
+## `@yume-chan/adb-scrcpy`
+
+Fixed a bug that `AdbScrcpyOptionsX_XX` doesn't [automatically switch to forward tunnel mode](../scrcpy/connect-server.mdx#with-yume-chanadb-scrcpy) when reverse tunnel is not supported.
+
+Now it handles errors and stream closures when parsing the device message stream. The errors and closures will be propagated to [`ScrcpyOptionsX_XX#clipboard`](../scrcpy/options/index.mdx#watch-device-clipboard-changes) and `ScrcpyOptionsX_XX#uHidOutput` (docs to be added).
+
+## `@yume-chan/android-bin`
+
+Similar to `@yume-chan/adb`, the following TypeScript enums are converted to plain objects:
+
+- `DumpSys.Battery.Status`
+- `DumpSys.Battery.Health`
+- `LogId` (use `LogIdName` to convert values back to names)
+- `AndroidLogPriority`
+- `LogcatFormat`
+
+Added `Intent#addStringExtra` method. Thanks [@cedricdevriendt](https://github.com/cedricdevriendt) for submitting [#644](https://github.com/yume-chan/ya-webadb/pull/644)!
+
+## `@yume-chan/aoa`
+
+All options to `HidMouse.serializeInputReport` are now optional.
+
+## `@yume-chan/scrcpy`
+
+The whole package has been completely rewritten. Options classes now shares code using ES modules, instead of inheritance, so if you only imports one options classes, only the related code will be included in the bundle.
+
+Removed `ScrcpyOptionsX_XX#defaults`. Now there is only `ScrcpyOptionsX_XX.Defaults`.
+
+Added `ScrcpyOptionsX_XX.Init` type for the options types.
+
+Set `ScrcpyOptionsX_XX#clipboard` to `undefined` if it's disabled by options, and allows `ScrcpyOptionsX_XX#clipboard#cancel` to ignore future messages.
+
+Support Scrcpy UHID messages via `ScrcpyOptionsX_XX#uHidOutput` (from v2.4), `ScrcpyControlMessageSerializer#uHidCreate` (from v2.4), `ScrcpyControlMessageSerializer#uHidInput` (from v2.4) and `ScrcpyControlMessageSerializer#uHidDestroy` (from v2.7).
+
+Support all new [options](../scrcpy/versions.mdx) up to Scrcpy 3.0.
+
+## `@yume-chan/scrcpy-decoder-tinyh264`
+
+Support [rendering to `OffscreenCanvas`](../scrcpy/video/tiny-h264.mdx#create-a-decoder). Thanks [@oott123](https://github.com/oott123) for submitting [#643](https://github.com/yume-chan/ya-webadb/pull/643)!
+
+## `@yume-chan/scrcpy-decoder-webcodecs`
+
+Added multiple [rendering modes](../scrcpy/video/web-codecs.mdx#renderer) and [rendering to `OffscreenCanvas`](../scrcpy/video/web-codecs.mdx#create-a-decoder).
+
+Fixed rendering H.265 videos having incorrect size on Microsoft Edge on Windows.
+
+## `@yume-chan/stream-extra`
+
+Added `BufferedReadableStream#iterateExactly` which returns raw chunks until the requested size is reached (while `BufferedReadableStream#readExactly` combines the chunks into one `Uint8Array`). This allows incremental processing and more granular control.
+
+Changed the coding style to workaround [evanw/esbuild#3923](https://github.com/evanw/esbuild/issues/3923). This should allow using in Vite without `optimizeDeps.exclude` option.
+
+`PushReadableStream` now ignores (instead of throwing an error) calling `controller.enqueue`, `controller.close` and `controller.error` when the stream is already in an errored or closed state. This simplifies the usage.
+
+Automatically polyfill [`ReadableStream.from`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static), [`ReadableStream.prototype[Symbol.asyncIterator]` and `ReadableStream#values`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#async_iteration) when necessary.
+
+## `@yume-chan/struct`
+
+The whole package has been mostly rewritten:
+
+- `SyncPromise` has been replaced with `bipedal` to support running async functions synchronously if possible.
+- `new Struct` has been replaced with `struct` method.
+- Fluent style API has been replaced by individual field type methods for easier extension and better tree-shaking.
+
+The new API is inspired by [TypeGPU](https://docs.swmansion.com/TypeGPU/) and [gensync](https://github.com/loganfsmyth/gensync). Check [README](https://www.npmjs.com/package/@yume-chan/struct/v/1.0.0) for documentation.
+
+The exported type `ValueOrPromise` has been moved to `@yume-chan/async` and renamed to `MaybePromiseLike`.
+
+The exported value `EMPTY_UINT8_ARRAY` has been renamed to `EmptyUint8Array`. We will use `PascalCase` for constants in the future.
