@@ -90,7 +90,7 @@ observer.stop();
 
 Removed `AdbDeviceFilter` and `ADB_DEFAULT_DEVICE_FILTER`.
 
-[`AdbDaemonWebUsbDeviceManager#requestDevice`](./daemon/usb/request-device.mdx) now accepts normal `USBDeviceFilter` objects, and automatically merges default ADB interface filters into each of them if necessary.
+[`AdbDaemonWebUsbDeviceManager#requestDevice`](./daemon/usb/request-device.mdx) now accepts normal `USBDeviceFilter` objects (means all fields are optional), and automatically merges default ADB interface filters (`classCode`, `subclassCode` and `protocolCode`) into each of them if not exist.
 
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
@@ -262,7 +262,7 @@ const report = HidMouse.serializeInputReport({
 
 ## `@yume-chan/scrcpy`
 
-The whole package has been completely rewritten. Options classes now shares code using ES modules, instead of inheritance, so if you only imports one options classes, only the related code will be included in the bundle.
+The whole package has been completely rewritten. Options classes now shares code using ES modules, instead of inheritance, so if you only import one options class, only the related code will be included in the output bundle.
 
 Removed `ScrcpyOptionsX_XX#defaults`. Now there is only `ScrcpyOptionsX_XX.Defaults`.
 
