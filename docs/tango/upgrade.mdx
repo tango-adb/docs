@@ -6,7 +6,11 @@ Here are all the changes, grouped by package:
 
 ## `@yume-chan/adb`
 
-The following TypeScript enums have been converted to plain objects to improve tree-shaking in Rollup. Type aliases that represents the union of their values has been added to keep source-compatibility. But you can't directly convert the value back to its name any more:
+### Remove TypeScript enums and namespaces
+
+TypeScript enums and namespaces transpiles to IIFEs with side effects, which can't be tree-shaken.
+
+To reduce the bundling size, the following TypeScript enums have been converted to plain objects. Type aliases that represents the union of their values has been added to keep source-compatibility. However, you can't directly convert the value back to its name any more:
 
 - `AdbShellProtocolId`
 - `AdbSyncSendV2Flags`
@@ -46,7 +50,9 @@ const name = AdbCommand[AdbCommand.Connect]; // Error
 </tbody>
 </table>
 
-[`AdbServerClient#trackDevices`](./server/watch.mdx) now returns an `AdbServerClient.DeviceObserver` instead of an async generator.
+### Device watcher API change
+
+[`AdbServerClient.prototype.trackDevices`](./server/watch.mdx) now returns an `AdbServerClient.DeviceObserver` instead of an async generator.
 
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
@@ -84,13 +90,15 @@ observer.stop();
 </tbody>
 </table>
 
-`AdbServerClient.ServerConnector#connect` now needs to return a `WritableStream<MaybeConsumable<Uint8Array>>` instead of a [`WritableStream<Uint8Array>`](./web-stream/index.mdx#writeablestream). It's unsafe to automatically unwrap [`MaybeConsumable`](./consumable.mdx#writablestream)s, the old version was causing corruptions when [pushing files](../api/adb/sync/write.mdx).
+### Fix pushing files with custom server connector
+
+The `connect` method of `AdbServerClient.ServerConnector` instances now needs to return a `WritableStream<MaybeConsumable<Uint8Array>>` instead of a [`WritableStream<Uint8Array>`](./web-stream/index.mdx#writeablestream). It's unsafe to automatically unwrap [`MaybeConsumable`](./consumable.mdx#writablestream)s, the old version was causing corruptions when [pushing files](../api/adb/sync/write.mdx).
 
 ## `@yume-chan/adb-daemon-webusb`
 
-Removed `AdbDeviceFilter` and `ADB_DEFAULT_DEVICE_FILTER`.
+### Simplified device filter
 
-[`AdbDaemonWebUsbDeviceManager#requestDevice`](./daemon/usb/request-device.mdx) now accepts normal `USBDeviceFilter` objects (means all fields are optional), and automatically merges default ADB interface filters (`classCode`, `subclassCode` and `protocolCode`) into each of them if not exist.
+[`AdbDaemonWebUsbDeviceManager.prototype.requestDevice`](./daemon/usb/request-device.mdx) now accepts normal `USBDeviceFilter` objects (which means all fields are optional), and automatically merges default ADB interface filters (`classCode`, `subclassCode` and `protocolCode`) into each of them if not exist.
 
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
@@ -123,7 +131,11 @@ const device = await manager.requestDevice({
 </tbody>
 </table>
 
-Changed [`AdbDaemonWebUsbDeviceManager#getDevices`](./daemon/usb/get-devices.mdx) method to also accept `exclusionFilters`.
+As a result, `AdbDeviceFilter` type and `ADB_DEFAULT_DEVICE_FILTER` constant are removed.
+
+### Exclusive filter in `getDevices`
+
+Changed [`AdbDaemonWebUsbDeviceManager.prototype.getDevices`](./daemon/usb/get-devices.mdx) method to also accept `exclusionFilters`.
 
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
@@ -155,7 +167,9 @@ const devices = await manager.getDevices({
 </tbody>
 </table>
 
-The exported type `AdbDaemonWebUsbDeviceWatcher` has been replaced by [`AdbDaemonWebUsbDeviceObserver`](./daemon/usb/watch-devices.mdx). It shares the same interface as `AdbServerClient.DeviceObserver` to improve consistency and ease of use.
+### Device watcher API change
+
+The exported type `AdbDaemonWebUsbDeviceWatcher` has been replaced by [`AdbDaemonWebUsbDeviceObserver`](./daemon/usb/watch-devices.mdx). It shares the same interface as [`AdbServerClient.DeviceObserver`](#device-watcher-api-change) to improve consistency and ease of use.
 
 <table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
 <thead>
@@ -193,7 +207,7 @@ observer.stop();
 </tbody>
 </table>
 
-Added `AdbDaemonWebUsbDeviceManager#trackDevices` method that creates an `AdbDaemonWebUsbDeviceObserver` instance. It mirrors `AdbServerClient#trackDevices`.
+Added `AdbDaemonWebUsbDeviceManager.prototype.trackDevices` method that creates an `AdbDaemonWebUsbDeviceObserver` instance. It mirrors `AdbServerClient.prototype.trackDevices`.
 
 ```ts showLineNumbers
 const observer1 = new AdbDaemonWebUsbDeviceObserver(navigator.usb, {
@@ -204,13 +218,19 @@ const observer2 = manager.trackDevices();
 
 ## `@yume-chan/adb-scrcpy`
 
+### Fix automatically switching to forward tunnel
+
 Fixed a bug that `AdbScrcpyOptionsX_XX` doesn't [automatically switch to forward tunnel mode](../scrcpy/connect-server.mdx#with-yume-chanadb-scrcpy) when reverse tunnel is not supported.
 
-Now it handles errors and stream closures when parsing the device message stream. The errors and closures will be propagated to [`ScrcpyOptionsX_XX#clipboard`](../scrcpy/options/index.mdx#watch-device-clipboard-changes) and `ScrcpyOptionsX_XX#uHidOutput` (docs to be added).
+### Properly handle device message stream
+
+Now it handles errors and stream closures when parsing the device message stream. The errors and closures will be propagated to [`ScrcpyOptionsX_XX.prototype.clipboard`](../scrcpy/options/index.mdx#watch-device-clipboard-changes) and `ScrcpyOptionsX_XX.prototype.uHidOutput` (docs to be added).
 
 ## `@yume-chan/android-bin`
 
-Similar to `@yume-chan/adb`, the following TypeScript enums are converted to plain objects:
+### Remove TypeScript enums
+
+For the reason stated [above](#remove-typescript-enums-and-namespaces), the following TypeScript enums are converted to plain objects:
 
 - `DumpSys.Battery.Status`
 - `DumpSys.Battery.Health`
@@ -218,7 +238,9 @@ Similar to `@yume-chan/adb`, the following TypeScript enums are converted to pla
 - `AndroidLogPriority`
 - `LogcatFormat`
 
-Added `Intent#addStringExtra` method. Thanks [@cedricdevriendt](https://github.com/cedricdevriendt) for submitting [#644](https://github.com/yume-chan/ya-webadb/pull/644)!
+### Add `Intent.prototype.addStringExtra` method
+
+Thanks [@cedricdevriendt](https://github.com/cedricdevriendt) for submitting [#644](https://github.com/yume-chan/ya-webadb/pull/644)!
 
 ## `@yume-chan/aoa`
 
@@ -262,13 +284,58 @@ const report = HidMouse.serializeInputReport({
 
 ## `@yume-chan/scrcpy`
 
-The whole package has been completely rewritten. Options classes now shares code using ES modules, instead of inheritance, so if you only import one options class, only the related code will be included in the output bundle.
+### Rewrite options classes
 
-Removed `ScrcpyOptionsX_XX#defaults`. Now there is only `ScrcpyOptionsX_XX.Defaults`.
+Options classes now share code using ES modules, instead of inheritance, so if you only import one options class, unused code can be tree-shaken.
+
+Removed `ScrcpyOptionsX_XX.prototype.defaults`. Now there is only `ScrcpyOptionsX_XX.Defaults`.
 
 Added `ScrcpyOptionsX_XX.Init` type aliases for the options types.
 
-Set `ScrcpyOptionsX_XX#clipboard` to `undefined` if it's disabled by options, and allows `ScrcpyOptionsX_XX#clipboard#cancel` to ignore future messages.
+### Rename `AndroidKeyEventMeta` values
+
+Addition to the [enum-to-object conversion](#remove-typescript-enums-and-namespaces), the `AndroidKeyEventMeta` enum also have its value names changed:
+
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td>0.0.24</td>
+<td>1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+const message: Uint8Array = serializer.injectKeyCode({
+  action: AndroidKeyEventAction.Down,
+  keyCode: AndroidKeyCode.KeyA,
+  repeat: 0,
+  metaState: AndroidKeyEventMeta.ShiftOn,
+});
+```
+
+</td>
+<td>
+
+```ts
+const message: Uint8Array = serializer.injectKeyCode({
+  action: AndroidKeyEventAction.Down,
+  keyCode: AndroidKeyCode.KeyA,
+  repeat: 0,
+  metaState: AndroidKeyEventMeta.Shift,
+});
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
+### Improve clipboard stream
+
+Set `ScrcpyOptionsX_XX.prototype.clipboard` to `undefined` when it's disabled by options.
 
 ```ts showLineNumbers
 const options = new ScrcpyOptions3_0({
@@ -284,12 +351,20 @@ const options = new ScrcpyOptions3_0({
 options.clipboard; // undefined
 ```
 
+`ScrcpyOptionsX_XX.prototype.clipboard.cancel` now correctly ignores future messages.
+
 ```ts showLineNumbers
 const options = new ScrcpyOptions3_0();
 await options.clipboard.cancel();
 ```
 
-Support Scrcpy UHID messages via `ScrcpyOptionsX_XX#uHidOutput` (from v2.4), `ScrcpyControlMessageSerializer#uHidCreate` (from v2.4), `ScrcpyControlMessageSerializer#uHidInput` (from v2.4) and `ScrcpyControlMessageSerializer#uHidDestroy` (from v2.7).
+### Add basic UHID support
+
+Support Scrcpy UHID messages via `ScrcpyOptionsX_XX.prototype.uHidOutput` (from v2.4), `ScrcpyControlMessageSerializer.prototype.uHidCreate` (from v2.4), `ScrcpyControlMessageSerializer.prototype.uHidInput` (from v2.4) and `ScrcpyControlMessageSerializer.prototype.uHidDestroy` (from v2.7).
+
+A better integration is coming soon.
+
+### Add support for Scrcpy 3.0
 
 Support all new [options](../scrcpy/versions.mdx) up to Scrcpy 3.0.
 
@@ -299,30 +374,50 @@ Support [rendering to `OffscreenCanvas`](../scrcpy/video/tiny-h264.mdx#create-a-
 
 ## `@yume-chan/scrcpy-decoder-webcodecs`
 
-Added multiple [rendering modes](../scrcpy/video/web-codecs.mdx#renderer) and [rendering to `OffscreenCanvas`](../scrcpy/video/web-codecs.mdx#create-a-decoder).
+### Add multiple renderers
 
-Fixed rendering H.265 videos having incorrect size on Microsoft Edge on Windows.
+There are multiple ways to render WebCodecs video frames. Now the package ships with [several renderers](../scrcpy/video/web-codecs.mdx#renderer), and you need to create a renderer before creating a decoder.
+
+For canvas-based renderers, [rendering to `OffscreenCanvas`](../scrcpy/video/web-codecs.mdx#create-a-decoder) is now also supported.
+
+### Fix rendering H.265 in Microsoft Edge
+
+Fixed rendering H.265 videos having incorrect size in Microsoft Edge on Windows.
 
 ## `@yume-chan/stream-extra`
 
-Added `BufferedReadableStream#iterateExactly` which returns raw chunks until the requested size is reached (while `BufferedReadableStream#readExactly` combines the chunks into one `Uint8Array`). This allows incremental processing and more granular control.
+### Add `BufferedReadableStream.prototype.iterateExactly`
+
+Which returns chunks of data until the requested size is reached (while `BufferedReadableStream.prototype.readExactly` combines the chunks into one `Uint8Array`). This allows incremental processing and more granular control.
+
+### Workaround a ESBuild bug
 
 Changed the coding style to workaround [evanw/esbuild#3923](https://github.com/evanw/esbuild/issues/3923). This should allow using in Vite without `optimizeDeps.exclude` option.
 
+### Simplify `PushReadableStream` usage
+
 `PushReadableStream` now ignores (instead of throwing an error) calling `controller.enqueue`, `controller.close` and `controller.error` when the stream is already in an errored or closed state. This simplifies the usage.
 
-Automatically polyfill [`ReadableStream.from`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static), [`ReadableStream.prototype[Symbol.asyncIterator]` and `ReadableStream#values`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#async_iteration) when necessary.
+### Polyfill `ReadableStream.from` and `ReadableStream.prototype[Symbol.asyncIterator]`
+
+Automatically polyfill [`ReadableStream.from`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static), [`ReadableStream.prototype[Symbol.asyncIterator]` and `ReadableStream.prototype.values`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#async_iteration) when necessary.
 
 ## `@yume-chan/struct`
 
+### Whole package rewrite
+
 The whole package has been mostly rewritten:
 
-- `SyncPromise` has been replaced with `bipedal` to support running async functions synchronously if possible.
+- `SyncPromise` has been replaced with `bipedal` to support running async functions synchronously when possible.
 - `new Struct` has been replaced with `struct` method.
 - Fluent style API has been replaced by individual field type methods for easier extension and better tree-shaking.
 
 The new API is inspired by [TypeGPU](https://docs.swmansion.com/TypeGPU/) and [gensync](https://github.com/loganfsmyth/gensync). Check [README](https://www.npmjs.com/package/@yume-chan/struct/v/1.0.0) for documentation.
 
+### Remove `ValueOrPromise`
+
 The exported type `ValueOrPromise` has been moved to `@yume-chan/async` and renamed to `MaybePromiseLike`.
+
+### Rename `EMPTY_UINT8_ARRAY`
 
 The exported value `EMPTY_UINT8_ARRAY` has been renamed to `EmptyUint8Array`. We will use `PascalCase` for constants in the future.
