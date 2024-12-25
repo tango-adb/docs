@@ -15,6 +15,7 @@
         "libusb",
         "logcat",
         "muxer",
+        "muxing",
         "MVVM",
         "nohostname",
         "nouser",

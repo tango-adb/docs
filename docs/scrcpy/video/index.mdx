@@ -112,8 +112,8 @@ When the encoder is restarted, a new configuration packet will be generated and 
 
 The `data` field contains the codec-specific configuration information:
 
-* H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS)
-* H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS)
+* H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS) in Annex B format.
+* H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS) in Annex B format.
 * AV1: The first 3 bytes of `AV1CodecConfigurationRecord` (https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox). The remaining configuration OBUs are in the next data packet.
 
 The client should handle this packet and update the decoder accordingly.

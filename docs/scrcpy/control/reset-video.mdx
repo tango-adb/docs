@@ -1,0 +1,34 @@
+---
+sidebar_position: 12
+---
+
+# Reset video
+
+:::info
+
+Added in Scrcpy 3.0
+
+:::
+
+Restart video capture and encoding.
+
+Because a video must start with a configuration and keyframe to be decoded, sometimes you might want to manually restart video capture and encoding, which produces a new configuration packet and keyframe data packet immediately.
+
+For example, when you want to [save a video](../video/record.mdx) from a specific point, or stream the video to multiple players, and a new player is added.
+
+Reset video will cause a very small pause in the video stream, but it should be acceptable for most cases.
+
+## Usage
+
+```ts transpile
+import { AndroidKeyEventAction } from "@yume-chan/scrcpy";
+
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.resetVideo();
+
+// Using `ScrcpyControlMessageWriter`
+await writer.resetVideo();
+
+// Using `AdbScrcpyClient`
+await client.controller!.resetVideo();
+```

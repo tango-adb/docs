@@ -1,5 +1,7 @@
 # Control device
 
+import Version from "../version-span";
+
 Scrcpy supports various input events, including mouse, touch, keyboard, and physical buttons. The client sends input events to the server, which injects them into the device.
 
 There are three ways to create or send control messages, they provide the same set of methods:
@@ -15,6 +17,7 @@ There are three ways to create or send control messages, they provide the same s
 - Collapse panels: Collapse the notification and quick settings panels.
 - [Rotate device](./rotate.mdx): Change the device orientation.
 - Set clipboard: Set the device clipboard (only supports plain text).
+- <Version since="v3.0">[Reset video](./reset-video.mdx): Restart video capture and encoding.</Version>
 
 ## Using `@yume-chan/scrcpy`
 
