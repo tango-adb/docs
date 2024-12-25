@@ -1,0 +1,94 @@
+# Upgrade from 0.0.24
+
+This page lists changes from version 0.0.24 in Scrcpy-related packages.
+
+For changes in other packages, see [this page](../tango/upgrade.mdx).
+
+## `@yume-chan/adb-scrcpy`
+
+Fixed a bug that `AdbScrcpyOptionsX_XX` doesn't [automatically switch to forward tunnel mode](../scrcpy/connect-server.mdx#with-yume-chanadb-scrcpy) when reverse tunnel is not supported.
+
+Now it handles errors and stream closures when parsing the device message stream. The errors and closures will be propagated to [`ScrcpyOptionsX_XX#clipboard`](../scrcpy/options/index.mdx#watch-device-clipboard-changes) and `ScrcpyOptionsX_XX#uHidOutput` (docs to be added).
+
+## `@yume-chan/aoa`
+
+All options to `HidMouse.serializeInputReport` are now optional.
+
+<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
+<thead>
+<tr>
+<td>0.0.24</td>
+<td>1.0.0</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```ts
+const report = HidMouse.serializeInputReport({
+  movementX: 10,
+  movementY: -5,
+  buttons: 0,
+  scrollX: 0,
+  scrollY: 0,
+});
+```
+
+</td>
+<td>
+
+```ts
+const report = HidMouse.serializeInputReport({
+  movementX: 10,
+  movementY: -5,
+});
+```
+
+</td>
+</tr>
+</tbody>
+</table>
+
+## `@yume-chan/scrcpy`
+
+The whole package has been completely rewritten. Options classes now shares code using ES modules, instead of inheritance, so if you only import one options class, only the related code will be included in the output bundle.
+
+Removed `ScrcpyOptionsX_XX#defaults`. Now there is only `ScrcpyOptionsX_XX.Defaults`.
+
+Added `ScrcpyOptionsX_XX.Init` type aliases for the options types.
+
+Set `ScrcpyOptionsX_XX#clipboard` to `undefined` if it's disabled by options, and allows `ScrcpyOptionsX_XX#clipboard#cancel` to ignore future messages.
+
+```ts showLineNumbers
+const options = new ScrcpyOptions3_0({
+  control: false,
+});
+options.clipboard; // undefined
+```
+
+```ts showLineNumbers
+const options = new ScrcpyOptions3_0({
+  clipboardAutosync: false,
+});
+options.clipboard; // undefined
+```
+
+```ts showLineNumbers
+const options = new ScrcpyOptions3_0();
+await options.clipboard.cancel();
+```
+
+Support Scrcpy UHID messages via `ScrcpyOptionsX_XX#uHidOutput` (from v2.4), `ScrcpyControlMessageSerializer#uHidCreate` (from v2.4), `ScrcpyControlMessageSerializer#uHidInput` (from v2.4) and `ScrcpyControlMessageSerializer#uHidDestroy` (from v2.7).
+
+Support all new [options](../scrcpy/versions.mdx) up to Scrcpy 3.0.
+
+## `@yume-chan/scrcpy-decoder-tinyh264`
+
+Support [rendering to `OffscreenCanvas`](../scrcpy/video/tiny-h264.mdx#create-a-decoder). Thanks [@oott123](https://github.com/oott123) for submitting [#643](https://github.com/yume-chan/ya-webadb/pull/643)!
+
+## `@yume-chan/scrcpy-decoder-webcodecs`
+
+Added multiple [rendering modes](../scrcpy/video/web-codecs.mdx#renderer) and [rendering to `OffscreenCanvas`](../scrcpy/video/web-codecs.mdx#create-a-decoder).
+
+Fixed rendering H.265 videos having incorrect size on Microsoft Edge on Windows.

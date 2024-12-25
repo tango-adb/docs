@@ -2,7 +2,9 @@
 
 The version 1.0.0 contains many breaking changes, mainly to improve developer experience and reduce bundling size by improve tree-shaking.
 
-Here are all the changes, grouped by package:
+This page lists changes from version 0.0.24 in core packages.
+
+For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
 
 ## `@yume-chan/adb`
 
@@ -216,16 +218,6 @@ const observer1 = new AdbDaemonWebUsbDeviceObserver(navigator.usb, {
 const observer2 = manager.trackDevices();
 ```
 
-## `@yume-chan/adb-scrcpy`
-
-### Fix automatically switching to forward tunnel
-
-Fixed a bug that `AdbScrcpyOptionsX_XX` doesn't [automatically switch to forward tunnel mode](../scrcpy/connect-server.mdx#with-yume-chanadb-scrcpy) when reverse tunnel is not supported.
-
-### Properly handle device message stream
-
-Now it handles errors and stream closures when parsing the device message stream. The errors and closures will be propagated to [`ScrcpyOptionsX_XX.prototype.clipboard`](../scrcpy/options/index.mdx#watch-device-clipboard-changes) and `ScrcpyOptionsX_XX.prototype.uHidOutput` (docs to be added).
-
 ## `@yume-chan/android-bin`
 
 ### Remove TypeScript enums
@@ -241,148 +233,6 @@ For the reason stated [above](#remove-typescript-enums-and-namespaces), the foll
 ### Add `Intent.prototype.addStringExtra` method
 
 Thanks [@cedricdevriendt](https://github.com/cedricdevriendt) for submitting [#644](https://github.com/yume-chan/ya-webadb/pull/644)!
-
-## `@yume-chan/aoa`
-
-All options to `HidMouse.serializeInputReport` are now optional.
-
-<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
-<thead>
-<tr>
-<td>0.0.24</td>
-<td>1.0.0</td>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-
-```ts
-const report = HidMouse.serializeInputReport({
-  movementX: 10,
-  movementY: -5,
-  buttons: 0,
-  scrollX: 0,
-  scrollY: 0,
-});
-```
-
-</td>
-<td>
-
-```ts
-const report = HidMouse.serializeInputReport({
-  movementX: 10,
-  movementY: -5,
-});
-```
-
-</td>
-</tr>
-</tbody>
-</table>
-
-## `@yume-chan/scrcpy`
-
-### Rewrite options classes
-
-Options classes now share code using ES modules, instead of inheritance, so if you only import one options class, unused code can be tree-shaken.
-
-Removed `ScrcpyOptionsX_XX.prototype.defaults`. Now there is only `ScrcpyOptionsX_XX.Defaults`.
-
-Added `ScrcpyOptionsX_XX.Init` type aliases for the options types.
-
-### Rename `AndroidKeyEventMeta` values
-
-Addition to the [enum-to-object conversion](#remove-typescript-enums-and-namespaces), the `AndroidKeyEventMeta` enum also have its value names changed:
-
-<table style={{display:'table',width:'100%', tableLayout:'fixed'}}>
-<thead>
-<tr>
-<td>0.0.24</td>
-<td>1.0.0</td>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-
-```ts
-const message: Uint8Array = serializer.injectKeyCode({
-  action: AndroidKeyEventAction.Down,
-  keyCode: AndroidKeyCode.KeyA,
-  repeat: 0,
-  metaState: AndroidKeyEventMeta.ShiftOn,
-});
-```
-
-</td>
-<td>
-
-```ts
-const message: Uint8Array = serializer.injectKeyCode({
-  action: AndroidKeyEventAction.Down,
-  keyCode: AndroidKeyCode.KeyA,
-  repeat: 0,
-  metaState: AndroidKeyEventMeta.Shift,
-});
-```
-
-</td>
-</tr>
-</tbody>
-</table>
-
-### Improve clipboard stream
-
-Set `ScrcpyOptionsX_XX.prototype.clipboard` to `undefined` when it's disabled by options.
-
-```ts showLineNumbers
-const options = new ScrcpyOptions3_0({
-  control: false,
-});
-options.clipboard; // undefined
-```
-
-```ts showLineNumbers
-const options = new ScrcpyOptions3_0({
-  clipboardAutosync: false,
-});
-options.clipboard; // undefined
-```
-
-`ScrcpyOptionsX_XX.prototype.clipboard.cancel` now correctly ignores future messages.
-
-```ts showLineNumbers
-const options = new ScrcpyOptions3_0();
-await options.clipboard.cancel();
-```
-
-### Add basic UHID support
-
-Support Scrcpy UHID messages via `ScrcpyOptionsX_XX.prototype.uHidOutput` (from v2.4), `ScrcpyControlMessageSerializer.prototype.uHidCreate` (from v2.4), `ScrcpyControlMessageSerializer.prototype.uHidInput` (from v2.4) and `ScrcpyControlMessageSerializer.prototype.uHidDestroy` (from v2.7).
-
-A better integration is coming soon.
-
-### Add support for Scrcpy 3.0
-
-Support all new [options](../scrcpy/versions.mdx) up to Scrcpy 3.0.
-
-## `@yume-chan/scrcpy-decoder-tinyh264`
-
-Support [rendering to `OffscreenCanvas`](../scrcpy/video/tiny-h264.mdx#create-a-decoder). Thanks [@oott123](https://github.com/oott123) for submitting [#643](https://github.com/yume-chan/ya-webadb/pull/643)!
-
-## `@yume-chan/scrcpy-decoder-webcodecs`
-
-### Add multiple renderers
-
-There are multiple ways to render WebCodecs video frames. Now the package ships with [several renderers](../scrcpy/video/web-codecs.mdx#renderer), and you need to create a renderer before creating a decoder.
-
-For canvas-based renderers, [rendering to `OffscreenCanvas`](../scrcpy/video/web-codecs.mdx#create-a-decoder) is now also supported.
-
-### Fix rendering H.265 in Microsoft Edge
-
-Fixed rendering H.265 videos having incorrect size in Microsoft Edge on Windows.
 
 ## `@yume-chan/stream-extra`
 
