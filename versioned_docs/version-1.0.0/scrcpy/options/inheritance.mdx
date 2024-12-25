@@ -1,0 +1,69 @@
+# Inheritance
+
+import Interactive from "./interactive";
+
+`ScrcpyOptionsX_YY` classes use a special inheritance mechanism to allow breaking changes between versions. When features change in the server, a new options class is created, and only the changed behaviors are overridden.
+
+There are several virtual methods in the base class that can be overridden in the derived class.
+
+```ts
+declare class ScrcpyOptions {
+  abstract serialize(): string[];
+  /**
+   * Set the essential options to let Scrcpy server print out available encoders.
+   */
+  setListEncoders(): void;
+  /**
+   * Set the essential options to let Scrcpy server print out available displays.
+   */
+  setListDisplays(): void;
+  /**
+   * Parse encoder information from Scrcpy server output
+   * @param line One line of Scrcpy server output
+   */
+  parseEncoder(line: string): ScrcpyEncoder | undefined;
+  /**
+   * Parse display information from Scrcpy server output
+   * @param line One line of Scrcpy server output
+   */
+  parseDisplay(line: string): ScrcpyDisplay | undefined;
+  /**
+   * Parse the device metadata from video stream according to the current version and options.
+   * @param stream The video stream.
+   * @returns
+   * A tuple of the video stream and the metadata.
+   *
+   * The returned video stream may be different from the input stream, and should be used for further processing.
+   */
+  parseVideoStreamMetadata(
+    stream: ReadableStream<Uint8Array>
+  ): ValueOrPromise<ScrcpyVideoStream>;
+  parseAudioStreamMetadata(
+    stream: ReadableStream<Uint8Array>
+  ): ValueOrPromise<ScrcpyAudioStreamMetadata>;
+  parseDeviceMessage(id: number, stream: AsyncExactReadable): Promise<void>;
+  createMediaStreamTransformer(): TransformStream<
+    Uint8Array,
+    ScrcpyMediaStreamPacket
+  >;
+  serializeInjectTouchControlMessage(
+    message: ScrcpyInjectTouchControlMessage
+  ): Uint8Array;
+  serializeBackOrScreenOnControlMessage(
+    message: ScrcpyBackOrScreenOnControlMessage
+  ): Uint8Array | undefined;
+  /**
+   * Convert a clipboard control message to binary data
+   * @param message The clipboard control message
+   * @returns A `Uint8Array` containing the binary data, or a tuple of the binary data and a promise that resolves when the clipboard is updated on the device
+   */
+  serializeSetClipboardControlMessage(
+    message: ScrcpySetClipboardControlMessage
+  ): Uint8Array | [Uint8Array, Promise<void>];
+  createScrollController(): ScrcpyScrollController;
+}
+```
+
+The following table shows which methods are overridden in each version. Hover on each column to highlight all methods that are used in that version.
+
+<Interactive />

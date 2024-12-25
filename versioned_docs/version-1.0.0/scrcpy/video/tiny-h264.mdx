@@ -1,0 +1,178 @@
+---
+sidebar_position: 1
+---
+
+# Tiny H264 decoder
+
+Decode and render H.264 streams in Web browsers using TinyH264, the (now deprecated and removed) Android H.264 software decoder.
+
+It's slow, and only supports H.264 main profile at level 4, but works on most browsers.
+
+```sh npm2yarn
+npm install @yume-chan/scrcpy-decoder-tinyh264
+```
+
+## Performance
+
+There are two aspects of performance:
+
+### Decoding
+
+[`tinyh264`](https://npmjs.org/package/tinyh264) package is used for decoding, which compiles the C code into WebAssembly, and runs it in a Web Worker. This way, the main thread is not blocked by the decoding process.
+
+Because H.264 is a complex codec, decoding it is CPU-intensive. It might not be able to keep up with the video frame rate on low-end devices.
+
+### Rendering
+
+Tiny H264 decoder outputs raw YUV frames, which needs to be converted to RGB for rendering.
+
+[`yuv-canvas`](https://www.npmjs.com/package/yuv-canvas) package is used to do the conversion and rendering. When supported, it uses a WebGL shader to accelerate the conversion, so it's very fast. But on unsupported devices, it falls back to a software implementation, which is super slow.
+
+## Limit profile/level
+
+Because it only supports H.264 Baseline level 4 codec, but many newer devices default to higher profiles/levels, you must limit it using the `codecOptions` option:
+
+```ts transpile
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+const H264Capabilities = TinyH264Decoder.capabilities.h264;
+
+const options = new ScrcpyOptions1_24({
+  // other options...
+  codecOptions: new CodecOptions({
+    profile: H264Capabilities.maxProfile,
+    level: H264Capabilities.maxLevel,
+  }),
+});
+```
+
+However, it will fail on some very old devices that doesn't even support Baseline level 4 codec. If that happens, You can retry starting the server without the `codecOptions` option.
+
+```ts transpile
+try {
+  await startServer(
+    new ScrcpyOptions1_24({
+      // other options...
+      codecOptions: new CodecOptions({
+        profile: H264Capabilities.maxProfile,
+        level: H264Capabilities.maxLevel,
+      }),
+    })
+  );
+} catch (e) {
+  await startServer(
+    new ScrcpyOptions1_24({
+      // other options...
+    })
+  );
+}
+```
+
+## Create a decoder
+
+```ts
+export declare namespace TinyH264Decoder {
+  interface Options {
+    /**
+     * Optional render target canvas element or offscreen canvas.
+     * If not provided, a new `<canvas>` (when DOM is available)
+     * or a `OffscreenCanvas` will be created.
+     */
+    canvas?: HTMLCanvasElement | OffscreenCanvas | undefined;
+  }
+}
+
+export declare class TinyH264Decoder implements ScrcpyVideoDecoder {
+  static readonly capabilities: Record<string, ScrcpyVideoDecoderCapability>;
+
+  get renderer(): HTMLCanvasElement | OffscreenCanvas;
+  get sizeChanged(): import("@yume-chan/event").AddEventListener<
+    {
+      width: number;
+      height: number;
+    },
+    unknown
+  >;
+
+  get framesRendered(): number;
+  get framesSkipped(): number;
+
+  get writable(): WritableStream<ScrcpyMediaStreamPacket>;
+
+  constructor(options?: TinyH264Decoder.Options);
+
+  dispose(): void;
+}
+```
+
+TinyH264 decoder can render to an HTML `<canvas>` element, or an `OffscreenCanvas` object.
+
+### Using an existing canvas
+
+When using MVVM frameworks like React.js, it might be simpler to attach the decoder to an existing element, for example:
+
+```ts transpile
+import React from "react";
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+
+export function Renderer(props: {
+  videoStream: ReadableStream<ScrcpyMediaStreamPacket>;
+}) {
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+
+  React.useEffect(() => {
+    const decoder = new TinyH264Decoder({ canvas: canvasRef.current });
+    void props.videoStream.pipeTo(decoder.writable).catch(() => {});
+  }, []);
+
+  return (
+    <div className="container">
+      <canvas ref={canvasRef} />
+    </div>
+  );
+}
+```
+
+### Create a new canvas
+
+If the `canvas` option is not provided, it automatically creates an `<canvas>` element if there is DOM API, or an `OffscreenCanvas` otherwise. The created renderer target can be retrieved from the `renderer` property.
+
+```ts transpile
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+const decoder = new TinyH264Decoder();
+document.body.appendChild(decoder.renderer as HTMLCanvasElement);
+
+videoPacketStream // from previous step
+  .pipeTo(decoder.writable)
+  .catch(() => {});
+```
+
+The newly created `renderer` needs to be inserted into the page to display the video.
+
+## Handle size changes
+
+When the device orientation changes, Scrcpy server will recreate a new video encoder with the new size. The decoder will parse the new video configuration, and update the canvas size automatically.
+
+However, the video size is also useful for other purposes, like [injecting touch events](../control/touch.mdx). The `sizeChanged` event will be emitted when the video size changes:
+
+```ts transpile
+decoder.sizeChanged(({ width, height }) => {
+  console.log(width, height);
+});
+```
+
+## Rendering metrics
+
+The decoder will try to render every frame when it arrives, to minimize latency.
+
+However, when the video frame rate is higher than the display refresh rate, or when the hardware can't keep up, some frames will be dropped.
+
+The `framesRendered` and `framesSkipped` fields provides accumulated rendering metrics:
+
+```ts transpile
+setInterval(() => {
+  console.log(decoder.framesRendered, decoder.framesSkipped);
+}, 1000);
+```

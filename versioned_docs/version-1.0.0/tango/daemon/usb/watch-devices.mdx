@@ -1,0 +1,127 @@
+---
+sidebar_position: 6
+---
+
+# Watch devices
+
+The `AdbDaemonWebUsbDeviceObserver` class in `@yume-chan/adb-daemon-webusb` package wraps WebUSB API to monitor device additions and removals.
+
+```ts
+import { AddEventListener } from "@yume-chan/event";
+import { DeviceObserver } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+export declare class AdbDaemonWebUsbDeviceObserver
+  implements DeviceObserver<AdbDaemonWebUsbDevice>
+{
+  onDeviceAdd: AddEventListener<AdbDaemonWebUsbDevice[], unknown>;
+  onDeviceRemove: AddEventListener<AdbDaemonWebUsbDevice[], unknown>;
+  onListChange: AddEventListener<AdbDaemonWebUsbDevice[], unknown>;
+  current: AdbDaemonWebUsbDevice[];
+
+  constructor(
+    usb: USB,
+    options?: AdbDaemonWebUsbDeviceManager.RequestDeviceOptions
+  );
+
+  stop(): void;
+}
+```
+
+## Create an observer
+
+Similar to [`AdbDaemonWebUsbDeviceManager`](./device-manager.mdx), it requires a WebUSB implementation.
+
+If you already have an `AdbDaemonWebUsbDeviceManager` instance, the `trackDevices` method creates an `AdbDaemonWebUsbDeviceObserver` instance that uses the same `USB` handle.
+
+```ts transpile
+import {
+  AdbDaemonWebUsbDeviceManager,
+  AdbDaemonWebUsbDeviceObserver,
+} from "@yume-chan/adb-daemon-webusb";
+
+declare const Manager: AdbDaemonWebUsbDeviceManager;
+
+// highlight-start
+const observer: AdbDaemonWebUsbDeviceObserver = Manager.trackDevices();
+// highlight-end
+```
+
+You can also calling the constructor directly using a `USB` handle:
+
+```ts transpile
+import { AdbDaemonWebUsbDeviceObserver } from "@yume-chan/adb-daemon-webusb";
+
+// highlight-start
+const observer = new AdbDaemonWebUsbDeviceObserver(navigator.usb);
+// highlight-end
+```
+
+And similar to [`AdbDaemonWebUsbDeviceManager#requestDevice`](./request-device.mdx) and [`AdbDaemonWebUsbDeviceManager#getDevices`](./get-devices.mdx), it accepts an optional `options` parameter, to filter the devices. By default, it will only return devices that match the default ADB interface.
+
+For example, to only receive events for a specific manufacturer and model:
+
+```ts transpile
+import { AdbDaemonWebUsbDeviceObserver } from "@yume-chan/adb-daemon-webusb";
+
+const observer = new AdbDaemonWebUsbDeviceObserver(navigator.usb, {
+  filters: [
+    {
+      // highlight-start
+      vendorId: 0x18d1,
+      productId: 0x4ee2,
+      // highlight-end
+    },
+  ],
+});
+```
+
+## `onDeviceAdd` and `onDeviceRemove`
+
+When a device is added or connected, the `onDeviceAdd` event will fire with the list of new devices. It automatically creates `AdbDaemonWebUsbDevice` instances for them.
+
+When a device is removed or disconnected, the `onDeviceRemove` event will fire with the list of removed devices.
+
+```ts transpile
+observer.onDeviceAdd((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
+
+observer.onDeviceRemove((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
+```
+
+To remove an event listener, save and call the return value:
+
+```ts transpile
+const removeListener = observer.onDeviceAdd((devices) => {
+  // ...
+});
+
+removeListener();
+```
+
+## `onListChange` and `current`
+
+The `current` field contains all the devices that are currently connected. Devices already connected when the observer is created won't fire the `onDeviceAdd` event, but they will be included in the `current` field.
+
+When it changes, the `onListChange` event will fire with the new list. Note that with this device observer, the `current` field always contains the same array, only the items in the array may change.
+
+```ts transpile
+for (const device of observer.current) {
+  console.log(device.serial);
+}
+
+observer.onListChange((devices) => {
+  console.log(devices === observer.current); // true
+});
+```
+
+## Stop the observer
+
+The `stop` method removes all the event listeners and releases all the resources. The `AdbDaemonWebUsbDeviceObserver` instance is no longer usable after calling `stop`.

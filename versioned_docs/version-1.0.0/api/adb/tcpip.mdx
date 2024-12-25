@@ -1,0 +1,58 @@
+---
+sidebar_position: 6
+---
+
+# tcpip
+
+Enable/disable ADB over Wi-Fi.
+
+:::info
+
+Toggling ADB over Wi-Fi will restart ADB daemon, causing all existing connections to be closed.
+
+:::
+
+:::info
+
+Tango requires another daemon connection to connect devices over TCP. See [create TCP connection](/tango/daemon/tcp/create-connection.mdx) for more information.
+
+:::
+
+```ts
+declare class AdbTcpIpCommand extends AdbCommandBase {
+  setPort(port: number): Promise<string>;
+  disable(): Promise<string>;
+}
+
+declare class Adb {
+  readonly tcpip: AdbTcpIpCommand;
+}
+```
+
+## Enable ADB over Wi-Fi
+
+```ts transpile
+await adb.tcpip.setPort(5555);
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb tcpip 5555
+```
+
+:::
+
+## Disable ADB over Wi-Fi
+
+```ts transpile
+await adb.tcpip.disable();
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb usb
+```
+
+:::

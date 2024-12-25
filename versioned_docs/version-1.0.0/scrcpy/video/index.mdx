@@ -1,0 +1,209 @@
+---
+sidebar_position: 7
+---
+
+import Version from "../version-span";
+
+# Handle video stream
+
+The video socket from Scrcpy server contains the encoded video frames. Normally, it contains a leading metadata, and multiple configuration and data (video frame) packets, but the exact format depends on the Scrcpy server version and the specified option values.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> Metadata
+    Metadata --> Configuration
+
+    Configuration --> Data
+    Data --> Data
+    Data --> Configuration: Restart encoder
+
+    Data --> [*]
+```
+
+## Raw mode
+
+Since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, the server directly returns the encoded video stream without any encapsulations.
+
+In this mode, the video stream only contains codec-specific data. Tango doesn't support parsing the video stream in this mode, but it can be decoded by FFmpeg, or saved directly.
+
+Otherwise, the video stream contains additional metadata and frame information. The following methods can be used to parse and handle the video stream.
+
+## Video stream metadata
+
+Scrcpy server first sends some metadata about the video stream:
+
+```ts
+interface ScrcpyVideoStreamMetadata {
+  deviceName?: string | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  codec: ScrcpyVideoCodecId;
+}
+```
+
+- `deviceName`: The device's model name<Version since="v1.22">, or `undefined` if `sendDeviceMeta` option is `false`.</Version>.
+- `width` and `height`: Size of the first video frame<Version since="v1.22" until='v2.0'>, or `undefined` if `sendDeviceMeta` option is `false`.</Version><Version since="v2.0">, or `undefined` if `sendCodecMeta` option is `false`.</Version>.
+- `codec`: The codec returned from server<Version since="v2.0">, or the codec inferred from options if `sendCodecMeta` option is `false`.</Version>.
+
+When device's screen resolution changes (for example, when device rotates, or when a foldable device folds/unfolds), the server restarts video capture and encoding with the new resolution. However, it won't send a new metadata packets with the updated size. The only way to keep track of the video resolution is by parsing the video stream directly. The exact code depends on the video codec.
+
+### With `@yume-chan/scrcpy`
+
+If you already have a `ReadableStream<Uint8Array>` that reads from the video socket, use the `parseVideoStreamMetadata` method from the corresponding `ScrcpyOptionsX_YY` class to parse the metadata. This method will return the metadata, and a new stream that contains the remaining stream.
+
+```ts transpile
+import { ScrcpyOptions2_1, ScrcpyVideoStreamPacket } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_1({
+  // use the same version and options when starting the server
+});
+
+const videoSocket: ReadableStream<Uint8Array>; // get the stream yourself
+
+// Parse video socket metadata
+const { metadata: videoMetadata, stream: videoStream } =
+  await options.parseVideoStreamMetadata(videoSocket);
+```
+
+`parseVideoStreamMetadata` also supports raw mode:
+
+* In `metadata`, only the `codec` field is defined, and is inferred from the option values.
+* The `stream` field is the input `videoSocket` returned as-is.
+
+### With `@yume-chan/adb-scrcpy`
+
+In `AdbScrcpyClient`, parsing video stream metadata and transforming video packets can be done in a single step. See [the section below](#with-yume-chanadb-scrcpy-1).
+
+## Video packets
+
+When not in raw mode, Scrcpy server will encapsulate each encoded video frame with extra information. Tango parses the frames into two types of packets:
+
+```ts
+interface ScrcpyMediaStreamConfigurationPacket {
+  type: "configuration";
+  data: Uint8Array;
+}
+
+interface ScrcpyMediaStreamDataPacket {
+  type: "data";
+  keyframe?: boolean;
+  pts?: bigint;
+  data: Uint8Array;
+}
+
+type ScrcpyMediaStreamPacket =
+  | ScrcpyMediaStreamConfigurationPacket
+  | ScrcpyMediaStreamDataPacket;
+```
+
+The behavior of the packets depends on the `sendFrameMeta` option:
+
+| Value                                  | `sendFrameMeta: true`                                    | `sendFrameMeta: false` |
+| -------------------------------------- | -------------------------------------------------------- | ---------------------- |
+| `ScrcpyMediaStreamConfigurationPacket` | Must be the first packet, but can also appear anywhere   | Not exist              |
+| `ScrcpyMediaStreamDataPacket.keyframe` | `boolean` indicating if the current packet is a keyframe | `undefined`            |
+| `ScrcpyMediaStreamDataPacket.pts`      | `bigint` indicating the presentation timestamp           | `undefined`            |
+
+### Configuration packet
+
+When the encoder is restarted, a new configuration packet will be generated and sent.
+
+The `data` field contains the codec-specific configuration information:
+
+* H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS)
+* H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS)
+* AV1: The first 3 bytes of `AV1CodecConfigurationRecord` (https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox). The remaining configuration OBUs are in the next data packet.
+
+The client should handle this packet and update the decoder accordingly.
+
+### Data packet
+
+Each data packet contains exactly one encoded frame.
+
+### With `@yume-chan/scrcpy`
+
+The `createMediaStreamTransformer` method creates a `TransformStream` that parses the video stream into packets.
+
+`parseVideoStreamMetadata` and `createMediaStreamTransformer` are separate methods, because `createMediaStreamTransformer` can also be used to parse the audio stream.
+
+```ts transpile
+const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket> =
+  videoStream.pipeThrough(options.createMediaStreamTransformer());
+
+videoPacketStream
+  .pipeTo(
+    new WritableStream({
+      write(packet: ScrcpyMediaStreamPacket) {
+        switch (packet.type) {
+          case "configuration":
+            // Handle configuration packet
+            console.log(packet.data);
+            break;
+          case "data":
+            // Handle data packet
+            console.log(packet.keyframe, packet.pts, packet.data);
+            break;
+        }
+      },
+    })
+  )
+  .catch((e) => {
+    console.error(e);
+  });
+```
+
+Similar to [`options.clipboard`](../options/index.mdx#watch-device-clipboard-changes), don't `await` the `pipeTo`. The returned `Promise` only resolves when `videoSocket` ends, but waiting here and not handling other streams will block `videoSocket`, causing a deadlock.
+
+### With `@yume-chan/adb-scrcpy`
+
+When `video` option is not `false`, `AdbScrcpyClient.videoStream` is a `Promise` that resolves to an `AdbScrcpyVideoStream`.
+
+```ts
+interface AdbScrcpyVideoStream {
+  stream: ReadableStream<ScrcpyMediaStreamPacket>;
+  metadata: ScrcpyVideoStreamMetadata;
+}
+```
+
+It's very similar to the `videoMetadata` and `videoPacketStream` values in the above section, because `AdbScrcpyClient` calls `parseVideoStreamMetadata` and `createMediaStreamTransformer` internally.
+
+```ts transpile
+if (client.videoSteam) {
+  const { metadata: videoMetadata, stream: videoPacketStream } =
+    await client.videoStream;
+
+  videoPacketStream
+    .pipeTo(
+      new WritableStream({
+        write(packet: ScrcpyMediaStreamPacket) {
+          switch (packet.type) {
+            case "configuration":
+              // Handle configuration packet
+              console.log(packet.data);
+              break;
+            case "data":
+              // Handle data packet
+              console.log(packet.keyframe, packet.pts, packet.data);
+              break;
+          }
+        },
+      })
+    )
+    .catch((e) => {
+      console.error(e);
+    });
+}
+```
+
+## Decode and render video
+
+Tango provides packages to decode and render video packets in Web browsers:
+
+- [Tiny H264 decoder](./tiny-h264.mdx)
+- [WebCodecs decoder](./web-codecs.mdx)
+
+To use these decoders, the `sendFrameMeta` options must be `true` (the default value).
+
+Decoding and playing video outside the browser is out of scope for this library. It will depend on the runtime environment, UI framework, and media library you use.

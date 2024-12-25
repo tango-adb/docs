@@ -1,0 +1,173 @@
+---
+sidebar_position: 6
+---
+
+# Start server
+
+The server is a `jar` file, so it's not directly executable. On Android, `app_process` is the program to start the system server, all the apps, and standalone Java applications:
+
+:::info[Equivalent ADB command]
+
+```bash
+adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1
+```
+
+:::
+
+## With `@yume-chan/scrcpy`
+
+`@yume-chan/scrcpy` only provides APIs to serialize and deserialize Scrcpy protocol messages. It can't start the server directly.
+
+The `ScrcpyOptions#serialize` method generates the command line arguments for the specified options:
+
+```ts transpile
+import { ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
+
+const options = ScrcpyOptions2_1({
+  // options
+});
+
+const commandLineArguments: string[] = options.serialize();
+```
+
+## With `@yume-chan/adb-scrcpy`
+
+Use `AdbScrcpyClient.start()` method with an option class to start the server. It automatically sets up port forwarding, launches the server, and connects to it.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { AdbScrcpyClient, AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
+import type {
+  ScrcpyControlMessageWriter,
+  ScrcpyMediaStreamPacket,
+} from "@yume-chan/scrcpy";
+import { DEFAULT_SERVER_PATH, ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const VERSION: string;
+
+const options = new AdbScrcpyOptions2_1(
+  new ScrcpyOptions2_1({
+    // options
+  }),
+);
+
+const client: AdbScrcpyClient = await AdbScrcpyClient.start(
+  adb,
+  DEFAULT_SERVER_PATH,
+  // If server binary was downloaded manually, must provide the correct version
+  VERSION,
+  options,
+);
+
+// Print output of Scrcpy server
+void client.stdout.pipeTo(
+  new WritableStream<string>({
+    write(chunk) {
+      console.log(chunk);
+    },
+  }),
+);
+
+// `undefined` if `video: false` option was specified
+if (client.videoStream) {
+  const { metadata: videoMetadata, stream: videoPacketStream } =
+    await client.videoStream;
+  console.log(videoMetadata.codec);
+  void videoPacketStream.pipeTo(
+    new WritableStream({
+      write(chunk) {
+        console.log(chunk.type);
+        // handle video stream (see next chapter)
+      },
+    }),
+  );
+}
+
+// `undefined` if `audio: false` option was specified
+if (client.audioStream) {
+  const metadata = await client.audioStream;
+  switch (metadata.type) {
+    case "disabled":
+      // Audio forwarding not supported by device
+      // The video stream still works
+      break;
+    case "errored":
+      // Other error when initializing audio
+      // The video stream still works
+      break;
+    case "success":
+      // Audio packets in the codec specified in options
+      const audioPacketStream: ReadableStream<ScrcpyMediaStreamPacket> =
+        metadata.stream;
+      break;
+  }
+}
+
+// `undefined` if `control: false` option was specified
+const controller: ScrcpyControlMessageWriter | undefined = client.controller;
+
+// `undefined` if `control: false` or `clipboardAutosync: false` option was specified
+options.clipboard
+  ?.pipeTo(
+    new WritableStream<string>({
+      write(chunk) {
+        // Handle device clipboard change
+        console.log(chunk);
+      },
+    }),
+  )
+  .catch((error) => {
+    console.error(error);
+  });
+
+// to stop the server
+await client.close();
+```
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
+
+## With Tango
+
+[Subprocess#spawn](/api/adb/subprocess.mdx#start-process-in-raw-mode) can start a process on device:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const process = await adb.subprocess.spawn(
+  "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1"
+);
+
+// Print output of Scrcpy server
+await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
+  new WritableStream<string>({
+    write(chunk) {
+      console.log(chunk);
+    },
+  })
+);
+```
+
+Then you need to [connect to Scrcpy server](./connect-server.mdx) yourself.
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::

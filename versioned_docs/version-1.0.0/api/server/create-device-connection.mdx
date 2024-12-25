@@ -1,0 +1,32 @@
+---
+sidebar_position: 8
+---
+
+# createDeviceConnection
+
+```ts showLineNumbers
+namespace AdbServerClient {
+  interface Socket extends AdbSocket {
+    transportId: bigint;
+  }
+}
+
+declare class AdbServerClient {
+  createDeviceConnection(
+    device: AdbServerClient.DeviceSelector,
+    service: string
+  ): Promise<AdbServerClient.Socket>;
+}
+```
+
+Creates a socket to the ADB daemon on the device, letting the server forward packets between the client and the device.
+
+The socket can be used to run an [ADB command](../index.mdx#adb-from-yume-chanadb), or [connect to a socket](../adb/socket.mdx#forward-tunnel) on device.
+
+Usually you don't need to call this method directly, the `createTransport` method uses it to implement `AdbTransport`.
+
+:::info[Equivalent ADB Command]
+
+There is no equivalent ADB command.
+
+:::

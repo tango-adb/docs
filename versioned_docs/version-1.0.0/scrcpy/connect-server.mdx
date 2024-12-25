@@ -1,0 +1,127 @@
+---
+sidebar_position: 7
+---
+
+# Connect to server
+
+Scrcpy uses multiple [Unix domain sockets](https://www.man7.org/linux/man-pages/man7/unix.7.html) to transmit video, audio, and control messages between client and server. However, because most of time you connect to it over ADB Server tunnels, you don't need to deal with Unix domain sockets directly, and it's also usable on Windows.
+
+:::info
+
+Scrcpy official documentation also has a section about this: https://github.com/Genymobile/scrcpy/blob/master/doc/develop.md#connection
+
+:::
+
+It supports two connection modes:
+
+## Reverse tunnel
+
+This is the default mode used by Scrcpy. The client listens on the Unix domain socket address, and the server connects to it.
+
+### Pros
+
+Because the client can listen on the socket address before the server starts, the server can connect to it immediately.
+
+### Cons
+
+The downside is that reverse tunnel may not be supported, for example with [ADB over Wi-Fi on Android 8 and below](../api/adb/reverse/index.mdx#errors), or with a [custom transport](../tango/custom-transport/transport.mdx#reverse-tunnel).
+
+In such cases, you can use the forward tunnel mode instead.
+
+### With Google ADB
+
+To setup the reverse tunnel manually with Google ADB, follow the steps below:
+
+1. Listen on a TCP port locally
+2. Run `adb reverse add` command to let Google ADB listen on the Unix domain socket address on device, and forward the connection to your TCP listener
+3. Start server using `adb shell app_process` command (described in previous page)
+4. Wait for incoming TCP connections. The number depends on the server options.
+
+See [server transport](../api/adb/reverse/add.mdx#server-transport) for more details.
+
+### With Tango
+
+Tango encapsulates the reverse tunnel feature into a callback-based API:
+
+1. Call [`reverse.add`](../api/adb/reverse/add.mdx) method to create a reverse tunnel.
+2. Start server using [`subprocess.spawn`](../api/adb/subprocess.mdx) method.
+3. Wait for the correct amount of incoming connections.
+
+### With `@yume-chan/adb-scrcpy`
+
+The `AdbScrcpyClient.start` method uses reverse tunnels by default. It sets up the reverse tunnel and waits for the correct amount of connections automatically.
+
+However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an `AdbReverseNotSupportedError`, `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
+
+If you are using a custom transport that doesn't support reverse tunnel, you can set `tunnelForward: true` option explicitly:
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_0({
+  tunnelForward: true,
+});
+```
+
+Or you can throw an `AdbReverseNotSupportedError` in your custom transport:
+
+```ts transpile
+import { AdbReverseNotSupportedError } from "@yume-chan/adb";
+
+export class YourTransport implements AdbTransport {
+  /// other methods
+
+  addReverseTunnel() {
+    throw new AdbReverseNotSupportedError();
+  }
+
+  removeReverseTunnel() {
+    throw new AdbReverseNotSupportedError();
+  }
+
+  clearReverseTunnels() {
+    throw new AdbReverseNotSupportedError();
+  }
+}
+```
+
+## Forward tunnel
+
+This mode can be used as a fallback when reverse tunnel is not supported. In forward tunnel mode, the server listens on the Unix domain socket address, and the client creates multiple connections to it.
+
+To tell Scrcpy server to use forward tunnel mode instead, add the `tunnelForward: true` option to your `ScrcpyOptionsX_XX` instance.
+
+To make it easier to detect a success connection, Scrcpy server will write a single `0` byte in the first (usually video) socket. This behavior can be turned off using `sendDummyByte: false` option.
+
+### Pros
+
+Forward tunnel is always supported.
+
+### Cons
+
+Because the server needs some time to start and listen on the socket address, the client may not connect to it immediately. Usually, the client needs to continuously retry the connection until it succeeds.
+
+### With Google ADB
+
+Here are the steps to setup a forward tunnel and connect to it using Google ADB:
+
+3. Start server using `adb shell app_process` command (described in previous page)
+1. Run `adb forward add` command, to let Google ADB listen on a local TCP port, and forward the connections to the Unix domain socket address on device.
+1. Connect to the TCP port.
+1. Retry the connection until the correct amount of sockets are created.
+
+Because local TCP sockets are handled by operating system and Google ADB server, the connection will always success, but it doesn't mean the connection has been forwarded to the remote address on device.
+
+If the server is still starting, the connection will be closed without any data.
+
+### With Tango
+
+In Tango, the [`createSocket`](../api/adb/socket.mdx#forward-tunnel) method can create sockets to the Unix domain socket address on device directly.
+
+If the server has not been started and listen on the socket address, `createSocket` will throw an error.
+
+You also need retry the connection until the correct amount of sockets are created.
+
+### With `@yume-chan/adb-scrcpy`
+
+When `tunnelForward: true` option is specified, `AdbScrcpyClient` uses forward tunnel mode to connect to Scrcpy server.

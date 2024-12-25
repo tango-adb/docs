@@ -1,0 +1,105 @@
+---
+sidebar_position: 2
+---
+
+# Get devices
+
+Use the `AdbServerClient#getDevices` method to get all connected devices.
+
+It returns an array of `AdbServerClient.Device` objects, which contains the device's serial number, product name, model name, and device name, as well as the transport ID used to create a transport later.
+
+```ts
+namespace AdbServerClient {
+  interface Device {
+    serial: string;
+    authenticating: boolean;
+    product?: string;
+    model?: string;
+    device?: string;
+    transportId: bigint;
+  }
+}
+
+declare class AdbServerClient {
+  getDevices(): Promise<AdbServerClient.Device[]>;
+}
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb devices -l
+```
+
+:::
+
+## `serial`
+
+The serial number of the device.
+
+### USB device
+
+For USB devices, it's the serial number in its USB descriptor.
+
+Most of the time, each USB device has a unique serial number, but some lazy manufacturers use the same serial number for all devices, so it's possible that multiple devices with the same serial number will be returned.
+
+Some even lazier manufacturers don't even fill in the serial number field, so it's possible that the serial number is an empty string.
+
+If multiple devices have the same (or empty) serial number, they can't be selected by serial number. So it's recommended to always use `transportId` to select devices.
+
+### TCP device
+
+For devices connected using `adb connect <ip>:<port>`, the serial number is the IP address and port number of the device. For example:
+
+```txt
+192.168.0.123:5555
+```
+
+For devices discovered by mDNS, the serial number is the device's service name. For example:
+
+```txt
+adb-12345678-ABCDEF._adb-tls-connect._tcp
+```
+
+For local Android emulator, the serial number is `emulator-<port>`. For example:
+
+```txt
+emulator-5554
+```
+
+For all TCP devices, their serial number might change after disconnection and reconnection.
+
+## `transportId`
+
+Transport ID is a number that uniquely identify a connection between the server and the device.
+
+It's not tied to a specific device, and will change when the device is disconnected and reconnected.
+
+However, transport ID is the only truly unique identifier, so it's recommended to use it to select devices when calling other methods.
+
+## Example
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+
+// highlight-start
+const devices: AdbServerClient.Device[] = await client.getDevices();
+// highlight-end
+if (devices.length === 0) {
+  alert("No device connected");
+  return;
+}
+
+const device = devices[0];
+```
+
+### Exclude unauthenticated devices
+
+The `authenticating` field indicates whether the device is currently authenticating. If you want to exclude these devices, you can use the `Array#filter` method:
+
+```ts transpile
+const devices: AdbServerClient.Device[] = await client.getDevices();
+// highlight-start
+const authenticatedDevices = devices.filter(device => !device.authenticating);
+// highlight-end
+```

@@ -1,0 +1,119 @@
+---
+sidebar_position: 5
+---
+
+import Version from "../version-span";
+
+# Options
+
+Scrcpy protocol changes over time, and are usually not backward compatible. Tango is compatible with many versions of Scrcpy server, by providing a set of options classes for each server version (or range).
+
+The options class serves two purposes:
+
+- It defines which server options are available (for you, the user)
+- It normalize the behavior between different server versions (for internal use)
+
+It's important to use the correct options class for the server version you're using. Using an incorrect version almost always results in errors.
+
+If the latest version of Scrcpy server is not declared as supported, you may try using the options class for the previous version. If it doesn't work, you may need to wait for an update.
+
+## With `@yume-chan/scrcpy`
+
+Each time a new option is added to the server, or a breaking change is introduced, a new options class is added. The class names are in a pattern of `ScrcpyOptionsX_YY`, where `X` is the major version and `YY` is the minor version. For example, `ScrcpyOptions2_1` is the options class for server version 2.1.
+
+Some Scrcpy versions contain only bug fixes or client-side changes, so the options class for the previous version is still 100% compatible. `@yume-chan/scrcpy` package provides aliases for these versions, but using the previous version is also fine.
+
+Check the [versions](../versions.mdx) page to see which options class to use for each server version. Aliases are not included in this page.
+
+### Create options
+
+All options classes take a single object parameter for server options:
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+  videoSource: "camera",
+  // ...
+});
+```
+
+Check the TypeScript definition files for available server options in each version.
+
+All server options are optional, the default values can be found in the `ScrcpyOptionsX_YY.Defaults` static field.
+
+Some part of the options class is stateful, so reuse an instance between multiple connections is not recommended. Don't do this unless you checked the source code to make sure only the stateless part is being used.
+
+### Watch device clipboard changes
+
+If the `control` option is `true`<Version since="v1.21"> and the `clipboardAutosync` option is also `true`</Version>, Scrcpy server will monitor the clipboard on the device and send the content to client when it changes. Only text content in clipboard is supported.
+
+If the feature is enabled, `options.clipboard` will be a `ReadableStream<string>`. Like other streams, you must keep reading from it to prevent blocking the whole connection. If clipboard syncing is not enabled, `options.clipboard` will be `undefined`.
+
+:::note
+
+See [Web Streams Basics](../../tango/web-stream/index.mdx) page for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+
+:::
+
+```ts transpile
+options.clipboard
+  ?.pipeTo(
+    new WritableStream({
+      write(value) {
+        console.log(value);
+      },
+    })
+  )
+  .catch(console.error);
+```
+
+You should use `.catch` and not `await` the returned `Promise`, since it will only resolve after the server exits.
+
+If an error happened in the device message socket, `options.clipboard` will enter an error state and no longer emit more values. The catch handler on the `pipeTo` call will be called with the error.
+
+If you don't need the clipboard syncing feature, you can call `options.clipboard?.cancel()` to ignore these messages<Version since="v1.21">, or disable it using `clipboardAutosync: false`</Version>.
+
+```ts transpile
+await options.clipboard?.cancel();
+
+// or
+
+new ScrcpyOptions1_21({ // or newer
+  clipboardAutosync: false,
+});
+```
+
+## With `@yume-chan/adb-scrcpy`
+
+`@yume-chan/adb-scrcpy` needs to do some additional behavior normalizations, so it has its own options classes. The naming convention is the same as `@yume-chan/scrcpy`, but with an `Adb` prefix. For example, `AdbScrcpyOptions2_1` is the options class for server version 2.1.
+
+It's more rare for protocol changes to affect `AdbScrcpyOptionsX_YY`, thus there are fewer `AdbScrcpyOptionsX_YY` classes than `ScrcpyOptionsX_YY` classes, and the versions between them don't always match.
+
+Check the [versions](../versions.mdx) page to see which options class to use for each server version.
+
+`AdbScrcpyOptionsX_YY` takes a `ScrcpyOptionsX_YY` instance and extends it, so read the previous section and create a `ScrcpyOptionsX_YY` instance first.
+
+```ts transpile
+import { AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new AdbScrcpyOptions2_1(
+  new ScrcpyOptions2_2({
+    videoSource: "camera",
+    // ...
+  })
+);
+
+options.clipboard
+  .pipeTo(
+    new WritableStream({
+      write(value) {
+        console.log(value);
+      },
+    })
+  )
+  .catch(console.error);
+```
+
+`options.clipboard` is also available in `AdbScrcpyOptionsX_YY`, the usage is the same.

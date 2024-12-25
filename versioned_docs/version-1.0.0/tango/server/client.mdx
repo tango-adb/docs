@@ -1,0 +1,63 @@
+---
+sidebar_position: 1
+---
+
+# Create client
+
+ADB Server has its own sets of commands. `AdbServerClient` class is a TypeScript re-implementation of Google ADB Client, that provides a high-level API to interact with the Server.
+
+## Create connector
+
+`AdbServerClient` class needs to connect to the ADB Server using TCP sockets. To support different runtime environments, `AdbServerClient` uses an `AdbServerConnector` implementation to create those TCP sockets.
+
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
+
+[Direct Socket API](https://github.com/WICG/direct-sockets) is a new Web API that provides TCP and UDP sockets. The `TCPSocket` class from this API can be used to create a TCP connection to ADB Servers.
+
+However, as of September 2024, it's still not clear how Direct Socket API will be implemented. The current proposal requires the Web app to be bundled and signed by the developer, then manually installed by users. This is not a practical solution for general Web apps.
+
+Another method to get TCP sockets on Web platform is to use a native "bridge" app to convert TCP sockets to WebSocket. They are usually called "WebSockify" softwares.
+
+We provide a more sophisticated bridge app, which also bundles and starts Google ADB if it's not available of not running. The source code is at https://github.com/tango-adb/bridge-rs.
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/adb-server-node-tcp) package provides a server connector based on Node.js built-in `net` module.
+
+```sh npm2yarn
+npm i @yume-chan/adb-server-node-tcp
+```
+
+Usage:
+
+```ts transpile
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
+// highlight-start
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+  host: "localhost",
+  port: 5037,
+});
+// highlight-end
+```
+
+Because each command creates a new connection, this step only saves the connection information, but does not actually connect to the server.
+
+</TabItem>
+</Tabs>
+
+## Create client
+
+With a server connector, we can create a client:
+
+```ts transpile
+import { AdbServerClient } from "@yume-chan/adb";
+
+// highlight-start
+const client: AdbServerClient = new AdbServerClient(connector);
+// highlight-end
+```
+
+This step doesn't send or receive any packets, it only initializes some internal states.

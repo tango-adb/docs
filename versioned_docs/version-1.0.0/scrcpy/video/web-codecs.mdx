@@ -1,0 +1,173 @@
+---
+sidebar_position: 2
+---
+
+# WebCodecs Decoder
+
+Decode and render H.264, H.265 and AV1 streams in Web browsers using [WebCodecs API](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API), the new Web standard for hardware-accelerated video decoding.
+
+It's fast, uses less hardware resources, and supports more profiles and levels. However, it's only available in recent versions of Chrome and Safari.
+
+```sh npm2yarn
+npm install @yume-chan/scrcpy-decoder-webcodecs
+```
+
+## Feature detection
+
+To check if the WebCodecs API is available, you can check if [`VideoDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder) is defined:
+
+```ts transpile
+const isSupported = globalThis.VideoDecoder !== undefined;
+```
+
+[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) is a static method that checks if a given codec configuration is supported.
+
+It accepts a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1.
+
+```ts transpile
+const result = await VideoDecoder.isConfigSupported({
+  codec: "hev1.1.60.L153.B0.0.0.0.0.0",
+});
+const isHevcSupported = result.supported === true;
+```
+
+You can decide which video codec to use based on the results.
+
+## Renderer
+
+WebCodecs decoder supports multiple renderers, and the package has several ones built-in:
+
+- `InsertableStreamWebCodecsDecoderRenderer`: Renders to a `<video>` element using [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). Only supported by Chromium browsers.
+- `WebGLWebCodecsDecoderRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using WebGL. Requires hardware acceleration, otherwise the performance is even worse than the two below.
+- `BitmapWebCodecsDecoderRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using bitmap renderer.
+- `CanvasWebCodecsDecoderRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using 2D canvas.
+
+Generally, the performance ranking is `InsertableStream` ≈ `WebGL` >> `Bitmap` > `Canvas`. The Insertable Streams API is specifically designed to render video frames from WebCodecs API, but in reality it's only easier to integrate, not faster.
+
+`InsertableStreamWebCodecsDecoderRenderer` and `WebGLWebCodecsDecoderRenderer` both have an `isSupported` static property, to check whether they are supported by the current browser and hardware:
+
+```ts transpile
+function createWebCodecsRenderer(): {
+  renderer: WebCodecsVideoDecoderRenderer;
+  element: HTMLVideoElement | HTMLCanvasElement;
+} {
+  if (InsertableStreamWebCodecsDecoderRenderer.isSupported) {
+    const renderer = new InsertableStreamWebCodecsDecoderRenderer();
+    return { renderer, element: renderer.element };
+  }
+
+  if (WebGLWebCodecsDecoderRenderer.isSupported) {
+    const renderer = new WebGLWebCodecsDecoderRenderer();
+    return { renderer, element: renderer.canvas as HTMLCanvasElement };
+  }
+
+  const renderer = new BitmapWebCodecsDecoderRenderer();
+  return { renderer, element: renderer.canvas as HTMLCanvasElement };
+}
+```
+
+You will need to insert the created `element` into the page to display the video:
+
+```ts transpile
+const { renderer, element } = createWebCodecsRenderer();
+document.body.appendChild(element);
+```
+
+Or, all renderers accept existing rendering targets:
+
+```ts transpile
+new InsertableStreamWebCodecsDecoderRenderer(videoElement);
+new WebGLWebCodecsDecoderRenderer(canvasElementOrOffscreenCanvas);
+new BitmapWebCodecsDecoderRenderer(canvasElementOrOffscreenCanvas);
+new CanvasWebCodecsDecoderRenderer(canvasElementOrOffscreenCanvas);
+```
+
+## Create a decoder
+
+```ts
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
+import type {
+  ScrcpyVideoDecoder,
+  ScrcpyVideoDecoderCapability,
+} from "@yume-chan/scrcpy-decoder-tinyh264";
+import { WritableStream } from "@yume-chan/stream-extra";
+import type { WebCodecsVideoDecoderRenderer } from "./render/index.js";
+
+export declare class WebCodecsVideoDecoder implements ScrcpyVideoDecoder {
+  static get isSupported(): boolean;
+  static readonly capabilities: Record<string, ScrcpyVideoDecoderCapability>;
+
+  get codec(): ScrcpyVideoCodecId;
+  get writable(): WritableStream<ScrcpyMediaStreamPacket>;
+  get renderer(): WebCodecsVideoDecoderRenderer;
+
+  get framesRendered(): number;
+  get framesSkipped(): number;
+
+  get sizeChanged(): import("@yume-chan/event").AddEventListener<
+    {
+      width: number;
+      height: number;
+    },
+    unknown
+  >;
+
+  /**
+   * Create a new WebCodecs video decoder.
+   */
+  constructor(options: WebCodecsVideoDecoder.Options);
+
+  snapshot(): Promise<Blob | undefined>;
+  dispose(): void;
+}
+
+export declare namespace WebCodecsVideoDecoder {
+  interface Options {
+    /**
+     * The video codec to decode
+     */
+    codec: ScrcpyVideoCodecId;
+
+    renderer: WebCodecsVideoDecoderRenderer;
+  }
+}
+```
+
+The constructor requires two options:
+
+- `codec`: the video codec to be decoded. It can be retrieved from the [video stream metadata](./index.mdx#video-stream-metadata), or hard-coded if you only use a specific video codec.
+- `renderer`: a renderer created in the previous section.
+
+Similar to the TinyH264 decoder, after creating a decoder instance, you need to pipe the [video stream](./index.mdx#video-packets) into the `writable` stream:
+
+```ts transpile
+const decoder = new WebCodecsVideoDecoder({
+  codec: videoMetadata.codec,
+  renderer: renderer,
+});
+
+void videoPacketStream.pipeTo(decoder.writable).catch((e) => {
+  console.error(e);
+});
+```
+
+## Take a screenshot
+
+Because WebCodecs decoder can render to different types of targets, it's more difficult to manually capture the latest frame.
+
+To help with that, the decoder provides the `snapshot` method to easily capture the last rendered frame as a PNG image.
+
+```ts transpile
+const blob = await decoder.snapshot();
+```
+
+Only when no frames has been rendered, the return value will be `undefined`.
+
+## Microsoft Edge on Windows
+
+By default, Chromium browsers uses FFMpeg internally for WebCodecs API. However, Microsoft Edge, when running on Windows, uses Media Foundation decoders instead.
+
+Decoding H.265 requires the [**HEVC Video Extensions**](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) ($0.99) or **HEVC Video Extensions from Device Manufacturer** (free but not available anymore) app from Microsoft Store.
+
+Decoding AV1 requires the [**AV1 Video Extension**](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) (free) app from Microsoft Store.
