@@ -124,7 +124,9 @@ export function Renderer(props: {
   React.useEffect(() => {
     const decoder = new TinyH264Decoder({ canvas: canvasRef.current });
     void props.videoStream.pipeTo(decoder.writable).catch(() => {});
-  }, []);
+
+    return () => decoder.dispose();
+  }, [props.videoStream]);
 
   return (
     <div className="container">
