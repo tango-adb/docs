@@ -35,18 +35,56 @@ You can decide which video codec to use based on the results.
 
 ## Renderer
 
-WebCodecs decoder supports multiple renderers, and the package has several ones built-in:
+WebCodecs API decodes video frames into `VideoFrame` objects. There are multiple methods to render those `VideoFrame` objects onto the page. This package provides three renderers:
 
-- `InsertableStreamWebCodecsDecoderRenderer`: Renders to a `<video>` element using [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). Only supported by Chromium browsers.
-- `WebGLWebCodecsDecoderRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using WebGL. Requires hardware acceleration, otherwise the performance is even worse than the two below.
+:::info
+
+These renderers are not tied to our `WebCodecsVideoDecoder`, they can also be used separately to render any `VideoFrame` objects from WebCodecs API.
+
+:::
+
+- `InsertableStreamWebCodecsDecoderRenderer`: Renders to a `<video>` element using [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). See [quirks](#quirks-of-insertable-stream-renderer) below.
+- `WebGLWebCodecsDecoderRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using WebGL. It only works with hardware accelerated WebGL, because without hardware acceleration, the performance is even worse than the bitmap renderer below.
 - `BitmapWebCodecsDecoderRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using bitmap renderer.
-- `CanvasWebCodecsDecoderRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using 2D canvas.
 
-Generally, the performance ranking is `InsertableStream` ≈ `WebGL` >> `Bitmap` > `Canvas`. The Insertable Streams API is specifically designed to render video frames from WebCodecs API, but in reality it's only easier to integrate, not faster.
+:::info
+
+`VideoFrame`s can also be rendered using 2D canvas. However, because it's slower than bitmap renderer, and bitmap renderer is already available on all devices, we didn't think it's necessary to implement it.
+
+:::
+
+### Quirks of Insertable Stream renderer
+
+The Insertable Streams renderer should be considered as experimental, because there are several issues around it:
+
+#### Performance
+
+The Insertable Streams API is specifically designed to render video frames from WebCodecs API, but in reality it's only easier to integrate, not faster. So it doesn't have the performance advantage over other renderers.
+
+#### Compatibility
+
+Its [specification](https://w3c.github.io/mediacapture-transform/) has two versions: the old `MediaStreamTrackGenerator` API, and the new `VideoTrackGenerator`. Only Chrome implemented the old API. The new API was added in mid 2023, but until end of 2024, nobody (including Chrome, who authored the specification), has implemented the new API ([Chrome issue](https://issues.chromium.org/issues/40058895), [Firefox issue](https://bugzilla.mozilla.org/show_bug.cgi?id=1749532)).
+
+As a result, we implemented the Insertable Stream renderer using the old `MediaStreamTrackGenerator` API. We will monitor the situation and update the renderer if necessary.
+
+#### Lifecycle
+
+Because it renders to a `<video>` element, if the video element is removed from the DOM tree (e.g. to move it into another element, or another page), it will be automatically paused. You need to call `renderer.element.play()` to resume playback after adding it back to the DOM tree.
+
+### Create a renderer
+
+Generally, the performance ranking is `InsertableStream` ≈ `WebGL` >> `Bitmap`. However, because Insertable Stream renderer and WebGL renderer are not available on all devices, we recommend the following method to choose the best renderer on all devices:
 
 `InsertableStreamWebCodecsDecoderRenderer` and `WebGLWebCodecsDecoderRenderer` both have an `isSupported` static property, to check whether they are supported by the current browser and hardware:
 
 ```ts transpile
+import type { WebCodecsVideoDecoderRenderer } from "@yume-chan/scrcpy-decoder-webcodecs";
+import {
+  InsertableStreamWebCodecsDecoderRenderer,
+  WebGLWebCodecsDecoderRenderer,
+  BitmapWebCodecsDecoderRenderer,
+} from "@yume-chan/scrcpy-decoder-webcodecs";
+
 function createWebCodecsRenderer(): {
   renderer: WebCodecsVideoDecoderRenderer;
   element: HTMLVideoElement | HTMLCanvasElement;
@@ -79,7 +117,6 @@ Or, all renderers accept existing rendering targets:
 new InsertableStreamWebCodecsDecoderRenderer(videoElement);
 new WebGLWebCodecsDecoderRenderer(canvasElementOrOffscreenCanvas);
 new BitmapWebCodecsDecoderRenderer(canvasElementOrOffscreenCanvas);
-new CanvasWebCodecsDecoderRenderer(canvasElementOrOffscreenCanvas);
 ```
 
 ## Create a decoder
