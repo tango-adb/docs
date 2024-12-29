@@ -71,6 +71,8 @@ As a result, we implemented the Insertable Stream renderer using the old `MediaS
 
 Because it renders to a `<video>` element, if the video element is removed from the DOM tree (e.g. to move it into another element, or another page), it will be automatically paused. You need to call `renderer.element.play()` to resume playback after adding it back to the DOM tree.
 
+It sets the `autoplay` attribute on the `<video>` element, so it will start playing automatically for the first time.
+
 ### Create a renderer
 
 Generally, the performance ranking is `InsertableStream` ≈ `WebGL` >> `Bitmap`. However, because Insertable Stream renderer and WebGL renderer are not available on all devices, we recommend the following method to choose the best renderer on all devices:
@@ -85,7 +87,7 @@ import {
   BitmapVideoFrameRenderer,
 } from "@yume-chan/scrcpy-decoder-webcodecs";
 
-function createWebCodecsRenderer(): {
+function createVideoFrameRenderer(): {
   renderer: VideoFrameRenderer;
   element: HTMLVideoElement | HTMLCanvasElement;
 } {
@@ -104,10 +106,10 @@ function createWebCodecsRenderer(): {
 }
 ```
 
-You will need to insert the created `element` into the page to display the video:
+When the constructors are called without arguments, they will create a rendering target automatically (`<video>` element for `InsertableStreamVideoFrameRenderer`, `<canvas>` for `WebGLVideoFrameRenderer` and `BitmapVideoFrameRenderer`). You will need to insert the created `element` into the page to display the video:
 
 ```ts transpile
-const { renderer, element } = createWebCodecsRenderer();
+const { renderer, element } = createVideoFrameRenderer();
 document.body.appendChild(element);
 ```
 
@@ -179,6 +181,11 @@ The constructor requires two options:
 Similar to the TinyH264 decoder, after creating a decoder instance, you need to pipe the [video stream](./index.mdx#video-packets) into the `writable` stream:
 
 ```ts transpile
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+
 const decoder = new WebCodecsVideoDecoder({
   codec: videoMetadata.codec,
   renderer: renderer,
@@ -186,6 +193,89 @@ const decoder = new WebCodecsVideoDecoder({
 
 void videoPacketStream.pipeTo(decoder.writable).catch((e) => {
   console.error(e);
+});
+```
+
+## Handle size changes
+
+When the device orientation changes, Scrcpy server will recreate a new video encoder with the new size. The decoder will parse the new video configuration, and update the canvas size automatically.
+
+However, the video size is also useful for other purposes, like [injecting touch events](../control/touch.mdx). The `sizeChanged` event will be emitted when the video size changes:
+
+```ts transpile
+decoder.sizeChanged(({ width, height }) => {
+  console.log(width, height);
+});
+```
+
+## Use in Web Worker
+
+Although WebCodecs API already runs in its own thread, and the renderers are very fast, you might still want to run them in a dedicated Web Worker, so other works on the main thread won't affect the performance.
+
+Only `WebGLVideoFrameRenderer` and `BitmapVideoFrameRenderer` are supported in Web Worker. There are two ways to render the frames:
+
+- When their constructors are called without arguments, they will create an `OffscreenCanvas` object. See [Synchronous display of frames produced by an OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas#synchronous_display_of_frames_produced_by_an_offscreencanvas) on MDN for how to use it.
+- Call `transferControlToOffscreen()` on a `<canvas>` element, `postMessage` the `OffscreenCanvas` object to the worker, and use it to create the renderer.
+
+```html
+<!-- index.html -->
+<canvas id="canvas"></canvas>
+```
+
+```ts transpile
+// index.js
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+
+const canvas = document.getElementById("canvas");
+const offscreenCanvas = canvas.transferControlToOffscreen();
+
+const worker = new Worker("worker.js");
+worker.postMessage(
+  {
+    codec: ScrcpyVideoCodecId.H264,
+    canvas: offscreenCanvas,
+    stream: videoPacketStream,
+  },
+  [offscreenCanvas, videoPacketStream]
+);
+worker.addEventListener("message", (e) => {
+  const { width, height } = e.data;
+  canvas.width = width;
+  canvas.height = height;
+});
+```
+
+```ts transpile
+// worker.js
+import type {
+  ScrcpyVideoCodecId,
+  ScrcpyMediaStreamPacket,
+} from "@yume-chan/scrcpy";
+import {
+  WebGLVideoFrameRenderer,
+  WebCodecsVideoDecoder,
+} from "@yume-chan/scrcpy-decoder-webcodecs";
+
+self.addEventListener("message", (e) => {
+  const { codec, canvas, stream } = e.data as {
+    codec: ScrcpyVideoCodecId;
+    canvas: OffscreenCanvas;
+    stream: ReadableStream<ScrcpyMediaStreamPacket>;
+  };
+
+  const renderer = new WebGLVideoFrameRenderer(canvas);
+  const decoder = new WebCodecsVideoDecoder({ codec, renderer });
+
+  decoder.sizeChanged(({ width, height }) => {
+    postMessage({ width, height });
+  });
+
+  void stream.pipeTo(decoder.writable).catch((e) => {
+    console.error(e);
+  });
 });
 ```
 
