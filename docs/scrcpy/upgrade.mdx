@@ -96,3 +96,7 @@ const options = new ScrcpyOptions3_1({
 In `ScrcpyOptions1_22` and later, the scroll controller for the mouse scroll event has been fixed.
 
 This fixes the [`injectScroll`](./control/scroll.mdx) control message.
+
+## `@yume-chan/scrcpy-decoder-webcodecs`
+
+`WebCodecsDecoderRenderer`s have been renamed to `VideoFrameRenderer`s, to show that they are independent of `WebCodecsVideoDecoder`, and can be used separately to render any `VideoFrame`s.
