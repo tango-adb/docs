@@ -21,9 +21,22 @@ declare class AdbServerClient {
 
 Creates a socket to the ADB daemon on the device, letting the server forward packets between the client and the device.
 
-The socket can be used to run an [ADB command](../index.mdx#adb-from-yume-chanadb), or [connect to a socket](../adb/socket.mdx#forward-tunnel) on device.
+## Parameters
 
-Usually you don't need to call this method directly, the `createTransport` method uses it to implement `AdbTransport`.
+### `device`
+
+A [device selector](./selector.mdx).
+
+Using selectors other than transport IDs requires [server version 41](../../internal/version.mdx#v41) or higher. Transport ID selectors are recommended anyway.
+
+### `service`
+
+An [ADB command](../index.mdx#adb-from-yume-chanadb), or a [socket address](../adb/socket.mdx#forward-tunnel) on device to connect to.
+
+
+## Remarks
+
+Usually you don't need to call this method directly. [`createTransport`](./create-transport.mdx) method uses it internally to implement `AdbTransport`.
 
 :::info[Equivalent ADB Command]
 

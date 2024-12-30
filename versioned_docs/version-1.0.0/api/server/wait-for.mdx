@@ -5,16 +5,18 @@ sidebar_position: 10
 # `waitFor`
 
 ```ts
-interface AdbServerConnectionOptions {
-  unref?: boolean | undefined;
-  signal?: AbortSignal | undefined;
+namespace AdbServerClient {
+  interface ServerConnectionOptions {
+    unref?: boolean | undefined;
+    signal?: AbortSignal | undefined;
+  }
 }
 
 declare class AdbServerClient {
   waitFor(
     device: AdbServerClient.DeviceSelector,
     state: "device" | "disconnect",
-    options?: AdbServerConnectionOptions
+    options?: AdbServerClient.ServerConnectionOptions
   ): Promise<void>;
 }
 ```
@@ -22,6 +24,18 @@ declare class AdbServerClient {
 Wait for a device to be connected or disconnected. This method returns a `Promise` that resolves when the condition is met.
 
 If the selector is `usb`, `tcp` or `undefined`, it won't tell which device is connected or disconnected.
+
+## State
+
+### `device`
+
+Wait for a device to be available.
+
+### `disconnect`
+
+Wait for a device to be disconnected.
+
+This state requires [server version 41](../../internal/version.mdx#v41) or higher, otherwise an "unknown host service" error will be thrown.
 
 ## Options
 
