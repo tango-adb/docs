@@ -213,11 +213,11 @@ const config: Config = {
                     editUrl: "https://github.com/tango-adb/docs/edit/main/",
                     remarkPlugins: [ts2js, [remarkPluginNpm2yarn, { sync: true }]],
                     showLastUpdateTime: true,
-                    lastVersion: "1.0.0",
+                    lastVersion: "current",
                     versions: {
                         current: {
-                            label: "next",
-                            path: "/next",
+                            label: "1.1.0",
+                            path: "/",
                         },
                     },
                 },
