@@ -41,7 +41,7 @@ import type {
   ScrcpyControlMessageWriter,
   ScrcpyMediaStreamPacket,
 } from "@yume-chan/scrcpy";
-import { DEFAULT_SERVER_PATH, ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
+import { DefaultServerPath, ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
 import type { ReadableStream } from "@yume-chan/stream-extra";
 import { WritableStream } from "@yume-chan/stream-extra";
 
@@ -56,7 +56,7 @@ const options = new AdbScrcpyOptions2_1(
 
 const client: AdbScrcpyClient = await AdbScrcpyClient.start(
   adb,
-  DEFAULT_SERVER_PATH,
+  DefaultServerPath,
   options
 );
 
