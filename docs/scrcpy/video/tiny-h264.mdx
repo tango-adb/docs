@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Tiny H264 decoder
+# TinyH264 decoder
 
 import Version from "../version-span";
 
@@ -50,7 +50,7 @@ Because H.264 is a complex codec, decoding it is CPU-intensive. It might not be 
 
 ### Rendering
 
-Tiny H264 decoder outputs raw YUV frames, which needs to be converted to RGB for rendering.
+TinyH264 decoder outputs buffers containing pixel colors in YUV color space, which needs to be converted to RGB for rendering.
 
 [`yuv-canvas`](https://www.npmjs.com/package/yuv-canvas) package is used to do the conversion and rendering. When supported, it uses a WebGL shader to accelerate the conversion, so it's very fast. But on unsupported devices, it falls back to a software implementation, which is super slow.
 
