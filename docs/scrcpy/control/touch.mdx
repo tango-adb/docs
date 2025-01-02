@@ -35,11 +35,40 @@ interface ScrcpyInjectTouchControlMessage {
 - `pointerId`: The ID of the pointer. There are some predefined values in `ScrcpyPointerId` namespace, but touch screen devices can assign a value for each finger.
 - `pointerX`: The X coordinate of the event.
 - `pointerY`: The Y coordinate of the event.
-- `screenWidth`: The width of the screen. It must match the current video stream resolution to prevent de-synchronization.
-- `screenHeight`: The height of the screen. It must match the current video stream resolution to prevent de-synchronization.
-- `pressure`: The pressure of the event. A floating-point value between 0 and 1.
 - `actionButton`: The button that changed. It's a value of `AndroidMotionEventButton` enum.
 - `buttons`: The state of all the buttons. It's a bit-or combination of `AndroidMotionEventButton` values.
+
+### `screenWidth` and `screenHeight`
+
+The size of latest video frame.
+
+The server will validate these values, and ignore the command if they don't match. This is to prevent invalid `pointerX` and `pointerY` values from being sent to the device, for example when device orientation is changed.
+
+When using `AdbScrcpyClient`, it will parse and save the size (if video stream is enabled):
+
+```ts transpile
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+
+declare const client: AdbScrcpyClient;
+
+console.log(client.screenWidth, client.screenHeight);
+```
+
+When using one of the [built-in video decoders](../video/index.mdx#decode-and-render-video), the [`sizeChanged` event](../video/tiny-h264.mdx#handle-size-changes) can be used to get the latest `screenWidth` and `screenHeight` values.
+
+```ts transpile
+import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+let screenWidth = 0;
+let screenHeight = 0;
+
+declare const decoder: ScrcpyVideoDecoder;
+
+decoder.sizeChanged(({ width, height }) => {
+  screenWidth = width;
+  screenHeight = height;
+});
+```
 
 ## Usage
 
@@ -88,4 +117,76 @@ await client.controller!.injectTouch({
   actionButton: AndroidMotionEventButton.Primary,
   buttons: AndroidMotionEventButton.Primary,
 });
+```
+
+### DOM Events Example
+
+The `pointerdown`, `pointermove` and `pointerup` events can be mapped to Scrcpy touch events.
+
+```ts transpile
+import type {
+  ScrcpyControlMessageSerializer,
+  AndroidMotionEventAction,
+  clamp,
+} from "@yume-chan/scrcpy";
+
+declare const serializer: ScrcpyControlMessageSerializer; // ScrcpyControlMessageWriter` and `AdbScrcpyClient` can also be used
+declare let screenWidth: number;
+declare let screenHeight: number;
+
+const PointerEventButtonToAndroidButton = [
+  AndroidMotionEventButton.Primary,
+  AndroidMotionEventButton.Tertiary,
+  AndroidMotionEventButton.Secondary,
+  AndroidMotionEventButton.Back,
+  AndroidMotionEventButton.Forward,
+];
+
+function handlePointerEvent(event: PointerEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const target = e.currentTarget as HTMLElement;
+  target.setPointerCapture(e.pointerId);
+
+  const { type, clientX, clientY, button, buttons } = e;
+
+  let action: AndroidMotionEventAction;
+  switch (type) {
+    case "pointerdown":
+      action = AndroidMotionEventAction.Down;
+      break;
+    case "pointermove":
+      if (buttons === 0) {
+        action = AndroidMotionEventAction.HoverMove;
+      } else {
+        action = AndroidMotionEventAction.Move;
+      }
+      break;
+    case "pointerup":
+      action = AndroidMotionEventAction.Up;
+      break;
+    default:
+      throw new Error(`Unsupported event type: ${type}`);
+  }
+
+  const rect = target.getBoundingClientRect();
+  const percentageX = clamp((clientX - rect.x) / rect.width, 0, 1);
+  const percentageY = clamp((clientY - rect.y) / rect.height, 0, 1);
+
+  const pointerX = percentageX * screenWidth;
+  const pointerY = percentageY * screenHeight;
+
+  return serializer.injectTouch({
+    action,
+    pointerId: BigInt(e.pointerId),
+    pointerX,
+    pointerY,
+    screenWidth,
+    screenHeight,
+    pressure: buttons === 0 ? 0 : 1,
+    actionButton: PointerEventButtonToAndroidButton[button],
+    buttons,
+  });
+}
 ```

@@ -22,17 +22,36 @@ stateDiagram-v2
     Data --> [*]
 ```
 
+## Format
+
+This table show how versions and options affect the video stream format.
+
+- ✅ means the field is always present
+- ⛔ means the field is not present
+- An option name means the field is present if the option is `true`
+
+| Value                                                 | v1.15 ~ v1.21   | 1.22             | v1.23 ~ v1.25    | v2.0 ~ v3.1                                            |
+| ----------------------------------------------------- | --------------- | ---------------- | ---------------- | ------------------------------------------------------ |
+| Metadata                                              | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | <code>sendDeviceMeta &#124;&#124; sendCodecMeta</code> |
+| <span style={{marginRight:'2em'}}/>Device name        | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta`                                       |
+| <span style={{marginRight:'2em'}}/>Initial video size | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendCodecMeta`                                        |
+| <span style={{marginRight:'2em'}}/>Video codec        | ⛔              | ⛔               | ⛔               | `sendCodecMeta`                                        |
+| Configuration                                         | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                                        |
+| Data Packet Header                                    | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                                        |
+| <span style={{marginRight:'2em'}}/> PTS               | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                                        |
+| <span style={{marginRight:'2em'}}/> Keyframe Mark     | ⛔              | ⛔               | `sendFrameMeta`  | `sendFrameMeta`                                        |
+
 ## Raw mode
 
-Since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, the server directly returns the encoded video stream without any encapsulations.
+As the above table shows, since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, all listed fields are not present.
 
-In this mode, the video stream only contains codec-specific data. Tango doesn't support parsing the video stream in this mode, but it can be decoded by FFmpeg, or saved directly.
+This is called the raw mode. In this mode, the video socket only contains codec-specific, encoded video data.
 
-Otherwise, the video stream contains additional metadata and frame information. The following methods can be used to parse and handle the video stream.
+Without the extra information, it's much harder to process the video stream. Because of that, Tango only has limited support for parsing the video stream in raw mode. Its methods can process the stream without errors, but some fields will be `undefined`, and [built-in video decoders](#decode-and-render-video) can't decode raw mode video stream.
 
 ## Video stream metadata
 
-Scrcpy server first sends some metadata about the video stream:
+If the server [version and options requirements](#format) are met, the server will first send some metadata about the device and the video stream:
 
 ```ts
 interface ScrcpyVideoStreamMetadata {
@@ -43,15 +62,19 @@ interface ScrcpyVideoStreamMetadata {
 }
 ```
 
-- `deviceName`: The device's model name<Version since="v1.22">, or `undefined` if `sendDeviceMeta` option is `false`.</Version>.
-- `width` and `height`: Size of the first video frame<Version since="v1.22" until='v2.0'>, or `undefined` if `sendDeviceMeta` option is `false`.</Version><Version since="v2.0">, or `undefined` if `sendCodecMeta` option is `false`.</Version>.
-- `codec`: The codec returned from server<Version since="v2.0">, or the codec inferred from options if `sendCodecMeta` option is `false`.</Version>.
+- `deviceName`: The device's model name.
+- `width`/`height`: Size of the first video frame.
+- `codec`: The codec of the video stream.
 
-When device's screen resolution changes (for example, when device rotates, or when a foldable device folds/unfolds), the server restarts video capture and encoding with the new resolution. However, it won't send a new metadata packets with the updated size. The only way to keep track of the video resolution is by parsing the video stream directly. The exact code depends on the video codec.
+### Size changes
+
+The metadata will only be sent once. When device screen size changes (for example, when device orientation changes, or a foldable device unfolds), the server will restart the video encoder, but it won't send a new metadata with the new size.
+
+To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-video) have a [`sizeChanged`](./tiny-h264.mdx#handle-size-changes) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) has `screenWidth` and `screenHeight` properties.
 
 ### With `@yume-chan/scrcpy`
 
-If you already have a `ReadableStream<Uint8Array>` that reads from the video socket, use the `parseVideoStreamMetadata` method from the corresponding `ScrcpyOptionsX_YY` class to parse the metadata. This method will return the metadata, and a new stream that contains the remaining stream.
+If you already have a `ReadableStream<Uint8Array>` that reads from the video socket, the `parseVideoStreamMetadata` method from the corresponding `ScrcpyOptionsX_YY` class can be used to parse the metadata. This method will return the metadata, and a new stream that contains the remaining stream.
 
 ```ts transpile
 import { ScrcpyOptions2_1, ScrcpyVideoStreamPacket } from "@yume-chan/scrcpy";
@@ -67,18 +90,23 @@ const { metadata: videoMetadata, stream: videoStream } =
   await options.parseVideoStreamMetadata(videoSocket);
 ```
 
-`parseVideoStreamMetadata` also supports raw mode:
+#### `codec`
 
-* In `metadata`, only the `codec` field is defined, and is inferred from the option values.
-* The `stream` field is the input `videoSocket` returned as-is.
+If metadata is not present, or doesn't contain codec information, the `codec` field will <Version until="v2.0">always be `ScrcpyVideoCodecId.H264` because it's the only supported codec</Version><Version since="v2.0">be the same as the `videoCodec` option</Version>.
+
+#### Raw mode
+
+If the whole metadata is not present, all fields except `codec` will be `undefined`. The `stream` field returned will be the same object as the parameter.
 
 ### With `@yume-chan/adb-scrcpy`
 
-In `AdbScrcpyClient`, parsing video stream metadata and transforming video packets can be done in a single step. See [the section below](#with-yume-chanadb-scrcpy-1).
+See [`AdbScrcpyClient.prototype.videoStream` property](#with-yume-chanadb-scrcpy-1) below. It uses `parseVideoStreamMetadata` internally to parse the metadata, and it also parses the video stream into packets.
+
+The [`codec`](#codec) and [raw mode](#raw-mode-1) behavior mentioned above also apply.
 
 ## Video packets
 
-When not in raw mode, Scrcpy server will encapsulate each encoded video frame with extra information. Tango parses the frames into two types of packets:
+If the server [version and options requirements](#format) are met, the server will encapsulate each encoded video frame with extra information. Tango parses them into two types of packets:
 
 ```ts
 interface ScrcpyMediaStreamConfigurationPacket {
@@ -98,29 +126,24 @@ type ScrcpyMediaStreamPacket =
   | ScrcpyMediaStreamDataPacket;
 ```
 
-The behavior of the packets depends on the `sendFrameMeta` option:
-
-| Value                                  | `sendFrameMeta: true`                                    | `sendFrameMeta: false` |
-| -------------------------------------- | -------------------------------------------------------- | ---------------------- |
-| `ScrcpyMediaStreamConfigurationPacket` | Must be the first packet, but can also appear anywhere   | Not exist              |
-| `ScrcpyMediaStreamDataPacket.keyframe` | `boolean` indicating if the current packet is a keyframe | `undefined`            |
-| `ScrcpyMediaStreamDataPacket.pts`      | `bigint` indicating the presentation timestamp           | `undefined`            |
-
 ### Configuration packet
 
-When the encoder is restarted, a new configuration packet will be generated and sent.
+If present, will always be the first packet. However, when the encoder is restarted, a new configuration packet will be generated and sent.
 
 The `data` field contains the codec-specific configuration information:
 
-* H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS) in Annex B format.
-* H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS) in Annex B format.
-* AV1: The first 3 bytes of `AV1CodecConfigurationRecord` (https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox). The remaining configuration OBUs are in the next data packet.
+- H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS) in Annex B format.
+- H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS) in Annex B format.
+- AV1: The first 3 bytes of `AV1CodecConfigurationRecord` (https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox). The remaining configuration OBUs are in the next data packet.
 
 The client should handle this packet and update the decoder accordingly.
 
 ### Data packet
 
-Each data packet contains exactly one encoded frame.
+Each data packet represents exactly one encoded frame, and if [version and options requirements](#format) are met, some extra information:
+
+* `keyframe`: `true` if the current packet is a keyframe. Many decoders can decode the video stream without knowing if each frame is a keyframe or not, but some decoders require this information.
+* `pts`: Presentation timestamp in nanoseconds. When rendering the video in real-time, generally you want to present the decoded frames as they arrive to minimize the latency, but this information can be used to remove processing time deviations when [recording](./record.mdx).
 
 ### With `@yume-chan/scrcpy`
 
@@ -156,6 +179,12 @@ videoPacketStream
 
 Similar to [`options.clipboard`](../options/index.mdx#watch-device-clipboard-changes), don't `await` the `pipeTo`. The returned `Promise` only resolves when `videoSocket` ends, but waiting here and not handling other streams will block `videoSocket`, causing a deadlock.
 
+#### Raw mode
+
+If data packet header is not present, the `keyframe` and `pts` fields will be `undefined`.
+
+The `data` field contains the data in one `read` call, because there is no packet boundaries, it might contain partial or multiple frames.
+
 ### With `@yume-chan/adb-scrcpy`
 
 When `video` option is not `false`, `AdbScrcpyClient.videoStream` is a `Promise` that resolves to an `AdbScrcpyVideoStream`.
@@ -167,7 +196,7 @@ interface AdbScrcpyVideoStream {
 }
 ```
 
-It's very similar to the `videoMetadata` and `videoPacketStream` values in the above section, because `AdbScrcpyClient` calls `parseVideoStreamMetadata` and `createMediaStreamTransformer` internally.
+It uses [`parseVideoStreamMetadata`](#with-yume-chanscrcpy) and [`createMediaStreamTransformer`](#with-yume-chanscrcpy-1) internally, so the return value is a combination of those two methods.
 
 ```ts transpile
 if (client.videoSteam) {
