@@ -118,6 +118,24 @@ const server: ArrayBuffer = await fetch(BIN).then((res) => res.arrayBuffer());
     </TabItem>
     <TabItem label="Vite" value="vite">
 
+:::warning
+
+Vite's dependency "optimizer" will break this package: https://github.com/vitejs/vite/issues/8427
+
+Add this to your `vite.config.js`/`vite.config.ts`:
+
+```js
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  optimizeDeps: {
+    exclude: ["@yume-chan/fetch-scrcpy-server"],
+  },
+});
+```
+
+:::
+
 ```ts transpile
 import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
 

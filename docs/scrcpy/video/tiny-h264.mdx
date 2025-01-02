@@ -14,6 +14,30 @@ It's slow, and only supports H.264 main profile at level 4, but works on most br
 npm install @yume-chan/scrcpy-decoder-tinyh264
 ```
 
+:::warning
+
+Vite's dependency "optimizer" will break this package: https://github.com/vitejs/vite/issues/8427
+
+Add this to your `vite.config.js`/`vite.config.ts`:
+
+```js
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  optimizeDeps: {
+    exclude: [
+      "@yume-chan/scrcpy-decoder-tinyh264",
+    ],
+    include: [
+      "@yume-chan/scrcpy-decoder-tinyh264 > yuv-buffer",
+      "@yume-chan/scrcpy-decoder-tinyh264 > yuv-canvas",
+    ],
+  },
+});
+```
+
+:::
+
 ## Performance
 
 There are two aspects of performance:
