@@ -123,10 +123,10 @@ declare class AdbSubprocess {
 Example:
 
 ```ts transpile
-import { DecodeUtf8Stream } from "@yume-chan/stream-extra";
+import { TextDecoderStream } from "@yume-chan/stream-extra";
 
 const process = await adb.subprocess.spawn("ls -l");
-await process.stdout.pipeThrough(new DecodeUtf8Stream()).pipeTo(
+await process.stdout.pipeThrough(new TextDecoderStream()).pipeTo(
   new WritableStream<string>({
     write(chunk) {
       console.log(chunk);

@@ -85,9 +85,6 @@ Usually it is not necessary to specify `localAddress`, the transport will choose
 This example creates an echo server on TCP port 1234 on the device.
 
 ```ts transpile
-import { encodeUtf8 } from "@yume-chan/adb";
-import { DecodeUtf8Stream } from "@yume-chan/stream-extra";
-
 const address = await adb.reverse.add("tcp:1234", (socket) => {
   const writer = socket.writable.getWriter();
   // Don't await the promise, otherwise the transport will block
