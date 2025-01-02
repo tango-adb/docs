@@ -142,8 +142,8 @@ The client should handle this packet and update the decoder accordingly.
 
 Each data packet represents exactly one encoded frame, and if [version and options requirements](#format) are met, some extra information:
 
-* `keyframe`: `true` if the current packet is a keyframe. Many decoders can decode the video stream without knowing if each frame is a keyframe or not, but some decoders require this information.
-* `pts`: Presentation timestamp in nanoseconds. When rendering the video in real-time, generally you want to present the decoded frames as they arrive to minimize the latency, but this information can be used to remove processing time deviations when [recording](./record.mdx).
+- `keyframe`: `true` if the current packet is a keyframe. Many decoders can decode the video stream without knowing if each frame is a keyframe or not, but some decoders require this information.
+- `pts`: Presentation timestamp in nanoseconds. When rendering the video in real-time, generally you want to present the decoded frames as they arrive to minimize the latency, but this information can be used to remove processing time deviations when [recording](./record.mdx).
 
 ### With `@yume-chan/scrcpy`
 
@@ -199,6 +199,11 @@ interface AdbScrcpyVideoStream {
 It uses [`parseVideoStreamMetadata`](#with-yume-chanscrcpy) and [`createMediaStreamTransformer`](#with-yume-chanscrcpy-1) internally, so the return value is a combination of those two methods.
 
 ```ts transpile
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+
+declare const client: AdbScrcpyClient;
+
 if (client.videoStream) {
   const { metadata: videoMetadata, stream: videoPacketStream } =
     await client.videoStream;
@@ -230,7 +235,7 @@ if (client.videoStream) {
 
 Tango provides packages to decode and render video packets in Web browsers:
 
-- [Tiny H264 decoder](./tiny-h264.mdx)
+- [TinyH264 decoder](./tiny-h264.mdx)
 - [WebCodecs decoder](./web-codecs.mdx)
 
 To use these decoders, the `sendFrameMeta` options must be `true` (the default value).
