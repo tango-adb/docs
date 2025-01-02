@@ -4,6 +4,8 @@ sidebar_position: 1
 
 # Tiny H264 decoder
 
+import Version from "../version-span";
+
 Decode and render H.264 streams in Web browsers using TinyH264, the (now deprecated and removed) Android H.264 software decoder.
 
 It's slow, and only supports H.264 main profile at level 4, but works on most browsers.
@@ -30,30 +32,36 @@ Tiny H264 decoder outputs raw YUV frames, which needs to be converted to RGB for
 
 ## Limit profile/level
 
-Because it only supports H.264 Baseline level 4 codec, but many newer devices default to higher profiles/levels, you must limit it using the `codecOptions` option:
+Because it only supports H.264 Baseline level 4 codec, but many newer devices default to higher profiles/levels, you must limit it using <Version until="v2.0">`codecOptions` option</Version><Version since="v2.0">`videoCodecOptions` option</Version>:
 
 ```ts transpile
+import { ScrcpyOptions1_24, ScrcpyCodecOptions } from "@yume-chan/scrcpy";
 import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
 
 const H264Capabilities = TinyH264Decoder.capabilities.h264;
 
 const options = new ScrcpyOptions1_24({
   // other options...
-  codecOptions: new CodecOptions({
+  codecOptions: new ScrcpyCodecOptions({
     profile: H264Capabilities.maxProfile,
     level: H264Capabilities.maxLevel,
   }),
 });
 ```
 
-However, it will fail on some very old devices that doesn't even support Baseline level 4 codec. If that happens, You can retry starting the server without the `codecOptions` option.
+However, it will fail on some very old devices that doesn't even support Baseline level 4 codec. If that happens, You can retry starting the server without the <Version until="v2.0">`codecOptions` option</Version><Version since="v2.0">`videoCodecOptions` option</Version>.
 
 ```ts transpile
+import { ScrcpyOptions1_24, ScrcpyCodecOptions } from "@yume-chan/scrcpy";
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+const H264Capabilities = TinyH264Decoder.capabilities.h264;
+
 try {
   await startServer(
     new ScrcpyOptions1_24({
       // other options...
-      codecOptions: new CodecOptions({
+      codecOptions: new ScrcpyCodecOptions({
         profile: H264Capabilities.maxProfile,
         level: H264Capabilities.maxLevel,
       }),
