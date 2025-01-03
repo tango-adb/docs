@@ -11,12 +11,12 @@ Both mouse and touch events are supported. Multiple fingers are also supported.
 ## Options
 
 ```ts
-namespace ScrcpyPointerId {
-  export const Mouse = -1n;
-  export const Finger = -2n;
-  export const VirtualMouse = -3n;
-  export const VirtualFinger = -4n;
-}
+const ScrcpyPointerId = {
+  Mouse: -1n,
+  Finger: -2n,
+  VirtualMouse: -3n,
+  VirtualFinger: -4n,
+} as const;
 
 interface ScrcpyInjectTouchControlMessage {
   action: AndroidMotionEventAction;
@@ -32,7 +32,7 @@ interface ScrcpyInjectTouchControlMessage {
 ```
 
 - `action`: The action of the event.
-- `pointerId`: The ID of the pointer. There are some predefined values in `ScrcpyPointerId` namespace, but touch screen devices can assign a value for each finger.
+- `pointerId`: The ID of the pointer. It can be one of the predefined values in `ScrcpyPointerId`, or any non-negative bigints for each individual finger.
 - `pointerX`: The X coordinate of the event.
 - `pointerY`: The Y coordinate of the event.
 - `actionButton`: The button that changed. It's a value of `AndroidMotionEventButton` enum.
@@ -124,11 +124,8 @@ await client.controller!.injectTouch({
 The `pointerdown`, `pointermove` and `pointerup` events can be mapped to Scrcpy touch events.
 
 ```ts transpile
-import type {
-  ScrcpyControlMessageSerializer,
-  AndroidMotionEventAction,
-  clamp,
-} from "@yume-chan/scrcpy";
+import type { ScrcpyControlMessageSerializer } from "@yume-chan/scrcpy";
+import { AndroidMotionEventAction, clamp } from "@yume-chan/scrcpy";
 
 declare const serializer: ScrcpyControlMessageSerializer; // ScrcpyControlMessageWriter` and `AdbScrcpyClient` can also be used
 declare let screenWidth: number;
