@@ -32,3 +32,31 @@ await writer.resetVideo();
 // Using `AdbScrcpyClient`
 await client.controller!.resetVideo();
 ```
+
+Because the transmission delay, some video packets for previous configuration might still arrive after the reset video command. You can still send them to existing consumers (decoders, muxers, or remote clients), but new consumers should only be started when the next `configuration` packet is received.
+
+```ts transpile
+import { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+
+let consumers: unknown[] = [];
+let pendingConsumers: unknown[] = []; // New decoders, muxers, or remote clients waiting for the next `configuration` packet
+
+for await (const packet of videoPacketStream) {
+  switch (packet.type) {
+    case "configuration":
+      if (pendingConsumers.length) {
+        // Initialize pending consumers
+
+        consumers = consumers.concat(pendingConsumers);
+        pendingConsumers = [];
+      }
+      // Send packets to `consumers`
+      break;
+    case "data":
+      // Send packets to `consumers`
+      break;
+  }
+}
+```
