@@ -1,0 +1,154 @@
+# installStream
+
+Install a single APK from a `ReadableStream`.
+
+It will use streaming install if the device supports it. The APK file will be uploaded, parsed, and installed at the same time.
+
+If the device does not support streaming install, it will first use [`AdbSync.prototype.write`](../../adb/sync/write.mdx) to upload the APK file to a temp folder on the device, then use [`install`](./install.mdx) method to install it.
+
+```ts showLineNumbers
+export interface PackageManagerInstallOptions {
+  /**
+   * `-R`
+   */
+  skipExisting: boolean;
+  /**
+   * `-i`
+   */
+  installerPackageName: string;
+  /**
+   * `-t`
+   */
+  allowTest: boolean;
+  /**
+   * `-f`
+   */
+  internalStorage: boolean;
+  /**
+   * `-d`
+   */
+  requestDowngrade: boolean;
+  /**
+   * `-g`
+   */
+  grantRuntimePermissions: boolean;
+  /**
+   * `--restrict-permissions`
+   */
+  restrictPermissions: boolean;
+  /**
+   * `--dont-kill`
+   */
+  doNotKill: boolean;
+  /**
+   * `--originating-uri`
+   */
+  originatingUri: string;
+  /**
+   * `--referrer`
+   */
+  refererUri: string;
+  /**
+   * `-p`
+   */
+  inheritFrom: string;
+  /**
+   * `--pkg`
+   */
+  packageName: string;
+  /**
+   * `--abi`
+   */
+  abi: string;
+  /**
+   * `--ephemeral`/`--instant`/`--instantapp`
+   */
+  instantApp: boolean;
+  /**
+   * `--full`
+   */
+  full: boolean;
+  /**
+   * `--preload`
+   */
+  preload: boolean;
+  /**
+   * `--user`
+   */
+  user: SingleUserOrAll;
+  /**
+   * `--install-location`
+   */
+  installLocation: PackageManagerInstallLocation;
+  /**
+   * `--install-reason`
+   */
+  installReason: PackageManagerInstallReason;
+  /**
+   * `--force-uuid`
+   */
+  forceUuid: string;
+  /**
+   * `--apex`
+   */
+  apex: boolean;
+  /**
+   * `--force-non-staged`
+   */
+  forceNonStaged: boolean;
+  /**
+   * `--staged`
+   */
+  staged: boolean;
+  /**
+   * `--force-queryable`
+   */
+  forceQueryable: boolean;
+  /**
+   * `--enable-rollback`
+   */
+  enableRollback: boolean;
+  /**
+   * `--staged-ready-timeout`
+   */
+  stagedReadyTimeout: number;
+  /**
+   * `--skip-verification`
+   */
+  skipVerification: boolean;
+  /**
+   * `--bypass-low-target-sdk-block`
+   */
+  bypassLowTargetSdkBlock: boolean;
+}
+
+declare class PackageManager {
+  installStream(
+    size: number,
+    stream: ReadableStream<Uint8Array>,
+    options?: Partial<PackageManagerInstallOptions>
+  ): Promise<void>;
+}
+```
+
+## Usage
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { PackageManager } from "@yume-chan/android-bin";
+
+declare const adb: Adb;
+const pm = new PackageManager(adb);
+
+declare const file: File;
+
+await pm.installStream(file.size, file.stream());
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb install /path/to/app.apk
+```
+
+:::
