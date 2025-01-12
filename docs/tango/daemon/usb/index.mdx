@@ -24,7 +24,13 @@ flowchart TD
 Install this package along with the core package:
 
 ```sh npm2yarn
-npm i @yume-chan/adb @yume-chan/adb-daemon-webusb
+npm install @yume-chan/adb @yume-chan/adb-daemon-webusb
+```
+
+If you are using PNPM and TypeScript, also install the typing for WebUSB API:
+
+```sh title="shell"
+pnpm add --save-dev @types/w3c-web-usb
 ```
 
 ## USB Basics
