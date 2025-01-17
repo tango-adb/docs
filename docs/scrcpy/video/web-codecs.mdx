@@ -4,23 +4,59 @@ sidebar_position: 2
 
 # WebCodecs Decoder
 
+import CanIUse from "../../can-i-use";
+
 Decode and render H.264, H.265 and AV1 streams in Web browsers using [WebCodecs API](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API), the new Web standard for hardware-accelerated video decoding.
 
-It's fast, uses less hardware resources, and supports more profiles and levels. However, it's only available in recent versions of Chrome and Safari.
+It's fast, uses less hardware resources, and supports more profiles and levels.
 
 ```sh npm2yarn
 npm install @yume-chan/scrcpy-decoder-webcodecs
 ```
 
+## Browser support
+
+<CanIUse feature="webcodecs" />
+
+### Microsoft Edge on Windows
+
+By default, Chromium browsers uses FFMpeg internally for WebCodecs API. However, Microsoft Edge, when running on Windows, uses Media Foundation decoders instead.
+
+Decoding H.265 requires the [**HEVC Video Extensions**](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) ($0.99) or **HEVC Video Extensions from Device Manufacturer** (free but not available anymore) app from Microsoft Store.
+
+Decoding AV1 requires the [**AV1 Video Extension**](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) (free) app from Microsoft Store.
+
+### Firefox
+
+Firefox 133 supports playing H.265 videos, but does not support decoding H.265 streams using WebCodecs API.
+
 ## Feature detection
 
-To check if the WebCodecs API is available, you can check if [`VideoDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder) is defined:
+Because WebCodecs API is not supported in all browsers, you should check if it is supported before using it.
 
 ```ts transpile
-const isSupported = globalThis.VideoDecoder !== undefined;
+import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
+
+console.log(WebCodecsVideoDecoder.isSupported);
 ```
 
-[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) is a static method that checks if a given codec configuration is supported.
+Internally, it checks if `VideoDecoder` is defined in the global object.
+
+```ts transpile
+class WebCodecsVideoDecoder {
+  static get isSupported() {
+    return typeof globalThis.VideoDecoder !== "undefined";
+  }
+}
+```
+
+If WebCodecs API is not supported, you can fallback to the [TinyH264 decoder](./tiny-h264.mdx), but be aware only H.264 main profile level 4 is supported, and the performance is much worse.
+
+## Codec support
+
+Even when the browser supports WebCodecs API, the video codecs they support may vary.
+
+[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) static method can be used to check if a given codec configuration is supported.
 
 It accepts a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1.
 
@@ -31,7 +67,7 @@ const result = await VideoDecoder.isConfigSupported({
 const isHevcSupported = result.supported === true;
 ```
 
-You can decide which video codec to use based on the results.
+Scrcpy v2.0 added the `videoCodec` option to specify the video codec. You should use a codec that is supported by both browser and device.
 
 ## Renderer
 
@@ -290,13 +326,3 @@ const blob = await decoder.snapshot();
 ```
 
 Only when no frames has been rendered, the return value will be `undefined`.
-
-## Microsoft Edge on Windows
-
-By default, Chromium browsers uses FFMpeg internally for WebCodecs API. However, Microsoft Edge, when running on Windows, uses Media Foundation decoders instead.
-
-Decoding H.265 requires the [**HEVC Video Extensions**](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) ($0.99) or **HEVC Video Extensions from Device Manufacturer** (free but not available anymore) app from Microsoft Store.
-
-Decoding AV1 requires the [**AV1 Video Extension**](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) (free) app from Microsoft Store.
-
-[`isConfigSupported`](#feature-detection) method can be used to detect whether the corresponding app is installed.

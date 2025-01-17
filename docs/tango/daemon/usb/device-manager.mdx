@@ -4,6 +4,7 @@ sidebar_position: 1
 
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
+import CanIUse from "../../../can-i-use";
 
 # Create device manager
 
@@ -17,6 +18,8 @@ The usage of `AdbDaemonWebUsbDeviceManager` is different in Node.js and Web brow
 <TabItem value="web" label="Web">
 
 Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
+
+<CanIUse feature="webusb" />
 
 :::info[Electron Support]
 
@@ -50,7 +53,7 @@ const Manager: AdbDaemonWebUsbDeviceManager | undefined =
 `AdbDaemonWebUsbDeviceManager.BROWSER` is a shorthand of:
 
 ```ts
-navigator.usb ? new AdbDaemonWebUsbDeviceManager(navigator.usb) : undefined
+navigator.usb ? new AdbDaemonWebUsbDeviceManager(navigator.usb) : undefined;
 ```
 
 :::
