@@ -2,11 +2,19 @@
 sidebar_position: 1
 ---
 
+import CanIUse from "../../can-i-use";
+
 # Web Streams Basics
 
 {/* cspell: ignore interoperating */}
 
-[`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and [`WriteableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) are from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API). They represent a stream of data that can be read from or written to asynchronously.
+Tango library uses [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API) to manage asynchronous I/O. Similar to [Node.js Streams](https://nodejs.org/api/streams.html), it provides a unified API for reading from and writing to data streams.
+
+## Runtime support
+
+<CanIUse feature="streams" />
+
+Node.js also supports Web Streams API since [v18.0.0](https://nodejs.org/api/webstreams.html).
 
 ## `@yume-chan/stream-extra` package
 

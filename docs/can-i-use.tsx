@@ -5,6 +5,7 @@ export default function CanIUse(props: { feature: string }) {
         <>
             <p
                 className="ciu_embed"
+                style={{ marginBottom: 0 }}
                 data-feature={props.feature}
                 data-periods="future_1,current,past_1,past_2"
                 data-accessible-colours="true"

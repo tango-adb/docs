@@ -2,9 +2,9 @@
 
 Install a single APK from a `ReadableStream`.
 
-It will use streaming install if the device supports it. The APK file will be uploaded, parsed, and installed at the same time.
+It will use streaming install if supported by the device. This means the APK file will be uploaded, parsed, and installed in parallel.
 
-If the device does not support streaming install, it will first use [`AdbSync.prototype.write`](../../adb/sync/write.mdx) to upload the APK file to a temp folder on the device, then use [`install`](./install.mdx) method to install it.
+If streaming install is not supported, `installStream` will first call [`AdbSync.prototype.write`](../../adb/sync/write.mdx) to upload the APK file to a temp folder on the device, then call [`install`](./install.mdx) method with the file path.
 
 ```ts showLineNumbers
 export interface PackageManagerInstallOptions {

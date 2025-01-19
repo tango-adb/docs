@@ -18,21 +18,7 @@ npm install @yume-chan/scrcpy-decoder-webcodecs
 
 <CanIUse feature="webcodecs" />
 
-### Microsoft Edge on Windows
-
-By default, Chromium browsers uses FFMpeg internally for WebCodecs API. However, Microsoft Edge, when running on Windows, uses Media Foundation decoders instead.
-
-Decoding H.265 requires the [**HEVC Video Extensions**](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) ($0.99) or **HEVC Video Extensions from Device Manufacturer** (free but not available anymore) app from Microsoft Store.
-
-Decoding AV1 requires the [**AV1 Video Extension**](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) (free) app from Microsoft Store.
-
-### Firefox
-
-Firefox 133 supports playing H.265 videos, but does not support decoding H.265 streams using WebCodecs API.
-
-## Feature detection
-
-Because WebCodecs API is not supported in all browsers, you should check if it is supported before using it.
+Because WebCodecs API is still relatively new, you should check if it is supported before using it.
 
 ```ts transpile
 import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
@@ -54,11 +40,11 @@ If WebCodecs API is not supported, you can fallback to the [TinyH264 decoder](./
 
 ## Codec support
 
-Even when the browser supports WebCodecs API, the video codecs they support may vary.
+Scrcpy v2.0 added the [`videoCodec`](../options/video-codec.mdx) option, to specify the video codec to use by the server. H.265 and AV1 codecs can provide better video quality at the same bitrate compared to H.264.
 
-[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) static method can be used to check if a given codec configuration is supported.
+WebCodecs spec supports H.264, H.265 and AV1, but runtime support requires a joint effort from browsers, operating systems, graphics cards and drivers. H.264 should be supported by all browsers that support WebCodecs API, but support for other newer codecs may vary.
 
-It accepts a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1.
+[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) static method can be used to check if a given codec is supported. It takes a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1.
 
 ```ts transpile
 const result = await VideoDecoder.isConfigSupported({
@@ -67,7 +53,17 @@ const result = await VideoDecoder.isConfigSupported({
 const isHevcSupported = result.supported === true;
 ```
 
-Scrcpy v2.0 added the `videoCodec` option to specify the video codec. You should use a codec that is supported by both browser and device.
+### Microsoft Edge on Windows
+
+By default, Chromium browsers uses FFMpeg internally for WebCodecs API. However, Microsoft Edge, when running on Windows, uses Media Foundation decoders instead.
+
+Decoding H.265 requires the [**HEVC Video Extensions**](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) ($0.99) or **HEVC Video Extensions from Device Manufacturer** (free but not available anymore) app from Microsoft Store.
+
+Decoding AV1 requires the [**AV1 Video Extension**](https://www.microsoft.com/store/productId/9MVZQVXJBQ9V) (free) app from Microsoft Store.
+
+### Firefox
+
+Firefox 133 supports playing H.265 videos, but does not support decoding H.265 streams using WebCodecs API.
 
 ## Renderer
 
@@ -246,12 +242,21 @@ decoder.sizeChanged(({ width, height }) => {
 
 ## Use in Web Worker
 
-Although WebCodecs API already runs in its own thread, and the renderers are very fast, you might still want to run them in a dedicated Web Worker, so other works on the main thread won't affect the performance.
+Although WebCodecs API already runs in its own thread, and the renderers are very fast, you might still want to run them in a dedicated Web Worker, so other tasks on the main thread won't affect its responsiveness.
 
 Only `WebGLVideoFrameRenderer` and `BitmapVideoFrameRenderer` are supported in Web Worker. There are two ways to render the frames:
 
-- When their constructors are called without arguments, they will create an `OffscreenCanvas` object. See [Synchronous display of frames produced by an OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas#synchronous_display_of_frames_produced_by_an_offscreencanvas) on MDN for how to use it.
-- Call `transferControlToOffscreen()` on a `<canvas>` element, `postMessage` the `OffscreenCanvas` object to the worker, and use it to create the renderer.
+### Create `OffscreenCanvas` directly
+
+When their constructors are called without arguments, they will create an [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) object internally.
+
+This `OffscreenCanvas` is not bound to a `<canvas>` element. See [Synchronous display of frames produced by an OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas#synchronous_display_of_frames_produced_by_an_offscreencanvas) on MDN for how send the image data to a normal `<canvas>` element.
+
+### Create `OffscreenCanvas` from a `<canvas>` element
+
+An [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) object can be created by calling [`transferControlToOffscreen()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/transferControlToOffscreen) method on an existing [`<canvas>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas) element.
+
+It can then be [`postMessage`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage) to the worker, and pass into [renderer constructors](#create-a-renderer). When the renderer draws on the `OffscreenCanvas`, the content will be displayed on the source `<canvas>` element automatically.
 
 ```html
 <!-- index.html -->
@@ -322,7 +327,7 @@ Because WebCodecs decoder can render to different types of targets, it's more di
 To help with that, the decoder provides the `snapshot` method to easily capture the last rendered frame as a PNG image.
 
 ```ts transpile
-const blob = await decoder.snapshot();
+const blob: Blob | undefined = await decoder.snapshot();
 ```
 
-Only when no frames has been rendered, the return value will be `undefined`.
+If no frames has been rendered, the return value will be `undefined`. Otherwise it will be a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob) object with the PNG image data.
