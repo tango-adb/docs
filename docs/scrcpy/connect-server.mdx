@@ -2,9 +2,13 @@
 sidebar_position: 7
 ---
 
+import Version from "./version-span";
+
 # Connect to server
 
-Scrcpy uses multiple [Unix domain sockets](https://www.man7.org/linux/man-pages/man7/unix.7.html) to transmit video, audio, and control messages between client and server. However, because most of time you connect to it over ADB Server tunnels, you don't need to deal with Unix domain sockets directly, and it's also usable on Windows.
+Scrcpy uses multiple [Unix domain sockets](https://www.man7.org/linux/man-pages/man7/unix.7.html) to transmit video, audio, and control messages between client and server.
+
+While programs on the Android device itself can connect to the Scrcpy server using [`socket`](https://www.man7.org/linux/man-pages/man2/socket.2.html) (for C and others) or [`LocalSocket`](https://developer.android.com/reference/android/net/LocalSocket) (for Java), the client is usually running on a PC, with the Android device connected to the PC through ADB, so ADB tunnels are used, to forward connections between TCP sockets on PC and Unix domain sockets on the Android device.
 
 :::info
 
@@ -12,11 +16,50 @@ Scrcpy official documentation also has a section about this: https://github.com/
 
 :::
 
-It supports two connection modes:
+## Sockets
+
+Scrcpy transmits video, audio, and control messages in individual sockets. The default order is:
+
+1. Video
+2. <Version since="v2.0">Audio</Version>
+3. Control
+
+If some of them are disabled by options (<Version since="v2.1">`video: false`</Version>, <Version since="v2.0">`audio: false`</Version>, <Version since="v1.22">`control: false`</Version>), the corresponding socket will be skipped, but the order of other sockets will be kept.
+
+:::info
+
+`control: false` in versions before v1.22 does not disable the control socket.
+
+:::
+
+These sockets can be transmitted between PC and Android devices using ADB reverse tunnels or ADB forward tunnels:
 
 ## Reverse tunnel
 
-This is the default mode used by Scrcpy. The client listens on the Unix domain socket address, and the server connects to it.
+```mermaid
+sequenceDiagram
+  box gray PC
+    participant A as Program
+    participant B as ADB Server
+  end
+
+  box gray Device
+    participant C as ADB Daemon
+    participant E as Android App
+  end
+
+  A->>A: Create TCP listener on tcp:1234
+  A->>B: reverse tcp:2345 tcp:1234
+  B->>C: reverse:forward:tcp:2345#59;tcp:1234
+  C->>C: Create TCP listener on tcp:2345
+  E->>C: Connect to tcp:2345
+  C->>B: Forward connection to tcp:1234
+  B->>A: Forward connection to tcp:1234
+```
+
+With reverse tunnels, programs on Android device can connect to a listening address on PC. So the client (running on PC) listens, and the server connects to it.
+
+This is the default mode used by Scrcpy.
 
 ### Pros
 
@@ -24,9 +67,9 @@ Because the client can listen on the socket address before the server starts, th
 
 ### Cons
 
-The downside is that reverse tunnel may not be supported, for example with [ADB over Wi-Fi on Android 8 and below](../api/adb/reverse/index.mdx#errors), or with a [custom transport](../tango/custom-transport/transport.mdx#reverse-tunnel).
+Reverse tunnel is not supported in some situations, including [ADB over Wi-Fi on Android 8 and below](../api/adb/reverse/index.mdx#errors), or with a [custom transport](../tango/custom-transport/transport.mdx#reverse-tunnel).
 
-In such cases, you can use the forward tunnel mode instead.
+In such cases, you can use the [forward tunnel](#forward-tunnel) mode instead.
 
 ### With Google ADB
 
@@ -47,51 +90,17 @@ Tango encapsulates the reverse tunnel feature into a callback-based API:
 2. Start server using [`subprocess.spawn`](../api/adb/subprocess.mdx) method.
 3. Wait for the correct amount of incoming connections.
 
-### With `@yume-chan/adb-scrcpy`
-
-The `AdbScrcpyClient.start` method uses reverse tunnels by default. It sets up the reverse tunnel and waits for the correct amount of connections automatically.
-
-However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an `AdbReverseNotSupportedError`, `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
-
-If you are using a custom transport that doesn't support reverse tunnel, you can set `tunnelForward: true` option explicitly:
-
-```ts transpile
-import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
-
-const options = new ScrcpyOptions3_0({
-  tunnelForward: true,
-});
-```
-
-Or you can throw an `AdbReverseNotSupportedError` in your custom transport:
-
-```ts transpile
-import { AdbReverseNotSupportedError } from "@yume-chan/adb";
-
-export class YourTransport implements AdbTransport {
-  /// other methods
-
-  addReverseTunnel() {
-    throw new AdbReverseNotSupportedError();
-  }
-
-  removeReverseTunnel() {
-    throw new AdbReverseNotSupportedError();
-  }
-
-  clearReverseTunnels() {
-    throw new AdbReverseNotSupportedError();
-  }
-}
-```
-
 ## Forward tunnel
 
 This mode can be used as a fallback when reverse tunnel is not supported. In forward tunnel mode, the server listens on the Unix domain socket address, and the client creates multiple connections to it.
 
-To tell Scrcpy server to use forward tunnel mode instead, add the `tunnelForward: true` option to your `ScrcpyOptionsX_XX` instance.
+### Dummy byte
 
-To make it easier to detect a success connection, Scrcpy server will write a single `0` byte in the first (usually video) socket. This behavior can be turned off using `sendDummyByte: false` option.
+When using ADB forward tunnels, ADB server listens on the PC, so when client connects to the local socket address, it will always succeeds.
+
+To signal a successful connection, the server sends an extra `0x00` byte at the beginning of the first established [socket](#sockets). You need to ignore this byte, before sending the stream to other APIs to process.
+
+This behavior can be turned off using `sendDummyByte: false` option.
 
 ### Pros
 
@@ -122,6 +131,40 @@ If the server has not been started and listen on the socket address, `createSock
 
 You also need retry the connection until the correct amount of sockets are created.
 
-### With `@yume-chan/adb-scrcpy`
+## With `@yume-chan/adb-scrcpy`
 
-When `tunnelForward: true` option is specified, `AdbScrcpyClient` uses forward tunnel mode to connect to Scrcpy server.
+If no `tunnelForward` option is specified, `AdbScrcpyClient.start` method will try to use reverse tunnels by default. It sets up the reverse tunnel and waits for the correct amount of connections automatically.
+
+However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an `AdbReverseNotSupportedError`, `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
+
+If your custom transport doesn't support reverse tunnels, it's recommended to throw an `AdbReverseNotSupportedError` to trigger this automatic fallback behavior:
+
+```ts transpile
+import { AdbReverseNotSupportedError } from "@yume-chan/adb";
+
+export class YourTransport implements AdbTransport {
+  /// other methods
+
+  addReverseTunnel() {
+    throw new AdbReverseNotSupportedError();
+  }
+
+  removeReverseTunnel() {
+    throw new AdbReverseNotSupportedError();
+  }
+
+  clearReverseTunnels() {
+    throw new AdbReverseNotSupportedError();
+  }
+}
+```
+
+In all situations, the `tunnelForward` option can be specified to always use forward tunnels:
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_0({
+  tunnelForward: true,
+});
+```
