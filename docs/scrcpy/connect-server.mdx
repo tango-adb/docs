@@ -16,6 +16,26 @@ Scrcpy official documentation also has a section about this: https://github.com/
 
 :::
 
+## Socket address
+
+Scrcpy uses Unix domain sockets, their address are represented in ADB using the `localabstract:` schema.
+
+Before Scrcpy 2.0, the socket address is always `localabstract:scrcpy`.
+
+Since Scrcpy 2.0, to make running multiple Scrcpy instances easier, each instance can be specified to use different addresses using the `scid` option.
+
+`scid` option is a positive number, converted to hexadecimal, and padded to 8 characters with `0`s at start:
+
+```ts transpile
+export function getSocketName(scid: number | undefined): string {
+  if (!scid || scid <= 0) {
+    return "localabstract:scrcpy";
+  } else {
+    return "localabstract:scrcpy_" + scid.toString(16).padStart(8, "0");
+  }
+}
+```
+
 ## Sockets
 
 Scrcpy transmits video, audio, and control messages in individual sockets. The default order is:
@@ -96,11 +116,67 @@ This mode can be used as a fallback when reverse tunnel is not supported. In for
 
 ### Dummy byte
 
-When using ADB forward tunnels, ADB server listens on the PC, so when client connects to the local socket address, it will always succeeds.
+When using ADB forward tunnels, ADB server listens on the PC, so when client connects to the local socket address, it will always succeed.
 
-To signal a successful connection, the server sends an extra `0x00` byte at the beginning of the first established [socket](#sockets). You need to ignore this byte, before sending the stream to other APIs to process.
+To signal a successful connection, the server sends an extra `0x00` byte at the beginning of the first established [socket](#sockets) (usually, the video socket). You need to ignore this byte, before sending the stream to other APIs to process.
 
-This behavior can be turned off using `sendDummyByte: false` option.
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import { BufferedReadableStream } from "@yume-chan/stream-extra";
+
+export async function connect(
+  adb: Adb,
+  address: string,
+  sendDummyByte: boolean,
+): Promise<ReadableWritablePair<Uint8Array, Consumable<Uint8Array>>> {
+  const stream = await adb.createSocket(address);
+  if (sendDummyByte) {
+    // Can't guarantee the stream will preserve message boundaries,
+    // so buffer the stream
+    const buffered = new BufferedReadableStream(stream.readable);
+    // Skip the dummy byte
+    // Google ADB forward tunnel listens on a socket on the computer,
+    // when a client connects to that socket, Google ADB will forward
+    // the connection to the socket on the device.
+    // However, connecting to that socket will always succeed immediately,
+    // which doesn't mean that Google ADB has connected to
+    // the socket on the device.
+    // Thus Scrcpy server sends a dummy byte to the socket, to let the client
+    // know that the connection is truly established.
+    await buffered.readExactly(1);
+    return {
+      readable: buffered.release(),
+      writable: stream.writable,
+    };
+  }
+  return stream;
+}
+```
+
+Because only the first socket contains the dummy byte, it needs to be stored in a variable:
+
+```ts transpile
+declare const adb: Adb;
+const address = "localabstract:scrcpy";
+declare const options: Record<string, unknown>;
+
+let sendDummyByte = options.sendDummyByte !== false;
+if (options.video !== false) {
+  const videoSocket = await connect(adb, address, sendDummyByte);
+  sendDummyByte = false;
+}
+if (options.audio !== false) {
+  const audioSocket = await connect(adb, address, sendDummyByte);
+  sendDummyByte = false;
+}
+if (options.control !== false) {
+  const controlSocket = await connect(adb, address, sendDummyByte);
+  sendDummyByte = false;
+}
+```
+
+This behavior can be turned off using `sendDummyByte: false` option. For example, in [daemon transport](../tango/daemon/index.mdx) mode, it connects to ADB daemon directly, so no dummy byte is needed to detect connection success.
 
 ### Pros
 
@@ -129,13 +205,57 @@ In Tango, the [`createSocket`](../api/adb/socket.mdx#forward-tunnel) method can 
 
 If the server has not been started and listen on the socket address, `createSocket` will throw an error.
 
-You also need retry the connection until the correct amount of sockets are created.
+You need to retry the connection until the correct amount of sockets are created. Continuing from the code example in [dummy byte](#dummy-byte) section above:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { delay } from "@yume-chan/async";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+
+export async function connectWithRetry(
+  adb: Adb,
+  address: string,
+  sendDummyByte: boolean,
+): Promise<ReadableWritablePair<Uint8Array, Consumable<Uint8Array>>> {
+  for (let i = 0; i < 100; i += 1) {
+    try {
+      return await connect(adb, address, sendDummyByte);
+    } catch {
+      // Maybe the server is still starting
+      await delay(100);
+    }
+  }
+  throw new Error(`Can't connect to server after 100 retries`);
+}
+```
+
+And replace `connect` calls with `connectWithRetry`:
+
+```ts transpile
+declare const adb: Adb;
+const address = "localabstract:scrcpy";
+declare const options: Record<string, unknown>;
+
+let sendDummyByte = options.sendDummyByte !== false;
+if (options.video !== false) {
+  const videoSocket = await connectWithRetry(adb, address, sendDummyByte);
+  sendDummyByte = false;
+}
+if (options.audio !== false) {
+  const audioSocket = await connectWithRetry(adb, address, sendDummyByte);
+  sendDummyByte = false;
+}
+if (options.control !== false) {
+  const controlSocket = await connectWithRetry(adb, address, sendDummyByte);
+  sendDummyByte = false;
+}
+```
 
 ## With `@yume-chan/adb-scrcpy`
 
 If no `tunnelForward` option is specified, `AdbScrcpyClient.start` method will try to use reverse tunnels by default. It sets up the reverse tunnel and waits for the correct amount of connections automatically.
 
-However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an `AdbReverseNotSupportedError`, `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
+However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an [`AdbReverseNotSupportedError`](../api/adb/reverse/index.mdx#errors), `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
 
 If your custom transport doesn't support reverse tunnels, it's recommended to throw an `AdbReverseNotSupportedError` to trigger this automatic fallback behavior:
 
