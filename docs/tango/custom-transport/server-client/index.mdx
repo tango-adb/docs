@@ -19,9 +19,9 @@ The server is a Node.js program that:
 - Establishes ADB connection to devices when clients request via HTTP
 - Forwards ADB sockets between clients and devices through WebSocket
 
-It uses [Daemon Transport over USB connections](../../daemon/usb/index.mdx). Other transports and connection methods can also be used, by referring to the corresponding documentation pages.
+It uses [Daemon Transport over USB connections](../../daemon/usb/index.mdx), but other transports and connection methods can also be used, by referring to the corresponding documentation pages.
 
-A Node.js HTTP `Server` is created to handle HTTP requests, and a `WebSocketServer` from [`ws`](https://npmjs.com/package/ws) is created, sharing the HTTP `Server`, to handle WebSocket requests:
+A Node.js HTTP `Server` is created to handle HTTP requests, and a `WebSocketServer` from [`ws`](https://npmjs.com/package/ws) package is created, sharing the HTTP `Server`, to handle WebSocket requests:
 
 ```ts transpile
 import { createServer } from "node:http";
@@ -66,9 +66,9 @@ The client is a Web app that:
 - Requests the server to establish ADB connection when a device is selected
 - Runs ADB commands by sending them to the server through WebSocket
 
-The client doesn't use any UI frameworks. You can use any JavaScript library to implement your own UI.
+The client only contains basic UI using vanilla JavaScript. You can use any UI library/framework to create your own UI.
 
-It has two HTML pages:
+There are two HTML pages:
 
 * `index.html`: Displays the device list and links to the device page
 * `device.html`: Displays the output from `logcat` command to demonstrate the use of ADB commands
@@ -90,7 +90,7 @@ This project uses PNPM workspaces. Make sure you have [pnpm](https://pnpm.io) in
    pnpm install
    ```
 
-The server uses [tsx](https://www.npmjs.com/package/tsx) to run TypeScript code in Node.js directly, and the client uses [@babel/standalone](https://www.npmjs.com/package/@babel/standalone) to run TypeScript in Web browsers, so no compile step is needed.
+The server uses [tsx](https://www.npmjs.com/package/tsx) to run TypeScript code in Node.js directly, and the client uses [@babel/standalone](https://www.npmjs.com/package/@babel/standalone) to run TypeScript in Web browsers, so no compilation step is needed.
 
 To run the server:
 
