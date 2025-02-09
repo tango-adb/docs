@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   mermaid:
-    hash: k34s43u3ajgvyzuswufpmz755e
+    hash: a4e98f1fa59fc37939205303915c9026a33df6ff3a7d6695dceb00407437f8a3
     path: patches/mermaid.patch
 
 importers:
@@ -7476,7 +7476,7 @@ snapshots:
       '@docusaurus/theme-common': 3.6.3(@docusaurus/plugin-content-docs@3.6.3(@mdx-js/react@3.1.0(@types/react@18.3.12)(react@18.3.1))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.2))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.2)
       '@docusaurus/types': 3.6.3(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/utils-validation': 3.6.3(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.2)
-      mermaid: 11.4.1(patch_hash=k34s43u3ajgvyzuswufpmz755e)
+      mermaid: 11.4.1(patch_hash=a4e98f1fa59fc37939205303915c9026a33df6ff3a7d6695dceb00407437f8a3)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       tslib: 2.8.1
@@ -10622,7 +10622,7 @@ snapshots:
 
   merge2@1.4.1: {}
 
-  mermaid@11.4.1(patch_hash=k34s43u3ajgvyzuswufpmz755e):
+  mermaid@11.4.1(patch_hash=a4e98f1fa59fc37939205303915c9026a33df6ff3a7d6695dceb00407437f8a3):
     dependencies:
       '@braintree/sanitize-url': 7.1.0
       '@iconify/utils': 2.1.33
