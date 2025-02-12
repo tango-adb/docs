@@ -1,0 +1,29 @@
+---
+sidebar_position: 3
+---
+
+# Usage
+
+You can use an instance of your custom transport to create an `Adb` instance. The `Adb` instance is used to run ADB commands or other services.
+
+```ts
+declare class Adb {
+  constructor(transport: AdbTransport);
+}
+```
+
+```ts transpile
+import type { AdbTransport } from "@yume-chan/adb";
+import { Adb } from "@yume-chan/adb";
+
+declare const transport: AdbTransport; // Your custom transport instance
+const adb = new Adb(transport);
+
+console.log(await adb.getProp("ro.build.version.sdk")); // Example ADB command
+```
+
+:::note[Next Step]
+
+See [API](/api/index.mdx) section for all supported ADB commands.
+
+:::
