@@ -30,16 +30,16 @@ This table show how versions and options affect the video stream format.
 - ⛔ means the field is not present
 - An option name means the field is present if the option is `true`
 
-| Value                                                 | v1.15 ~ v1.21   | 1.22             | v1.23 ~ v1.25    | v2.0 ~ v3.1                                            |
-| ----------------------------------------------------- | --------------- | ---------------- | ---------------- | ------------------------------------------------------ |
-| Metadata                                              | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | <code>sendDeviceMeta &#124;&#124; sendCodecMeta</code> |
-| <span style={{marginRight:'2em'}}/>Device name        | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta`                                       |
-| <span style={{marginRight:'2em'}}/>Initial video size | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendCodecMeta`                                        |
-| <span style={{marginRight:'2em'}}/>Video codec        | ⛔              | ⛔               | ⛔               | `sendCodecMeta`                                        |
-| Configuration                                         | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                                        |
-| Data Packet Header                                    | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                                        |
-| <span style={{marginRight:'2em'}}/> PTS               | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                                        |
-| <span style={{marginRight:'2em'}}/> Keyframe Mark     | ⛔              | ⛔               | `sendFrameMeta`  | `sendFrameMeta`                                        |
+| Value                                                 | v1.15 ~ v1.21   | 1.22             | v1.23 ~ v1.25    | v2.0 ~ v3.1                         |
+| ----------------------------------------------------- | --------------- | ---------------- | ---------------- | ----------------------------------- |
+| Metadata                                              | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta` or `sendCodecMeta` |
+| <span style={{marginRight:'2em'}}/>Device name        | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta`                    |
+| <span style={{marginRight:'2em'}}/>Initial video size | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendCodecMeta`                     |
+| <span style={{marginRight:'2em'}}/>Video codec        | ⛔              | ⛔               | ⛔               | `sendCodecMeta`                     |
+| Configuration                                         | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                     |
+| Data Packet Header                                    | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                     |
+| <span style={{marginRight:'2em'}}/> PTS               | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                     |
+| <span style={{marginRight:'2em'}}/> Keyframe Mark     | ⛔              | ⛔               | `sendFrameMeta`  | `sendFrameMeta`                     |
 
 ## Raw mode
 
@@ -47,7 +47,9 @@ As the above table shows, since v1.22, if `sendDeviceMeta` and `sendFrameMeta` o
 
 This is called the raw mode. In this mode, the video socket only contains codec-specific, encoded video data.
 
-Without the extra information, it's much harder to process the video stream. Because of that, Tango only has limited support for parsing the video stream in raw mode. Its methods can process the stream without errors, but some fields will be `undefined`, and [built-in video decoders](#decode-and-render-video) can't decode raw mode video stream.
+Without the extra information, it's much harder to process the video stream. Tango supports raw mode, by returning `undefined` for related fields, but [built-in video decoders](#decode-and-render-video) can't decode raw mode video streams.
+
+Advanced decoders, like FFMpeg, can decode raw video streams. If you only need to pipe the video stream to ffmpeg, raw mode can save some processing time.
 
 ## Video stream metadata
 
@@ -96,7 +98,7 @@ If metadata is not present, or doesn't contain codec information, the `codec` fi
 
 #### Raw mode
 
-If the whole metadata is not present, all fields except `codec` will be `undefined`. The `stream` field returned will be the same object as the parameter.
+If the whole metadata is not present, all fields except `codec` will be `undefined`. The `stream` field returned will be the same object as the argument.
 
 ### With `@yume-chan/adb-scrcpy`
 
