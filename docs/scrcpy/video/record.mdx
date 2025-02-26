@@ -27,8 +27,8 @@ No matter which container and muxer library you use, there are some codec-specif
 
 H.264/AVC is a [joint effect between ITU-T and ISO](https://en.wikipedia.org/wiki/Advanced_Video_Coding#Naming), thus it has two names. The words "H.264" and "AVC" are usually used interchangeably. However, they are actually two different specifications. The packet format and algorithm to decode them are identical, but how to store those packets in files is different:
 
-* ITU-T H.264 standard (https://www.itu.int/rec/T-REC-H.264) defines a bit stream for storing H.264 packets. This format doesn't have an official name, but since it's in the Annex B section of the specification, it's commonly referred to as "Annex B format", and used to store raw H.264 streams.
-* ISO/IEC MPEG-4 AVC standard (https://www.iso.org/obp/ui/en/#iso:std:iso-iec:14496:-10:ed-10:v1:en) uses varies C structure-like format to store those packets. This format is commonly referred to as "avcC", and used by various containers.
+- ITU-T H.264 standard (https://www.itu.int/rec/T-REC-H.264) defines a bit stream for storing H.264 packets. This format doesn't have an official name, but since it's in the Annex B section of the specification, it's commonly referred to as "Annex B format", and used to store raw H.264 streams.
+- ISO/IEC MPEG-4 AVC standard (https://www.iso.org/obp/ui/en/#iso:std:iso-iec:14496:-10:ed-10:v1:en) uses varies C structure-like format to store those packets. This format is commonly referred to as "avcC", and used by various containers.
 
 Android MediaCodec API (which Scrcpy uses) produces video streams in Annex B format. To save the stream into a container format, it needs to be converted to avcC format.
 
@@ -69,10 +69,10 @@ Then you can use this function to convert them into `AvcDecoderConfigurationReco
 // https://ffmpeg.org/doxygen/0.11/avc_8c-source.html#l00106
 function h264ConfigurationToAvcDecoderConfigurationRecord(
   sequenceParameterSet: Uint8Array,
-  pictureParameterSet: Uint8Array
+  pictureParameterSet: Uint8Array,
 ) {
   const buffer = new Uint8Array(
-    11 + sequenceParameterSet.byteLength + pictureParameterSet.byteLength
+    11 + sequenceParameterSet.byteLength + pictureParameterSet.byteLength,
   );
   buffer[0] = 1;
   buffer[1] = sequenceParameterSet[1]!;
@@ -122,7 +122,7 @@ for await (const packet of videoPacketStream) {
 
     if (configuration) {
       const buffer = new Uint8Array(
-        configuration.byteLength + packet.data.byteLength
+        configuration.byteLength + packet.data.byteLength,
       );
       buffer.set(configuration);
       buffer.set(packet.data, configuration.byteLength);
@@ -202,7 +202,7 @@ import {
 function h265ConfigurationToHevcDecoderConfigurationRecord(
   videoParameterSet: H265NaluRaw,
   sequenceParameterSet: H265NaluRaw,
-  pictureParameterSet: H265NaluRaw
+  pictureParameterSet: H265NaluRaw,
 ) {
   const {
     profileTierLevel: {
@@ -231,7 +231,7 @@ function h265ConfigurationToHevcDecoderConfigurationRecord(
       5 * 3 +
       videoParameterSet.data.length +
       sequenceParameterSet.data.length +
-      pictureParameterSet.data.length
+      pictureParameterSet.data.length,
   );
 
   /* unsigned int(8) configurationVersion = 1; */
@@ -362,8 +362,68 @@ The data packets only need to be saved as-is into the video stream.
 
 ## Start recording anytime
 
-The above examples assume you are saving the video stream from the beginning. Because a video file must start with a configuration and a keyframe, it's a little different if you want to start and stop recording from a specific point.
+The above examples assume you are saving the video stream from the beginning. Because a video file must start with a configuration and a keyframe, it's a little different if you want to start and stop recording in the middle.
 
-Before v3.0, it's not possible to manually request a configuration and keyframe. The best possible approach is saving the latest configuration, and frames starting from the latest keyframe, and use them when starting recoding. Because Android produces keyframes every N frames, and the framerate is variable, it will record several extra seconds.
+### Before v3.0
 
-v3.0 added the [reset video](../control/reset-video.mdx) command. You can send the control message, then wait for next configuration and keyframe to begin recording.
+Before v3.0, it's not possible to manually request configuration and keyframe packets.
+
+The best possible approach is caching the latest configuration, and frames starting from the latest keyframe, and use them when starting recoding.
+
+```ts transpile
+import type {
+  ScrcpyMediaStreamPacket,
+  ScrcpyMediaStreamConfigurationPacket,
+  ScrcpyMediaStreamDataPacket,
+} from "@yume-chan/scrcpy";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+
+let configuration: ScrcpyMediaStreamConfigurationPacket | undefined;
+const frames: ScrcpyMediaStreamDataPacket[] = [];
+
+let recording = false;
+
+for await (const packet of videoPacketStream) {
+  switch (packet.type) {
+    case "configuration":
+      configuration = packet;
+      frames.length = 0; // Clear the array
+
+      if (recording) {
+        // Convert and save the configuration
+      }
+      break;
+    case "data":
+      frames.length = 0;
+      frames.push(packet);
+
+      if (recording) {
+        // Convert and save the frame
+      }
+      break;
+  }
+}
+
+function startRecord() {
+  if (recording) {
+    return;
+  }
+
+  recording = true;
+
+  if (configuration) {
+    // Convert and save the configuration
+
+    for (const frame of frames) {
+      // Convert and save the frame
+    }
+  }
+}
+```
+
+Obviously, this will record several extra frames before requested. To make it worse, because Android produces keyframes bases on fixed frame intervals, but new frames are only generated when the screen content changes, those extra frames may last several seconds, or even surpass the max keyframe time interval of some container formats.
+
+### v3.0 and later
+
+v3.0 added the [reset video](../control/reset-video.mdx) control message. It requests the server to restart capturing and encoding immediately, which produces new configuration and keyframe packets, so the stream can be recorded from any point. See that page for examples.

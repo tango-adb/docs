@@ -33,29 +33,42 @@ await writer.resetVideo();
 await client.controller!.resetVideo();
 ```
 
-Because the transmission delay, some video packets for previous configuration might still arrive after the reset video command. You can still send them to existing consumers (decoders, muxers, or remote clients), but new consumers should only be started when the next `configuration` packet is received.
+## Example
+
+Because the transmission delay, some video packets for previous configuration might still arrive after the reset video command. Those packets can still be sent to existing consumers (decoders, muxers, or remote clients), but new consumers should only be started when the next `configuration` packet is received.
 
 ```ts transpile
-import { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
 
 declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+declare const controller: ScrcpyControlMessageWriter;
 
 let consumers: unknown[] = [];
 let pendingConsumers: unknown[] = []; // New decoders, muxers, or remote clients waiting for the next `configuration` packet
+
+function addNewConsumer(consumer: unknown) {
+  // For example when a new client connected
+  pendingConsumers.add(consumer);
+  await controller.resetVideo();
+}
 
 for await (const packet of videoPacketStream) {
   switch (packet.type) {
     case "configuration":
       if (pendingConsumers.length) {
-        // Initialize pending consumers
-
+        // Start new consumers
         consumers = consumers.concat(pendingConsumers);
         pendingConsumers = [];
       }
-      // Send packets to `consumers`
+
+      for (const consumer of consumers) {
+        // Send the configuration to consumer
+      }
       break;
     case "data":
-      // Send packets to `consumers`
+      for (const consumer of consumers) {
+        // Send the frame to consumer
+      }
       break;
   }
 }
