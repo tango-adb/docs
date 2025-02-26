@@ -25,11 +25,10 @@ No matter which container and muxer library you use, there are some codec-specif
 
 ## H.264
 
-The words "H.264" and "AVC" are usually used interchangeably. However, they are actually two different specifications. The part for encoding and decoding video frames is identical, but the part for saving the video stream is different.
+H.264/AVC is a [joint effect between ITU-T and ISO](https://en.wikipedia.org/wiki/Advanced_Video_Coding#Naming), thus it has two names. The words "H.264" and "AVC" are usually used interchangeably. However, they are actually two different specifications. The packet format and algorithm to decode them are identical, but how to store those packets in files is different:
 
-The ITU-T H.264 standard (https://www.itu.int/rec/T-REC-H.264) defines a stream format for storing multiple H.264 packets. This format doesn't have an official name, but because it's in the Annex B section of the specification, it's commonly referred to as "Annex B format", and used to store raw H.264 streams.
-
-On the other hand, the ISO/IEC MPEG-4 AVC standard (https://www.iso.org/obp/ui/en/#iso:std:iso-iec:14496:-10:ed-10:v1:en) uses varies C structure-like format to store the packets. This format is commonly referred to as "avcC", and used by various containers.
+* ITU-T H.264 standard (https://www.itu.int/rec/T-REC-H.264) defines a bit stream for storing H.264 packets. This format doesn't have an official name, but since it's in the Annex B section of the specification, it's commonly referred to as "Annex B format", and used to store raw H.264 streams.
+* ISO/IEC MPEG-4 AVC standard (https://www.iso.org/obp/ui/en/#iso:std:iso-iec:14496:-10:ed-10:v1:en) uses varies C structure-like format to store those packets. This format is commonly referred to as "avcC", and used by various containers.
 
 Android MediaCodec API (which Scrcpy uses) produces video streams in Annex B format. To save the stream into a container format, it needs to be converted to avcC format.
 
@@ -169,7 +168,7 @@ Again, how to save the `AVCSample` into the video stream depends on the containe
 
 ## H.265
 
-H.265 stream format is very similar to H.264. It uses the same Annex B format, and the process to handle packets is also the same.
+H.265/HEVC is very similar to H.264. It's also a joint effect between ITU-T and ISO, and it also has two formats, Annex B (identical to H.264) and HEVC (similar to avcC but with different fields).
 
 ### Configuration
 
