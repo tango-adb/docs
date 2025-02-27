@@ -146,6 +146,7 @@ Each data packet represents exactly one encoded frame, and if [version and optio
 
 - `keyframe`: `true` if the current packet is a keyframe. Many decoders can decode the video stream without knowing if each frame is a keyframe or not, but some decoders require this information.
 - `pts`: Presentation timestamp in nanoseconds. When rendering the video in real-time, generally you want to present the decoded frames as they arrive to minimize the latency, but this information can be used to remove processing time deviations when [recording](./record.mdx).
+- `data`: Contains exactly one encoded frame. For H.264 and H.265, in [Annex B format](./record.mdx#h264).
 
 ### With `@yume-chan/scrcpy`
 
