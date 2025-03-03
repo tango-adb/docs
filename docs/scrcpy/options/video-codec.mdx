@@ -1,8 +1,8 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
-# Video codec
+# videoCodec
 
 :::info
 
@@ -10,15 +10,10 @@ Added in Scrcpy 2.0
 
 :::
 
-```ts
-namespace ScrcpyOptions2_0 {
-  export interface Init {
-    videoCodec?: "h264" | "h265" | "av1";
-  }
-}
-```
+* **Type**: `"h264" | "h265" | "av1"`
+* **Default value**: `"h264"`
 
-The `videoCodec` option specifies the video codec to use by the server.
+Specifies the video codec to use by the server.
 
 The specified `videoCodec` must be supported by the device (has an encoder for it), otherwise an error will be thrown in the startup process.
 

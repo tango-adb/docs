@@ -18,9 +18,9 @@ const sync: AdbSync = await adb.sync();
 
 :::danger[READ ALL STREAMS!]
 
-ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
 
-You must continuously read from all sync connections to prevent this from happening.
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
 
 For example, you can't create another sync connection or call other methods on `Adb` when `opendir` is still running. Upcoming data for `opendir` will block other operations.
 

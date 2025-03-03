@@ -44,11 +44,27 @@ Scrcpy transmits video, audio, and control messages in individual sockets. The d
 2. <Version since="v2.0">Audio</Version>
 3. Control
 
-If some of them are disabled by options (<Version since="v2.1">`video: false`</Version>, <Version since="v2.0">`audio: false`</Version>, <Version since="v1.22">`control: false`</Version>), the corresponding socket will be skipped, but the order of other sockets will be kept.
+If some of them are disabled by options (<Version since="v2.1">[`video: false`](./options/video.mdx)</Version>, <Version since="v2.0">[`audio: false`](./options/audio.mdx)</Version>, <Version since="v1.22">and [`control: false`](./options/control.mdx)</Version>), the corresponding socket will be skipped, but the order of other sockets will be kept.
 
 :::info
 
-`control: false` in versions before v1.22 does not disable the control socket.
+`control: false` in versions before v1.22 is client only. It does not actually disable the control socket.
+
+:::
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
+
+:::danger[READ ALL STREAMS!]
+
+If you need video only or audio only, you can also use the options listed above to disable the other sockets.
 
 :::
 

@@ -46,7 +46,7 @@ Some part of the options class is stateful, so reuse an instance between multipl
 
 ### Watch device clipboard changes
 
-If the `control` option is `true`<Version since="v1.21"> and the `clipboardAutosync` option is also `true`</Version>, Scrcpy server will monitor the clipboard on the device and send the content to client when it changes. Only text content in clipboard is supported.
+If the [`control` option](./control.mdx) is `true` (defaults to `true`)<Version since="v1.21"> and the `clipboardAutosync` option is also `true` (defaults to `true`)</Version>, Scrcpy server will monitor the clipboard on the device and send the content to client when it changes. Only text content in clipboard is supported.
 
 If the feature is enabled, `options.clipboard` will be a `ReadableStream<string>`. Like other streams, you must keep reading from it to prevent blocking the whole connection. If clipboard syncing is not enabled, `options.clipboard` will be `undefined`.
 

@@ -35,7 +35,19 @@ Tango's Scrcpy client implementation is fully compatible with the original Scrcp
 
 ## Standalone Usage
 
-The core package `@yume-chan/scrcpy` provides low-level APIs to serialize and deserialize Scrcpy protocol messages. It can't push the server file to device, start the server, or directly communicate with a server.
+The core package `@yume-chan/scrcpy` provides low-level APIs to serialize and deserialize Scrcpy messages.
+
+It only handles data. It's up to the user to send and receive those data with Scrcpy server.
+
+```mermaid
+flowchart LR
+    subgraph PC
+        A[@yume-chan/scrcpy] <-->|Parse/serialize data| B[Your Code]
+    end
+    subgraph Device
+        B <-->|Your own transport| C[Scrcpy server]
+    end
+```
 
 It doesn't use any Web or Node.js APIs, so it can be used in any JavaScript environment.
 
@@ -53,7 +65,21 @@ It can be used standalone if you can communicate with Scrcpy server using other 
 
 ## Use with Tango
 
-The `@yume-chan/adb-scrcpy` package combines `@yume-chan/scrcpy` with `@yume-chan/adb` to provides high-level APIs to push the server file, start the server, setup and establish the connection, and communicate with the server.
+The `@yume-chan/adb-scrcpy` package provides a complete Scrcpy client. It can push the server file to device, start the server, setup and establish the connection, and communicate with the server.
+
+It uses [`@yume-chan/adb`](../tango/index.mdx) package to control the device, and `@yume-chan/scrcpy` package to parse and serialize Scrcpy messages.
+
+```mermaid
+flowchart LR
+    subgraph PC
+        A[@yume-chan/scrcpy] <--> B[@yume-chan/adb-scrcpy]
+        B <--> C[@yume-chan/adb]
+    end
+    subgraph Device
+        C <--> D[ADB daemon]
+        D <--> S[Scrcpy server]
+    end
+```
 
 However, it doesn't provide any UI components. You need to create your own UI to display the screen and handle input events.
 
@@ -62,6 +88,17 @@ It also doesn't use any Web or Node.js APIs.
 ```sh npm2yarn
 npm install @yume-chan/scrcpy @yume-chan/adb-scrcpy
 ```
+
+## Overview
+
+Here are the steps to use Scrcpy:
+
+1. [**Prepare server**](./prepare-server.mdx): Include prebuilt Scrcpy server binary in your project.
+2. [**Push server to device**](./push-server.mdx): Send the server binary to device.
+3. [**Prepare reverse tunnel**](./connect-server.mdx#reverse-tunnel) (when using reverse tunnel): Reverse tunnels need to be setup before starting the server.
+4. [**Start server on device**](./start-server.mdx).
+5. [**Connect to server**](./connect-server.mdx): Create connections to transmit video, audio and control messages.
+6. [**Decode and render video**](./video/index.mdx), [**record video to files**](./video/record.mdx), **decode and play audio**, [**control the device**](./control/index.mdx).
 
 :::note[Next Step]
 

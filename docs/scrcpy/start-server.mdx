@@ -127,9 +127,9 @@ await client.close();
 
 :::danger[READ ALL STREAMS!]
 
-ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
 
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
 
 If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
 
@@ -160,13 +160,3 @@ await process.stdout.pipeThrough(new TextDecoderStream()).pipeTo(
 ```
 
 Then you need to [connect to Scrcpy server](./connect-server.mdx) yourself.
-
-:::danger[READ ALL STREAMS!]
-
-ADB is a multiplexing protocol (multiple logic streams are transferred over one connection), so blocking one stream will block all other streams.
-
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s or calling `reader.read()` in a loop) to prevent this from happening.
-
-If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
-
-:::

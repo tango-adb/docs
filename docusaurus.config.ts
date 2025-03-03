@@ -209,7 +209,6 @@ const config: Config = {
                 docs: {
                     sidebarPath: resolve("./sidebars.js"),
                     routeBasePath: "/",
-                    // Please change this to your repo.
                     editUrl: "https://github.com/tango-adb/docs/edit/main/",
                     remarkPlugins: [ts2js, [remarkPluginNpm2yarn, { sync: true }]],
                     showLastUpdateTime: true,
