@@ -13,7 +13,7 @@ Creating `AdbSocket` requires two parameters: the device's `serial` and the sock
 Again, it creates a real `AdbSocket` using the existing `AdbTransport`, then forwards packets between the client WebSocket and the `AdbSocket`.
 
 ```ts transpile title="server/index.ts"
-wsServer.addListener("connection", async (client, request) => {
+wsServer.on("connection", async (client, request) => {
   const url = new URL(request.url!, "http://localhost");
   const segments = url.pathname.substring(1).split("/");
 
@@ -53,7 +53,7 @@ wsServer.addListener("connection", async (client, request) => {
 
           // Read from WebSocket and write to ADB socket
           const writer = socket.writable.getWriter();
-          client.addListener("message", async (message) => {
+          client.on("message", async (message) => {
             client.pause();
             await writer.write(new Uint8Array(message as ArrayBuffer));
             client.resume();
@@ -65,7 +65,7 @@ wsServer.addListener("connection", async (client, request) => {
           });
 
           // Propagate WebSocket closure to ADB socket
-          client.addListener("close", () => {
+          client.on("close", () => {
             socket.close();
           });
         } catch {
