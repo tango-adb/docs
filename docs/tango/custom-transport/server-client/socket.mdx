@@ -35,7 +35,7 @@ wsServer.addListener("connection", async (client, request) => {
 
         // highlight-start
         try {
-          const socket = await transport.connect(service);
+          const socket = await transport.connect(decodeURIComponent(service));
 
           client.binaryType = "arraybuffer";
 
@@ -90,7 +90,7 @@ class WebSocketTransport implements AdbTransport {
   // highlight-start
   async connect(service: string): Promise<AdbSocket> {
     const socket = new WebSocketStream(
-      `ws://localhost:8080/device/${this.serial}/${service}`
+      `ws://localhost:8080/device/${this.serial}/${encodeURIComponent(service)}`
     );
     const open = await socket.opened;
     this.#sockets.add(socket);
