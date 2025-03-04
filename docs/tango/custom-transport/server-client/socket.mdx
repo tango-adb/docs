@@ -39,6 +39,7 @@ wsServer.addListener("connection", async (client, request) => {
 
           client.binaryType = "arraybuffer";
 
+          // Read from ADB socket and write to WebSocket
           socket.readable.pipeTo(
             new WritableStream({
               async write(chunk) {
@@ -47,9 +48,10 @@ wsServer.addListener("connection", async (client, request) => {
                 }
                 client.send(chunk);
               },
-            })
+            }),
           );
 
+          // Read from WebSocket and write to ADB socket
           const writer = socket.writable.getWriter();
           client.addListener("message", async (message) => {
             client.pause();
@@ -57,10 +59,17 @@ wsServer.addListener("connection", async (client, request) => {
             client.resume();
           });
 
+          // Propagate ADB socket closure to WebSocket
+          void socket.closed.then(() => {
+            client.close();
+          });
+
+          // Propagate WebSocket closure to ADB socket
           client.addListener("close", () => {
             socket.close();
           });
         } catch {
+          // ADB socket open failed
           client.close();
           break;
         }
@@ -90,7 +99,7 @@ class WebSocketTransport implements AdbTransport {
   // highlight-start
   async connect(service: string): Promise<AdbSocket> {
     const socket = new WebSocketStream(
-      `ws://localhost:8080/device/${this.serial}/${encodeURIComponent(service)}`
+      `ws://localhost:8080/device/${this.serial}/${encodeURIComponent(service)}`,
     );
     const open = await socket.opened;
     this.#sockets.add(socket);
@@ -104,7 +113,7 @@ class WebSocketTransport implements AdbTransport {
             // Chrome's implementation still gives `ArrayBuffer`
             controller.enqueue(new Uint8Array(chunk));
           },
-        })
+        }),
       ) as ReadableStream<Uint8Array>,
       writable: new MaybeConsumable.WritableStream({
         async write(chunk) {
