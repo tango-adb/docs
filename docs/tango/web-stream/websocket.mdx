@@ -10,12 +10,20 @@ A very common requirement when implementing [custom daemon connection](../daemon
 
 The word "WebSocket" can actually mean two things:
 
-- The WebSocket protocol defined in [RFC 6455](https://tools.ietf.org/html/rfc6455): Clients and servers can send bi-directional messages using this protocol, on top of an HTTP connection. It can be implemented using any language and API.
-- The WebSocket DOM API defined in [HTML Living Standard](https://websockets.spec.whatwg.org/): It provides classes and methods for JavaScript code to create and control WebSocket connections.
+- The **WebSocket protocol** defined in [RFC 6455](https://tools.ietf.org/html/rfc6455): Clients and servers can send bi-directional messages using this protocol, on top of an HTTP connection. It can be implemented using any language and API.
+- The **WebSocket DOM API** defined in [HTML Living Standard](https://websockets.spec.whatwg.org/): It provides classes and methods for JavaScript code to create and control WebSocket connections.
 
-We can't implement the WebSocket protocol ourself, because we can't send raw HTTP requests ourself in a browser. However, to use WebSocket with Tango (which uses Web Streams extensively), we need to convert the WebSocket API to Web Streams.
+Because WebSocket protocol runs on HTTP connections, but Web API doesn't allow us to create raw TCP or HTTP connections, we can't implement the WebSocket protocol itself. Instead, we can only use what Web API already provides, which is, traditionally, the `WebSocket` API.
 
-In fact, as Web Streams API gains traction, there is already a [`WebSocketStream` API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocketStream). It not only modernize the WebSocket API with Web Streams API, but also supports [backpressure](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Concepts#backpressure) out of the box.
+:::info
+
+Technically, we can implement the WebSocket protocol, like my [port](https://www.npmjs.com/package/@yume-chan/undici-browser) of [undici](https://www.npmjs.com/package/undici) for Web. However, it can't create WebSocket connections to servers without external help, like a proxy server.
+
+:::
+
+However, to use WebSocket with Tango (which uses Web Streams extensively), we need to convert the WebSocket API to Web Streams.
+
+In fact, as Web Streams API gains traction, Chrome team has already proposed [`WebSocketStream` API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocketStream). It provides a modern version of WebSocket API using Promises and Web Streams, supporting [backpressure](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Concepts#backpressure) out of the box.
 
 ## Benefits of Web Streams
 
@@ -34,6 +42,10 @@ In old `WebSocket` API, if one end is sending data too fastly, the browser will 
 One `ReadableStream` can only be locked by one `reader`, and because of backpressure support, no data will flow when there is no readers. This pushes the developer to attach a `reader` to handle the data, so no data will be lost.
 
 ## Architecture
+
+import CanIUse from '../../can-i-use';
+
+<CanIUse feature="mdn-api_WebSocketStream"/>
 
 The `WebSocketStream` API is only supported in Chrome 124+, so before it becomes widely available, to use WebSocket with Tango, we need to manually convert the old `WebSocket` API to Web Streams.
 
