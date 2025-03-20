@@ -14,6 +14,16 @@ It's fast, uses less hardware resources, and supports more profiles and levels.
 npm install @yume-chan/scrcpy-decoder-webcodecs
 ```
 
+:::info[Secure Context Required]
+
+WebCodecs API requires a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts). Basically it means the page must be served over HTTPS or `localhost`.
+
+- If you have a domain name, you can easily get a free SSL certificate from [Let's Encrypt](https://letsencrypt.org/).
+- If you only have an IP address, you can create a self-signed certificate and trust it in every device that will access your server (or ignore the warning every time).
+- For Chromium-based browser, you can also add your origin to `chrome://flags/#unsafely-treat-insecure-origin-as-secure`.
+
+:::
+
 ## Browser support
 
 <CanIUse feature="webcodecs" />
