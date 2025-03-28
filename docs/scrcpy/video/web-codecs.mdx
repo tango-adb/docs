@@ -14,6 +14,21 @@ It's fast, uses less hardware resources, and supports more profiles and levels.
 npm install @yume-chan/scrcpy-decoder-webcodecs
 ```
 
+## Overview
+
+The WebCodecs decoder is more powerful and flexible than TinyH264 decoder, but also slightly more difficult to use.
+
+Here are the overall steps to create and use WebCodecs decoders:
+
+1. Check [browser support](#browser-support)
+2. Create a [renderer](#renderer) and attach it to DOM tree
+3. Create the [decoder](#create-a-decoder) using the renderer
+4. [Pipe video stream](#pipe-video-stream) to the decoder
+
+## Browser support
+
+<CanIUse feature="webcodecs" />
+
 :::info[Secure Context Required]
 
 WebCodecs API requires a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts). Basically it means the page must be served over HTTPS or `localhost`.
@@ -24,11 +39,15 @@ WebCodecs API requires a [Secure Context](https://developer.mozilla.org/en-US/do
 
 :::
 
-## Browser support
-
-<CanIUse feature="webcodecs" />
-
 Because WebCodecs API is still relatively new, you should check if it is supported before using it.
+
+`WebCodecsVideoDecoder.isSupported` property returns whether the browser supports basic WebCodecs API:
+
+```ts
+export declare class WebCodecsVideoDecoder {
+  static get isSupported(): boolean;
+}
+```
 
 ```ts transpile
 import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
@@ -36,7 +55,7 @@ import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
 console.log(WebCodecsVideoDecoder.isSupported);
 ```
 
-Internally, it checks if `VideoDecoder` is defined in the global object.
+Internally, it checks whether `VideoDecoder` is defined on the global object.
 
 ```ts transpile
 class WebCodecsVideoDecoder {
@@ -173,50 +192,17 @@ new BitmapVideoFrameRenderer(canvasElementOrOffscreenCanvas);
 ## Create a decoder
 
 ```ts
-import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
 import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
-import type {
-  ScrcpyVideoDecoder,
-  ScrcpyVideoDecoderCapability,
-} from "@yume-chan/scrcpy-decoder-tinyh264";
-import { WritableStream } from "@yume-chan/stream-extra";
-import type { VideoFrameRenderer } from "./render/index.js";
+import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import type { VideoFrameRenderer } from "@yume-chan/scrcpy-decoder-webcodecs";
 
 export declare class WebCodecsVideoDecoder implements ScrcpyVideoDecoder {
-  static get isSupported(): boolean;
-  static readonly capabilities: Record<string, ScrcpyVideoDecoderCapability>;
-
-  get codec(): ScrcpyVideoCodecId;
-  get writable(): WritableStream<ScrcpyMediaStreamPacket>;
-  get renderer(): VideoFrameRenderer;
-
-  get framesRendered(): number;
-  get framesSkipped(): number;
-
-  get sizeChanged(): import("@yume-chan/event").AddEventListener<
-    {
-      width: number;
-      height: number;
-    },
-    unknown
-  >;
-
-  /**
-   * Create a new WebCodecs video decoder.
-   */
   constructor(options: WebCodecsVideoDecoder.Options);
-
-  snapshot(): Promise<Blob | undefined>;
-  dispose(): void;
 }
 
 export declare namespace WebCodecsVideoDecoder {
-  interface Options {
-    /**
-     * The video codec to decode
-     */
+  export interface Options {
     codec: ScrcpyVideoCodecId;
-
     renderer: VideoFrameRenderer;
   }
 }
@@ -227,18 +213,23 @@ The constructor requires two options:
 - `codec`: the video codec to be decoded. It can be retrieved from the [video stream metadata](./index.mdx#video-stream-metadata), or hard-coded if you only use a specific video codec.
 - `renderer`: a renderer created in the previous section.
 
-Similar to the TinyH264 decoder, after creating a decoder instance, you need to pipe the [video stream](./index.mdx#video-packets) into the `writable` stream:
-
 ```ts transpile
-import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
 import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
-
-declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
 
 const decoder = new WebCodecsVideoDecoder({
   codec: videoMetadata.codec,
   renderer: renderer,
 });
+```
+
+### Pipe video stream
+
+Similar to the TinyH264 decoder, after creating a decoder instance, you need to pipe the [video stream](./index.mdx#video-packets) into the `writable` property:
+
+```ts transpile
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
 
 void videoPacketStream.pipeTo(decoder.writable).catch((e) => {
   console.error(e);
@@ -263,13 +254,13 @@ Although WebCodecs API already runs in its own thread, and the renderers are ver
 
 Only `WebGLVideoFrameRenderer` and `BitmapVideoFrameRenderer` are supported in Web Worker. There are two ways to render the frames:
 
-### Create `OffscreenCanvas` directly
+### Method A: Create `OffscreenCanvas` directly
 
 When their constructors are called without arguments, they will create an [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) object internally.
 
 This `OffscreenCanvas` is not bound to a `<canvas>` element. See [Synchronous display of frames produced by an OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas#synchronous_display_of_frames_produced_by_an_offscreencanvas) on MDN for how send the image data to a normal `<canvas>` element.
 
-### Create `OffscreenCanvas` from a `<canvas>` element
+### Method B: Create `OffscreenCanvas` from a `<canvas>` element
 
 An [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) object can be created by calling [`transferControlToOffscreen()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/transferControlToOffscreen) method on an existing [`<canvas>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas) element.
 

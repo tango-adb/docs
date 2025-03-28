@@ -43,13 +43,15 @@ This table show how versions and options affect the video stream format.
 
 ## Raw mode
 
-As the above table shows, since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, all listed fields are not present.
+As the above table shows, since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, all fields will be omitted.
 
 This is called the raw mode. In this mode, the video socket only contains codec-specific, encoded video data.
 
-Without the extra information, it's much harder to process the video stream. Tango supports raw mode, by returning `undefined` for related fields, but [built-in video decoders](#decode-and-render-video) can't decode raw mode video streams.
+Raw mode is more difficult to process, because it requires the client to parse the codec-specific format directly.
 
-Advanced decoders, like FFMpeg, can decode raw video streams. If you only need to pipe the video stream to ffmpeg, raw mode can save some processing time.
+Tango has partial support for raw mode, all omitted fields will be `undefined`, and [built-in video decoders](#decode-and-render-video) don't work with raw mode video streams.
+
+Advanced decoders, like ffmpeg, can decode raw video streams. If you only need to pipe the video stream to ffmpeg, raw mode can save some processing time.
 
 ## Video stream metadata
 
@@ -72,7 +74,7 @@ interface ScrcpyVideoStreamMetadata {
 
 The metadata will only be sent once. When device screen size changes (for example, when device orientation changes, or a foldable device unfolds), the server will restart the video encoder, but it won't send a new metadata with the new size.
 
-To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-video) have a [`sizeChanged`](./tiny-h264.mdx#handle-size-changes) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) has `screenWidth` and `screenHeight` properties.
+To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-in-browsers) have a [`sizeChanged`](./tiny-h264.mdx#handle-size-changes) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) has `screenWidth` and `screenHeight` properties.
 
 ### With `@yume-chan/scrcpy`
 
@@ -130,15 +132,36 @@ type ScrcpyMediaStreamPacket =
 
 ### Configuration packet
 
-If present, will always be the first packet. However, when the encoder is restarted, a new configuration packet will be generated and sent.
+When video streaming starts, or when the server re-creates new video encoders due to configuration changes, a configuration packet will generated and sent.
 
-The `data` field contains the codec-specific configuration information:
+The first configuration packet will be send immediately after [metadata](#video-stream-metadata) (or at the beginning of video stream if metadata was disabled), and when each time the screen size or orientation changes.
 
-- H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS) in [Annex B format](./record.mdx#h264).
-- H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS) in [Annex B format](./record.mdx#h265).
-- AV1: The first 3 bytes of `AV1CodecConfigurationRecord` (https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox). The remaining configuration OBUs are in the next data packet.
+The format of configuration packets depend on the codec:
 
-The client should handle this packet and update the decoder accordingly.
+#### H.264 and H.265
+
+For H.26x codecs, the configuration packets include the following data:
+
+- H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS), in [Annex B format](./record.mdx#h264).
+- H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS), in [Annex B format](./record.mdx#h265).
+
+These information are essential for proper decoding of the video, so they will still be sent through the video stream even when configuration packets are disabled. Enabling configuration packets only adds a mark to them, so the client can more easily find and handle them.
+
+When client receives a configuration packet, it should create a new video decoder with the data, to decode the following data packets.
+
+:::info
+
+The two [built-in decoders](#decode-and-render-in-browsers) will handle configuration packets and re-create video decoders for you.
+
+You only need to pipe the whole video stream into them.
+
+:::
+
+#### AV1
+
+For AV1, the configuration packet contains the first 3 bytes of `AV1CodecConfigurationRecord` (https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox). The remaining configuration OBUs are in the next data packet.
+
+These 3 bytes are required when [saving the stream to video files](./record.mdx), although they can also be inferred from the configuration OBUs.
 
 ### Data packet
 
@@ -234,13 +257,17 @@ if (client.videoStream) {
 }
 ```
 
-## Decode and render video
+## Decode and render in browsers
 
-Tango provides packages to decode and render video packets in Web browsers:
+We provide two packages to decode and render the video stream in Web browsers:
 
 - [TinyH264 decoder](./tiny-h264.mdx)
 - [WebCodecs decoder](./web-codecs.mdx)
 
-To use these decoders, the `sendFrameMeta` options must be `true` (the default value).
+To use them, the `sendFrameMeta` options must be `true` (the default value) to enable [configuration packets](#configuration-packet).
 
-Decoding and playing video outside the browser is out of scope for this library. It will depend on the runtime environment, UI framework, and media library you use.
+## Decode and render outside browsers
+
+Decoding and playing video outside the browser is out of this library's scope. It will depend on the runtime environment, UI framework, and media library you use.
+
+However, we have an example of using `ffplay` (from ffmpeg) to play the video stream (without audio) at https://github.com/tango-adb/scrcpy-ffplay.

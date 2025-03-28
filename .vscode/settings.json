@@ -12,6 +12,7 @@
         "CNXN",
         "dumpsys",
         "fastboot",
+        "ffplay",
         "framebuffer",
         "getprop",
         "Insertable",
