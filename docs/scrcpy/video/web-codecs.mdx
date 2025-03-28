@@ -139,10 +139,11 @@ function createVideoFrameRenderer(): {
   renderer: VideoFrameRenderer;
   element: HTMLVideoElement | HTMLCanvasElement;
 } {
-  if (InsertableStreamVideoFrameRenderer.isSupported) {
-    const renderer = new InsertableStreamVideoFrameRenderer();
-    return { renderer, element: renderer.element };
-  }
+  // Uncomment following lines to enable InsertableStreamVideoFrameRenderer, see quirks above
+  // if (InsertableStreamVideoFrameRenderer.isSupported) {
+  //   const renderer = new InsertableStreamVideoFrameRenderer();
+  //   return { renderer, element: renderer.element };
+  // }
 
   if (WebGLVideoFrameRenderer.isSupported) {
     const renderer = new WebGLVideoFrameRenderer();
@@ -296,7 +297,7 @@ worker.postMessage(
     canvas: offscreenCanvas,
     stream: videoPacketStream,
   },
-  [offscreenCanvas, videoPacketStream]
+  [offscreenCanvas, videoPacketStream],
 );
 worker.addEventListener("message", (e) => {
   const { width, height } = e.data;
