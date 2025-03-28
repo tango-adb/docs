@@ -58,7 +58,11 @@ await AdbScrcpyClient.pushServer(
 );
 ```
 
-If the server binary is downloaded using `fetch`, it's also possible to use the response stream directly. In theory, this is more efficient because the downloading and pushing is run in parallel. However, in practice, because how small the server binary is, it doesn't make much difference. If the cache is not properly configured, this will download the server binary every time, so it might be even slower.
+### Using `fetch`
+
+When downloading the server binary using `fetch`, [`Response.body`](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) is a `ReadableStream<Uint8Array>` that can be directly piped to `pushServer`.
+
+In theory, this is also faster, because the downloading and pushing are run in parallel. Although in practice, the server binary is too small to make a difference.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
