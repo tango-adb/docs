@@ -81,6 +81,38 @@ client.videoStream.height;
 client.videoStream.sizeChanged((size) => console.log(size));
 ```
 
+### Add `AdbScrcpyClient#clipboard` to mirror `ScrcpyOptionsX_YY#clipboard`
+
+Now you can also listen to clipboard changes from `AdbScrcpyClient`. Note that a `ReadableStream` can't be consumed twice.
+
+```ts showLineNumbers title="1.1.0"
+const options = new AdbScrcpyOptions2_1(new ScrcpyOptions3_1({}));
+void options.clipboard.pipeTo(
+  new WritableStream({
+    write(content) {
+      console.log(content);
+    },
+  }),
+);
+
+const client = await AdbScrcpyClient.start(adb, DefaultServerPath, options);
+```
+
+```ts showLineNumbers title="next"
+const client = await AdbScrcpyClient.start(
+  adb,
+  DefaultServerPath,
+  new AdbScrcpyOptions3_1({}),
+);
+void client.clipboard.pipeTo(
+  new WritableStream({
+    write(content) {
+      console.log(content);
+    },
+  }),
+);
+```
+
 ## `@yume-chan/adb`
 
 ### `screenWidth`/`Height` renamed to `videoWidth`/`Height`

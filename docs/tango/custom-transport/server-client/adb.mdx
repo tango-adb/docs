@@ -47,13 +47,13 @@ const data = await response.json();
 const transport = new WebSocketTransport(
   serial,
   data.maxPayloadSize,
-  new AdbBanner(data.product, data.model, data.device, data.features)
+  new AdbBanner(data.product, data.model, data.device, data.features),
 );
 
 // highlight-start
 const adb = new Adb(transport);
-const process = await adb.subprocess.spawn("logcat");
-for await (const chunk of process.stdout.pipeThrough(new TextDecoderStream())) {
+const process = await adb.subprocess.noneProtocol.spawn("logcat");
+for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
   container.textContent += chunk;
 }
 // highlight-end

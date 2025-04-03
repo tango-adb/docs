@@ -298,9 +298,9 @@ export class YourTransport implements AdbTransport {
 In all situations, the `tunnelForward` option can be specified to always use forward tunnels:
 
 ```ts transpile
-import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+import { AdbScrcpyOptions3_0 } from "@yume-chan/adb-scrcpy";
 
-const options = new ScrcpyOptions3_0({
+const options = new AdbScrcpyOptions3_0({
   tunnelForward: true,
 });
 ```

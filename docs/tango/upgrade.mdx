@@ -10,7 +10,7 @@ For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
 
 ### Subprocess API redesign
 
-The API for creating child processes has been completed redesigned.
+The [subprocess](../api/adb/subprocess.mdx) has been completed redesigned.
 
 `none` protocol and `shell` protocol are now completely separated, so you can choose `none` protocol for speed and compatibility, or `shell` protocol for features.
 
@@ -22,8 +22,6 @@ The API for creating child processes has been completed redesigned.
 | `AdbShellProtocolProcess`    | Shell    | Raw  | ✅      | ⛔      | ✅       | ✅       | ⛔       | ⛔       | ⛔       |
 | `AdbNoneProtocolPtyProcess`  | None     | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ⛔       | ✅       |
 | `AdbShellProtocolPtyProcess` | Shell    | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ✅       | ✅       |
-
-See [subprocess](../api/adb/subprocess.mdx) page for detailed differences.
 
 #### Choose protocol explicitly
 
@@ -112,16 +110,38 @@ const {
 } = await adb.subprocess.shellProtocol.spawnWaitText("ls");
 ```
 
-### `AdbDaemonWebUsbDeviceManager#trackDevices` is not asynchronous
+### Creating `AdbDaemonWebUsbDeviceObserver` is now asynchronous
 
-`AdbDaemonWebUsbDeviceManager#trackDevices` will get and populate `current` field on creation, so you can solely relies on it to get and monitor devices.
+[`AdbDaemonWebUsbDeviceObserver`](./daemon/usb/watch-devices.mdx) needs to retrieve initial device list and set the `current` field, so the creating process needs to be asynchronous.
 
-```ts showLineNumbers title="1.1.0"
-const observer = manager.trackDevices();
-console.log(observer.current); // []
-```
+- `AdbDaemonWebUsbDeviceManager#trackDevices` has became asynchronous.
 
-```ts showLineNumbers title="next"
-const observer = await manager.trackDevices();
-console.log(observer.current); // [device1, ...]
-```
+  ```ts showLineNumbers title="1.1.0"
+  const observer = manager.trackDevices();
+  console.log(observer.current); // []
+  ```
+
+  ```ts showLineNumbers title="next"
+  const observer = await manager.trackDevices();
+  console.log(observer.current); // [device1, ...]
+  ```
+
+- `AdbDaemonWebUsbDeviceObserver`'s constructor now require an `initial` parameter. Generally, it should not be used directly.
+- `AdbDaemonWebUsbDeviceObserver.create` static method has been added to asynchronously create an `AdbDaemonWebUsbDeviceObserver`
+
+  ```ts showLineNumbers title="1.1.0"
+  const observer = new AdbDaemonWebUsbDeviceObserver(navigator.usb);
+  console.log(observer.current); // []
+  ```
+
+  ```ts showLineNumbers title="next"
+  const observer = await AdbDaemonWebUsbDeviceObserver.create(navigator.usb);
+  console.log(observer.current); // [device1, ...]
+  ```
+
+### `DeviceObserver` behavior normalization
+
+`DeviceObserver` is the common interface behind [daemon transport WebUSB connection device observer `AdbDaemonWebUsbDeviceObserver`](./daemon/usb/watch-devices.mdx) and [server transport device observer `AdbServerDeviceObserver`](./server/watch.mdx).
+
+- The `current` field is now an immutable array. It will be guaranteed to contain current device list when the observer is created. Every time the list changes, a new array will be created and returned.
+- `onListChange` event is now sticky, meaning newly attached event listeners will be invoked immediately with the latest value.

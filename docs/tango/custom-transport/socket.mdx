@@ -17,7 +17,7 @@ import type { MaybeConsumable } from "@yume-chan/stream-extra";
 
 interface AdbSocket {
   get service(): string;
-  get closed(): Promise<void>;
+  get closed(): Promise<undefined>;
 
   readable: ReadableStream<Uint8Array>;
   writable: WritableStream<MaybeConsumable<Uint8Array>>;

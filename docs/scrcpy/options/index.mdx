@@ -15,19 +15,27 @@ The options class serves two purposes:
 
 It's important to use the correct options class for the server version you're using. Using an incorrect version almost always results in errors.
 
-If the latest version of Scrcpy server is not declared as supported, you may try using the options class for the previous version. If it doesn't work, you may need to wait for an update.
+If the latest version of Scrcpy server doesn't have a matching options class, the last supported version can be tried. If it doesn't work, you may need to wait for an update.
 
 ## With `@yume-chan/scrcpy`
 
-Each time a new option is added to the server, or a breaking change is introduced, a new options class is added. The class names are in a pattern of `ScrcpyOptionsX_YY`, where `X` is the major version and `YY` is the minor version. For example, `ScrcpyOptions2_1` is the options class for server version 2.1.
+Tango supports all version between 1.15 and 3.1, by providing a set of options classes for each server version.
 
-Some Scrcpy versions contain only bug fixes or client-side changes, so the options class for the previous version is still 100% compatible. `@yume-chan/scrcpy` package provides aliases for these versions, but using the previous version is also fine.
+For example, `ScrcpyOptions1_15` is the options class for server version 1.15, `ScrcpyOptions1_15_1` for version 1.15.1, and `ScrcpyOptions3_1` for version 3.1, and so on.
 
-Check the [versions](../versions.mdx) page to see which options class to use for each server version. Aliases are not included in this page.
+:::info
 
-### Create options
+These options classes are fully tree-shakeable. When using a bundler/minifier, only code related to the version you're using will be included.
+
+:::
 
 All options classes take a single object parameter for server options:
+
+```ts showLineNumber
+export class ScrcpyOptionsX_YY {
+  constructor(init: Partial<ScrcpyOptionsX_YY.Init>);
+}
+```
 
 ```ts transpile
 import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
@@ -40,80 +48,50 @@ const options = new ScrcpyOptions2_2({
 
 Check the TypeScript definition files for available server options in each version.
 
-All server options are optional, the default values can be found in the `ScrcpyOptionsX_YY.Defaults` static field.
-
 Some part of the options class is stateful, so reuse an instance between multiple connections is not recommended. Don't do this unless you checked the source code to make sure only the stateless part is being used.
-
-### Watch device clipboard changes
-
-If the [`control` option](./control.mdx) is `true` (defaults to `true`)<Version since="v1.21"> and the `clipboardAutosync` option is also `true` (defaults to `true`)</Version>, Scrcpy server will monitor the clipboard on the device and send the content to client when it changes. Only text content in clipboard is supported.
-
-If the feature is enabled, `options.clipboard` will be a `ReadableStream<string>`. Like other streams, you must keep reading from it to prevent blocking the whole connection. If clipboard syncing is not enabled, `options.clipboard` will be `undefined`.
-
-:::note
-
-See [Web Streams Basics](../../tango/web-stream/index.mdx) page for a quick introduction to `ReadableStream`, `WriteableStream`, and other types from [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
-
-:::
-
-```ts transpile
-options.clipboard
-  ?.pipeTo(
-    new WritableStream({
-      write(value) {
-        console.log(value);
-      },
-    })
-  )
-  .catch(console.error);
-```
-
-You should use `.catch` and not `await` the returned `Promise`, since it will only resolve after the server exits.
-
-If an error happened in the device message socket, `options.clipboard` will enter an error state and no longer emit more values. The catch handler on the `pipeTo` call will be called with the error.
-
-If you don't need the clipboard syncing feature, you can call `options.clipboard?.cancel()` to ignore these messages<Version since="v1.21">, or disable it using `clipboardAutosync: false`</Version>.
-
-```ts transpile
-await options.clipboard?.cancel();
-
-// or
-
-new ScrcpyOptions1_21({ // or newer
-  clipboardAutosync: false,
-});
-```
 
 ## With `@yume-chan/adb-scrcpy`
 
-`@yume-chan/adb-scrcpy` needs to do some additional behavior normalizations, so it has its own options classes. The naming convention is the same as `@yume-chan/scrcpy`, but with an `Adb` prefix. For example, `AdbScrcpyOptions2_1` is the options class for server version 2.1.
+`@yume-chan/adb-scrcpy` needs to do some additional behavior normalizations, so it has its own options classes.
 
-It's more rare for protocol changes to affect `AdbScrcpyOptionsX_YY`, thus there are fewer `AdbScrcpyOptionsX_YY` classes than `ScrcpyOptionsX_YY` classes, and the versions between them don't always match.
+Similar to `@yume-chan/scrcpy`, there is an option class for each server version. The naming convention is the same as `@yume-chan/scrcpy`, but with an `Adb` prefix. For example, `AdbScrcpyOptions2_1` is the options class for server version 2.1.
 
-Check the [versions](../versions.mdx) page to see which options class to use for each server version.
+`AdbScrcpyOptionsX_YY` classes take the same server options parameter, and an optional client options object:
 
-`AdbScrcpyOptionsX_YY` takes a `ScrcpyOptionsX_YY` instance and extends it, so read the previous section and create a `ScrcpyOptionsX_YY` instance first.
+```ts showLineNumbers
+import type { AdbNoneProtocolSpawner } from "@yume-chan/adb";
+
+export interface AdbScrcpyClientOptions {
+  version?: string;
+  spawner?: AdbNoneProtocolSpawner | undefined;
+}
+
+declare class AdbScrcpyOptionsX_YY extends ScrcpyOptionsX_YY {
+  constructor(
+    init: ScrcpyOptions1_15_1.Init,
+    clientOptions?: AdbScrcpyClientOptions,
+  );
+}
+```
+
+`AdbScrcpyClientOptions` interface includes:
+
+- `version`: The server version to use. The default value matches the options class name. This option is rarely used, unless you are using a custom server binary with different version string.
+- `spawner`: A custom [process spawner](../../api/adb/subprocess.mdx) to start the server process. The default value is `undefined`, which uses `adb.subprocess.noneProtocol`. This option is rarely used, unless you have a different method (like SSH) to start processes on the device.
 
 ```ts transpile
 import { AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
 import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
 
-const options = new AdbScrcpyOptions2_1(
-  new ScrcpyOptions2_2({
-    videoSource: "camera",
-    // ...
-  })
-);
-
-options.clipboard
-  .pipeTo(
-    new WritableStream({
-      write(value) {
-        console.log(value);
-      },
-    })
-  )
-  .catch(console.error);
+const options = new AdbScrcpyOptions2_1({
+  videoSource: "camera",
+  // ...
+});
 ```
 
-`options.clipboard` is also available in `AdbScrcpyOptionsX_YY`, the usage is the same.
+## List of server options
+
+* <Version since="v2.1">[`video: boolean`](./video.mdx): Disables the video socket</Version>
+* <Version since="v2.0">[`videoCodec: string`](./video-codec.mdx): Use H.265 or AV1 video codecs</Version>
+* <Version since="v2.0">[`audio: boolean`](./audio.mdx): Disables the audio socket</Version>
+* <Version since="v1.22">[`control: boolean`](./control.mdx): Disables the control socket</Version>
