@@ -1,13 +1,127 @@
-# Upgrade from 1.0.0
+# Upgrade from 1.1.0
 
-This page lists changes from version 1.0.0 in core packages.
+import DiffTable from "../tango/diff-table";
+
+This page lists changes from version 1.1.0 in core packages.
 
 For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
 
 ## `@yume-chan/adb`
 
-Add partial support for ADB server version 40:
+### Subprocess API redesign
 
-* `createDeviceConnection` now skips server version check when device selector is transport ID
-* `waitFor` now checks server version when `state` is `disconnect`
-* Added `waitForDisconnect` which supports waiting for transport ID disconnect on all server versions
+The API for creating child processes has been completed redesigned.
+
+`none` protocol and `shell` protocol are now completely separated, so you can choose `none` protocol for speed and compatibility, or `shell` protocol for features.
+
+`raw` mode and `pty` mode now also have separated types.
+
+| Type                         | Protocol | Mode | `stdin` | `input` | `stdout` | `stderr` | `output` | `resize` | `sigint` |
+| ---------------------------- | -------- | ---- | ------- | ------- | -------- | -------- | -------- | -------- | -------- |
+| `AdbNoneProtocolProcess`     | None     | Raw  | ✅      | ⛔      | ⛔       | ⛔       | ✅       | ⛔       | ⛔       |
+| `AdbShellProtocolProcess`    | Shell    | Raw  | ✅      | ⛔      | ✅       | ✅       | ⛔       | ⛔       | ⛔       |
+| `AdbNoneProtocolPtyProcess`  | None     | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ⛔       | ✅       |
+| `AdbShellProtocolPtyProcess` | Shell    | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ✅       | ✅       |
+
+See [subprocess](../api/adb/subprocess.mdx) page for detailed differences.
+
+#### Choose protocol explicitly
+
+```ts showLineNumbers title="1.1.0"
+// Will try shell protocol first and fallback to none protocol
+const process = await adb.subprocess.spawn("ls");
+```
+
+```ts showLineNumbers title="next"
+// Use none protocol if you don't need separated `stdout` and `stderr`
+const process = await adb.subprocess.noneProtocol.spawn("ls");
+
+// Or test if shell protocol is supported by device
+if (adb.subprocess.shellProtocol) {
+  const process = await adb.subprocess.shellProtocol.spawn("ls");
+} else {
+  // Unsupported, not possible to get separated `stdout` and `stderr`
+}
+```
+
+#### None protocol `output` stream contains both `stdout` and `stderr`
+
+```ts showLineNumbers title="1.1.0"
+const process = await adb.subprocess.spawn("ls", {
+  protocols: [AdbSubprocessNoneProtocol],
+});
+// `stdout` field actually contains both `stdout` and `stderr`
+for (const chunk of process.stdout) {
+  console.log(chunk);
+}
+```
+
+```ts showLineNumbers title="next"
+const process = await adb.subprocess.noneProtocol.spawn("ls");
+// It has been renamed to `output`
+for (const chunk of process.output) {
+  console.log(chunk);
+}
+```
+
+#### `shell` renamed to `pty`
+
+```ts showLineNumbers title="1.1.0"
+const process = await adb.subprocess.shell();
+// PTY mode only has one output stream
+for (const chunk of process.stdout) {
+  console.log(chunk);
+}
+```
+
+```ts showLineNumbers title="next"
+const process = await adb.subprocess.noneProtocol.pty();
+// It has been renamed to `output`
+for (const chunk of process.output) {
+  console.log(chunk);
+}
+```
+
+#### `spawnAndWait` enhancements
+
+```ts showLineNumbers title="1.1.0"
+const { exitCode, stdout, stderr } = await adb.subprocess.spawnAndWait("ls");
+```
+
+| Field      | None protocol                | Shell protocol   |
+| ---------- | ---------------------------- | ---------------- |
+| `exitCode` | Always 0                     | Actual exit code |
+| `stdout`   | Mix of `stdout` and `stderr` | `stdout`         |
+| `stderr`   | Always an empty string       | `stderr`         |
+
+```ts showLineNumbers title="next"
+const binaryOutput: Uint8Array =
+  await adb.subprocess.noneProtocol.spawnWait("ls");
+const textOutput: string =
+  await adb.subprocess.noneProtocol.spawnWaitText("ls");
+
+const {
+  exitCode /* : number */,
+  stdout /* : Uint8Array */,
+  stderr /* : Uint8Array */,
+} = await adb.subprocess.shellProtocol.spawnWait("ls");
+const {
+  exitCode /* : number */,
+  stdout /* : string */,
+  stderr /* : string */,
+} = await adb.subprocess.shellProtocol.spawnWaitText("ls");
+```
+
+### `AdbDaemonWebUsbDeviceManager#trackDevices` is not asynchronous
+
+`AdbDaemonWebUsbDeviceManager#trackDevices` will get and populate `current` field on creation, so you can solely relies on it to get and monitor devices.
+
+```ts showLineNumbers title="1.1.0"
+const observer = manager.trackDevices();
+console.log(observer.current); // []
+```
+
+```ts showLineNumbers title="next"
+const observer = await manager.trackDevices();
+console.log(observer.current); // [device1, ...]
+```

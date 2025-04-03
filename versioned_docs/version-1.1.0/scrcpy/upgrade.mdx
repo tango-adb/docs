@@ -1,0 +1,102 @@
+# Upgrade from 1.0.0
+
+import DiffTable from "../tango/diff-table";
+
+This page lists changes from version 1.0.0 in Scrcpy-related packages.
+
+For changes in other packages, see [this page](../tango/upgrade.mdx).
+
+## `@yume-chan/adb-scrcpy`
+
+### Move version to option classes
+
+Because now we have an option class for each Scrcpy version (including aliases for patch versions), we moved the `version` info into the option classes.
+
+The `version` parameter has been removed from `AdbScrcpyClient.start`, `AdbScrcpyClient.getEncoders` and `AdbScrcpyClient.getDisplays`.
+
+<DiffTable leftHeader="1.0.0" rightHeader="next">
+<td>
+
+```ts showLineNumbers
+const options = new AdbScrcpyOptions2_1(
+  new ScrcpyOptions3_0({
+    // ...
+  })
+);
+
+const client = await AdbScrcpyClient.start(adb, path, version, options);
+```
+
+</td>
+<td>
+
+```ts showLineNumbers
+const options = new AdbScrcpyOptions2_1(
+  new ScrcpyOptions3_0({
+    // ...
+  })
+);
+
+const client = await AdbScrcpyClient.start(adb, path, options);
+```
+
+</td>
+</DiffTable>
+
+If you are using the matching option class for your server binary, you don't need to specify the version. Otherwise, you can override it in the option class constructor:
+
+```ts showLineNumbers
+const options = new AdbScrcpyOptions2_1(
+  new ScrcpyOptions3_0(
+    {
+      // ...
+    },
+    "3.1"
+  )
+);
+```
+
+## `@yume-chan/scrcpy`
+
+### Support Scrcpy v3.1
+
+`ScrcpyOptions3_1` and related types have been added to support new options in Scrcpy version 3.1.
+
+### Accept raw values for complex options
+
+We provided custom option value types from some complex options, for example `videoCodecOptions`, `scid` and `newDisplay`. Now they also accept the raw (serialized) value directly:
+
+<DiffTable leftHeader="1.0.0" rightHeader="next">
+<td>
+
+```ts showLineNumbers
+import { ScrcpyOptions3_1, ScrcpyNewDisplay } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_1({
+  newDisplay: new ScrcpyNewDisplay(1920, 1080, 330),
+});
+```
+
+</td>
+<td>
+
+```ts showLineNumbers
+import { ScrcpyOptions3_1 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_1({
+  newDisplay: "1920x1080/330",
+});
+```
+
+</td>
+</DiffTable>
+
+### Fix incorrect scroll controllers in `ScrcpyOptions1_22` and later
+
+In `ScrcpyOptions1_22` and later, the scroll controller for the mouse scroll event has been fixed.
+
+This fixes the [`injectScroll`](./control/scroll.mdx) control message.
+
+## `@yume-chan/scrcpy-decoder-webcodecs`
+
+`WebCodecsDecoderRenderer`s have been renamed to `VideoFrameRenderer`s, to show that they are independent of `WebCodecsVideoDecoder`, and can be used separately to render any `VideoFrame`s.

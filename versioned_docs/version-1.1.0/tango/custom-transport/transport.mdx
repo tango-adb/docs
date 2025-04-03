@@ -1,0 +1,120 @@
+---
+sidebar_position: 2
+---
+
+# Transport
+
+```ts
+export interface AdbTransport {
+  readonly serial: string;
+
+  readonly maxPayloadSize: number;
+
+  readonly banner: AdbBanner;
+
+  readonly disconnected: Promise<void>;
+
+  connect(service: string): AdbSocket | Promise<AdbSocket>;
+
+  addReverseTunnel(
+    handler: AdbIncomingSocketHandler,
+    address?: string
+  ): string | Promise<string>;
+
+  removeReverseTunnel(address: string): void | Promise<void>;
+
+  clearReverseTunnels(): void | Promise<void>;
+
+  close(): void | Promise<void>;
+}
+```
+
+As mentioned before, the main function of `AdbTransport` is the `connect` method, which creates an ADB socket for a service (request).
+
+Other fields:
+
+- `serial`: The serial number of the device. It's not used by Tango, but it helps you to identify the device.
+- `maxPayloadSize`: The maximum payload size of the device. `AdbSync#write` will split data into multiple packets if it's larger than this value. If you don't know this value, 4KB (`4096`) is compatible with all versions of ADB Daemons, but the performance will be affected.
+- `banner`: ADB banner returned from the device. It contains the list of ADB features the device supports, which is important for many command to choose the correct behavior.
+- `disconnected`: A promise that resolves when the transport is disconnected.
+- `close`: Close the transport. It should close all sockets created by `connect` method, and resolve `disconnected` promise.
+
+## Reverse tunnel
+
+`addReverseTunnel`, `removeReverseTunnel`, `clearReverseTunnels` methods manage reverse tunnels.
+
+When [`AdbReverseCommand#add`](/api/adb/reverse/add.mdx) is called, Tango not only sends a command to ADB Daemon to create the socket listener on device, but also calls `addReverseTunnel` method with `add`'s arguments.
+
+The transport should register the reverse tunnel, so when ADB Daemon creates a socket to the address, the corresponding `handler` method can be retrieved and invoked. How does the transport receives the incoming socket is also up to the implementation.
+
+If you never use reverse tunnel with your transport, you can throw an error in these methods.
+
+## Example
+
+This is a mock transport that uses the `MockSocket` from the [previous example](./socket.mdx#example) to respond to the `getprop` shell command:
+
+```ts transpile
+import {
+  AdbBanner,
+  AdbIncomingSocketHandler,
+  AdbSocket,
+  AdbTransport,
+} from "@yume-chan/adb";
+import { PromiseResolver } from "@yume-chan/async";
+import {
+  Consumable,
+  ReadableStream,
+  WritableStream,
+} from "@yume-chan/stream-extra";
+import { ValueOrPromise, encodeUtf8 } from "@yume-chan/struct";
+
+class MockTransport implements AdbTransport {
+  get serial(): string {
+    return "12345678";
+  }
+
+  get maxPayloadSize(): number {
+    return 4 * 1024;
+  }
+
+  get banner(): AdbBanner {
+    return new AdbBanner("mock", "mock", "mock", []);
+  }
+
+  #disconnected = new PromiseResolver<void>();
+  get disconnected(): Promise<void> {
+    return this.#disconnected.promise;
+  }
+
+  connect(service: string): AdbSocket {
+    if (service.startsWith("shell:getprop")) {
+      const key = service.split(" ")[1];
+      switch (key) {
+        case "ro.product.model":
+          return new MockSocket(service, encodeUtf8("Pixel 3a"));
+      }
+    }
+
+    throw new Error(`Unknown service: ${service}`);
+  }
+
+  addReverseTunnel(
+    handler: AdbIncomingSocketHandler,
+    address?: string | undefined
+  ): ValueOrPromise<string> {
+    throw new Error("Method not implemented.");
+  }
+
+  removeReverseTunnel(address: string): ValueOrPromise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+  clearReverseTunnels(): ValueOrPromise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+  close(): ValueOrPromise<void> {
+    this.#disconnected.resolve();
+  }
+}
+```

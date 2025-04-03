@@ -1,0 +1,13 @@
+# Upgrade from 1.0.0
+
+This page lists changes from version 1.0.0 in core packages.
+
+For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
+
+## `@yume-chan/adb`
+
+Add partial support for ADB server version 40:
+
+* `createDeviceConnection` now skips server version check when device selector is transport ID
+* `waitFor` now checks server version when `state` is `disconnect`
+* Added `waitForDisconnect` which supports waiting for transport ID disconnect on all server versions

@@ -1,0 +1,67 @@
+---
+sidebar_position: 10
+---
+
+# waitFor
+
+```ts
+namespace AdbServerClient {
+  interface ServerConnectionOptions {
+    unref?: boolean | undefined;
+    signal?: AbortSignal | undefined;
+  }
+}
+
+declare class AdbServerClient {
+  waitFor(
+    device: AdbServerClient.DeviceSelector,
+    state: "device" | "disconnect",
+    options?: AdbServerClient.ServerConnectionOptions
+  ): Promise<void>;
+}
+```
+
+Wait for a device to be connected or disconnected. This method returns a `Promise` that resolves when the condition is met.
+
+If the selector is `usb`, `tcp` or `undefined`, it won't tell which device is connected or disconnected.
+
+## State
+
+### `device`
+
+Wait for a device to be available.
+
+### `disconnect`
+
+Wait for a device to be disconnected.
+
+This state requires [server version 41](../../internal/version.mdx#v41) or higher, otherwise an "unknown host service" error will be thrown.
+
+If `device` parameter is a transport ID selector, you can use `waitForDisconnect` method instead, which fallbacks to [`trackDevices`](./track-devices.mdx) for server version below 41.
+
+## Options
+
+### `unref`
+
+If the underlying connection is using Node.js `net` module, then [`unref`](https://nodejs.org/api/net.html#socketunref) the socket, so the process can exit even if the connection is still alive.
+
+### `signal`
+
+Stops waiting when the signal is aborted.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb wait-for[-TRANSPORT]-STATE
+```
+
+For example:
+
+```sh
+adb wait-for-device
+adb wait-for-usb-device
+adb wait-for-disconnect
+adb wait-for-usb-disconnect
+```
+
+:::

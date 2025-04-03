@@ -1,0 +1,42 @@
+---
+sidebar_position: 5
+---
+
+# trackDevices
+
+```ts showLineNumbers
+import type { MaybePromiseLike } from "@yume-chan/async";
+import type { Event } from "@yume-chan/event";
+
+export interface DeviceObserver<T> {
+  onDeviceAdd: Event<T[]>;
+  onDeviceRemove: Event<T[]>;
+  onListChange: Event<T[]>;
+  current: T[];
+  stop(): MaybePromiseLike<void>;
+}
+
+export declare class AdbServerClient {
+  trackDevices(): Promise<AdbServerDeviceObserver>;
+}
+
+export namespace AdbServerClient {
+  export interface DeviceObserver extends DeviceObserverBase<Device> {
+    onError: Event<Error>;
+  }
+}
+```
+
+Get notified when a device is connected or disconnected.
+
+:::note
+
+See [Watch devices](/tango/server/watch.mdx) page for details.
+
+:::
+
+:::info[Equivalent ADB Command]
+
+There is no equivalent ADB command.
+
+:::

@@ -1,0 +1,55 @@
+---
+sidebar_position: 5
+---
+
+# Create connection
+
+As explained [before](./index.mdx#exclusivity), each USB device can have multiple interfaces for different functions, and each interface needs to be exclusively claimed by programs.
+
+Requesting permission to access a device doesn't automatically claim its interfaces. The `connect` method does that, but not only that. It includes three steps to simplify the usage:
+
+1. Call WebUSB [`USBDevice#open`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice/open) method to open the device
+2. Call WebUSB [`USBDevice#claimInterface`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice/claimInterface) method to claim the ADB interface
+3. Find the endpoints for the ADB interface and create streams for them
+
+It returns a pair of streams, one for sending and one for receiving ADB packets.
+
+```ts transpile
+import type { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+
+// highlight-start
+const connection: ReadableWritablePair<
+  AdbPacketData,
+  Consumable<AdbPacketInit>
+> = await device.connect();
+// highlight-end
+```
+
+If the interface is already claimed by another program (or another `USBDevice` instance), `connect` will throw an `DeviceBusyError`. You can catch it and show a message to the user to ask them to close the conflicting program.
+
+```ts transpile
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+function connect(device: AdbDaemonWebUsbDevice) {
+  try {
+    return await device.connect();
+  } catch (error) {
+    // highlight-start
+    if (error instanceof AdbDaemonWebUsbDevice.DeviceBusyError) {
+      alert(
+        "The device is already in use by another program. Please close the program and try again."
+      );
+    }
+    // highlight-end
+    // It might also throw other errors
+    throw error;
+  }
+}
+```
+
+:::note[Next Step]
+
+[Create credential store](../credential-store.mdx)
+
+:::

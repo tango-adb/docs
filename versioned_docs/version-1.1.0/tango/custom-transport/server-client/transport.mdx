@@ -1,0 +1,171 @@
+---
+sidebar_position: 2
+---
+
+# Create transport
+
+The second step is to create a custom [`AdbTransport` instance](../transport.mdx).
+
+Creating the `AdbTransport` instance requires `maxPayloadSize` and `banner` information from the device. The server retrieves this information from the device, and sends it back to the client.
+
+## Server
+
+The client can request the `maxPayloadSize` and `banner` information by sending a HTTP request to the server.
+
+The server creates an `AdbTransport` to the device using one of the supported transports, then sends the `maxPayloadSize` and `banner` information back to the client.
+
+It also caches the created `AdbTransport` instances, because the information won't change for the same device.
+
+```ts transpile title="server/index.ts"
+import type {
+  AdbTransport,
+  AdbDaemonWebUsbDeviceManager,
+} from "@yume-chan/adb";
+
+declare const Manager: AdbDaemonWebUsbDeviceManager;
+
+// highlight-start
+const devices = new Map<string, AdbTransport>();
+// highlight-end
+
+const httpServer = createServer(async (request, response) => {
+  const url = new URL(request.url!, "http://localhost");
+  const segments = url.pathname.substring(1).split("/");
+
+  if (segments[0] !== "device") {
+    // Route not found
+    response.writeHead(404, { "Access-Control-Allow-Origin": "*" }).end();
+    return;
+  }
+
+  const [, serial] = segments;
+  if (!serial) {
+    // Invalid request
+    response.writeHead(400, { "Access-Control-Allow-Origin": "*" }).end();
+    return;
+  }
+
+  // highlight-start
+  if (!devices.has(serial)) {
+    const [device] = await Manager.getDevices({
+      filters: [{ serialNumber: serial }],
+    });
+    if (!device) {
+      // Requested device not found
+      response.writeHead(401, { "Access-Control-Allow-Origin": "*" }).end();
+      return;
+    }
+
+    const connection = await device.connect();
+    const transport = await AdbDaemonTransport.authenticate({
+      serial,
+      connection,
+      credentialStore: CredentialStore,
+    });
+
+    devices.set(serial, transport);
+  }
+
+  const transport = devices.get(serial)!;
+
+  response
+    .writeHead(200, {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/json",
+    })
+    .end(
+      JSON.stringify({
+        maxPayloadSize: transport.maxPayloadSize,
+        product: transport.banner.product,
+        model: transport.banner.model,
+        device: transport.banner.device,
+        features: transport.banner.features,
+      })
+    );
+  // highlight-end
+});
+```
+
+## Client
+
+The client has a custom `AdbTransport` implementation, that uses the `maxPayloadSize` and `banner` information to initialize:
+
+```ts transpile title="client/transport.ts"
+import {
+  ADB_DAEMON_DEFAULT_FEATURES,
+  AdbBanner,
+  AdbReverseNotSupportedError,
+  type AdbSocket,
+  type AdbTransport,
+} from "@yume-chan/adb";
+
+class WebSocketTransport implements AdbTransport {
+  serial: string;
+  maxPayloadSize: number;
+  banner: AdbBanner;
+
+  #disconnected = Promise.withResolvers<void>();
+  get disconnected() {
+    return this.#disconnected.promise;
+  }
+
+  clientFeatures = ADB_DAEMON_DEFAULT_FEATURES;
+
+  constructor(serial: string, maxPayloadSize: number, banner: AdbBanner) {
+    this.serial = serial;
+    this.maxPayloadSize = maxPayloadSize;
+    this.banner = banner;
+  }
+
+  addReverseTunnel() {
+    // TODO
+  }
+
+  removeReverseTunnel() {
+    // TODO
+  }
+
+  clearReverseTunnels() {
+    // TODO
+  }
+
+  async connect(service: string): Promise<AdbSocket> {
+    // TODO
+  }
+
+  close() {
+    // TODO
+    this.#disconnected.resolve();
+  }
+}
+```
+
+It sends an HTTP request to the server to get the `maxPayloadSize` and `banner` information.
+
+```ts transpile title="client/device.ts"
+import { AdbBanner } from "@yume-chan/adb";
+
+const container = document.getElementById("app")!;
+
+const params = new URLSearchParams(location.search);
+const serial = params.get("serial");
+if (!serial) {
+  container.textContent = "Missing `serial` parameter";
+  return;
+}
+
+// highlight-start
+const response = await fetch(`http://localhost:8080/device/${serial}`);
+if (!response.ok) {
+  container.textContent = "Connect error: " + response.status;
+  return;
+}
+
+const data = await response.json();
+const transport = new WebSocketTransport(
+  serial,
+  data.maxPayloadSize,
+  new AdbBanner(data.product, data.model, data.device, data.features)
+);
+// highlight-end
+```

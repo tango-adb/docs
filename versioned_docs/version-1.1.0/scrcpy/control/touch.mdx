@@ -23,8 +23,8 @@ interface ScrcpyInjectTouchControlMessage {
   pointerId: bigint;
   pointerX: number;
   pointerY: number;
-  videoWidth: number;
-  videoHeight: number;
+  screenWidth: number;
+  screenHeight: number;
   pressure: number;
   actionButton: number;
   buttons: number;
@@ -38,7 +38,7 @@ interface ScrcpyInjectTouchControlMessage {
 - `actionButton`: The button that changed. It's a value of `AndroidMotionEventButton` enum.
 - `buttons`: The state of all the buttons. It's a bit-or combination of `AndroidMotionEventButton` values.
 
-### `videoWidth` and `videoHeight`
+### `screenWidth` and `screenHeight`
 
 The size of latest video frame.
 
@@ -51,22 +51,22 @@ import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
 
 declare const client: AdbScrcpyClient;
 
-console.log(client.videoWidth, client.videoHeight);
+console.log(client.screenWidth, client.screenHeight);
 ```
 
-When using one of the [built-in video decoders](../video/index.mdx#decode-and-render-in-browsers), the [`sizeChanged` event](../video/tiny-h264.mdx#handle-size-changes) can be used to get the latest `videoWidth` and `videoHeight` values.
+When using one of the [built-in video decoders](../video/index.mdx#decode-and-render-in-browsers), the [`sizeChanged` event](../video/tiny-h264.mdx#handle-size-changes) can be used to get the latest `screenWidth` and `screenHeight` values.
 
 ```ts transpile
 import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-tinyh264";
 
-let videoWidth = 0;
-let videoHeight = 0;
+let screenWidth = 0;
+let screenHeight = 0;
 
 declare const decoder: ScrcpyVideoDecoder;
 
 decoder.sizeChanged(({ width, height }) => {
-  videoWidth = width;
-  videoHeight = height;
+  screenWidth = width;
+  screenHeight = height;
 });
 ```
 
@@ -85,8 +85,8 @@ const message: Uint8Array = serializer.injectTouch({
   pointerId: ScrcpyPointerId.Finger,
   pointerX: 100,
   pointerY: 200,
-  videoWidth: 1920,
-  videoHeight: 1080,
+  screenWidth: 1920,
+  screenHeight: 1080,
   pressure: 0.5,
   actionButton: AndroidMotionEventButton.Primary,
   buttons: AndroidMotionEventButton.Primary,
@@ -98,8 +98,8 @@ await writer.injectTouch({
   pointerId: ScrcpyPointerId.Finger,
   pointerX: 100,
   pointerY: 200,
-  videoWidth: 1920,
-  videoHeight: 1080,
+  screenWidth: 1920,
+  screenHeight: 1080,
   pressure: 0.5,
   actionButton: AndroidMotionEventButton.Primary,
   buttons: AndroidMotionEventButton.Primary,
@@ -111,8 +111,8 @@ await client.controller!.injectTouch({
   pointerId: ScrcpyPointerId.Finger,
   pointerX: 100,
   pointerY: 200,
-  videoWidth: 1920,
-  videoHeight: 1080,
+  screenWidth: 1920,
+  screenHeight: 1080,
   pressure: 0.5,
   actionButton: AndroidMotionEventButton.Primary,
   buttons: AndroidMotionEventButton.Primary,
@@ -128,8 +128,8 @@ import type { ScrcpyControlMessageSerializer } from "@yume-chan/scrcpy";
 import { AndroidMotionEventAction, clamp } from "@yume-chan/scrcpy";
 
 declare const serializer: ScrcpyControlMessageSerializer; // ScrcpyControlMessageWriter` and `AdbScrcpyClient` can also be used
-declare let videoWidth: number;
-declare let videoHeight: number;
+declare let screenWidth: number;
+declare let screenHeight: number;
 
 const PointerEventButtonToAndroidButton = [
   AndroidMotionEventButton.Primary,
@@ -171,16 +171,16 @@ function handlePointerEvent(event: PointerEvent) {
   const percentageX = clamp((clientX - rect.x) / rect.width, 0, 1);
   const percentageY = clamp((clientY - rect.y) / rect.height, 0, 1);
 
-  const pointerX = percentageX * videoWidth;
-  const pointerY = percentageY * videoHeight;
+  const pointerX = percentageX * screenWidth;
+  const pointerY = percentageY * screenHeight;
 
   return serializer.injectTouch({
     action,
     pointerId: BigInt(e.pointerId),
     pointerX,
     pointerY,
-    videoWidth,
-    videoHeight,
+    screenWidth,
+    screenHeight,
     pressure: buttons === 0 ? 0 : 1,
     actionButton: PointerEventButtonToAndroidButton[button],
     buttons,

@@ -1,0 +1,141 @@
+---
+sidebar_position: 3
+---
+
+# Create socket
+
+The last step is to create `AdbSocket`s. This example uses one WebSocket connection for each `AdbSocket`.
+
+## Server
+
+Creating `AdbSocket` requires two parameters: the device's `serial` and the socket's `service` (address).
+
+Again, it creates a real `AdbSocket` using the existing `AdbTransport`, then forwards packets between the client WebSocket and the `AdbSocket`.
+
+```ts transpile title="server/index.ts"
+wsServer.on("connection", async (client, request) => {
+  const url = new URL(request.url!, "http://localhost");
+  const segments = url.pathname.substring(1).split("/");
+
+  switch (segments[0]) {
+    // ...
+    case "device":
+      {
+        const [, serial, service] = segments;
+        if (!serial || !service) {
+          client.close();
+          break;
+        }
+
+        const transport = devices.get(serial);
+        if (!transport) {
+          client.close();
+          break;
+        }
+
+        // highlight-start
+        try {
+          const socket = await transport.connect(decodeURIComponent(service));
+
+          client.binaryType = "arraybuffer";
+
+          // Read from ADB socket and write to WebSocket
+          socket.readable.pipeTo(
+            new WritableStream({
+              async write(chunk) {
+                while (client.bufferedAmount >= 1 * 1024 * 1024) {
+                  await delay(10);
+                }
+                client.send(chunk);
+              },
+            }),
+          );
+
+          // Read from WebSocket and write to ADB socket
+          const writer = socket.writable.getWriter();
+          client.on("message", async (message) => {
+            client.pause();
+            await writer.write(new Uint8Array(message as ArrayBuffer));
+            client.resume();
+          });
+
+          // Propagate ADB socket closure to WebSocket
+          void socket.closed.then(() => {
+            client.close();
+          });
+
+          // Propagate WebSocket closure to ADB socket
+          client.on("close", () => {
+            socket.close();
+          });
+        } catch {
+          // ADB socket open failed
+          client.close();
+          break;
+        }
+        // highlight-end
+      }
+      break;
+    default:
+      client.close();
+  }
+});
+```
+
+## Client
+
+Its custom `AdbTransport` can create a WebSocket connection with `serial` and `service`, then convert the connection back to `AdbSocket`.
+
+This example uses the new [`WebSocketStream`](../../web-stream/websocket.mdx) API.
+
+```ts transpile title="client/transport.ts"
+class WebSocketTransport implements AdbTransport {
+  // ...
+
+  #sockets = new Set<WebSocketStream>();
+
+  // ...
+
+  // highlight-start
+  async connect(service: string): Promise<AdbSocket> {
+    const socket = new WebSocketStream(
+      `ws://localhost:8080/device/${this.serial}/${encodeURIComponent(service)}`,
+    );
+    const open = await socket.opened;
+    this.#sockets.add(socket);
+
+    const writer = open.writable.getWriter();
+    return {
+      service,
+      readable: open.readable.pipeThrough(
+        new TransformStream<Uint8Array, Uint8Array>({
+          transform(chunk, controller) {
+            // Chrome's implementation still gives `ArrayBuffer`
+            controller.enqueue(new Uint8Array(chunk));
+          },
+        }),
+      ) as ReadableStream<Uint8Array>,
+      writable: new MaybeConsumable.WritableStream({
+        async write(chunk) {
+          await writer.write(chunk);
+        },
+      }),
+      close() {
+        socket.close();
+      },
+      closed: socket.closed as never as Promise<void>,
+    };
+  }
+
+  close() {
+    for (const socket of this.#sockets) {
+      socket.close();
+    }
+    this.#sockets.clear();
+    this.#disconnected.resolve();
+  }
+  // highlight-end
+}
+```
+
+Note: this client doesn't implement [reverse tunnel](../../../api/adb/reverse/index.mdx). Reverse tunnel requires the server to notify the client about new connections.
