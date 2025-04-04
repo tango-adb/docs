@@ -49,7 +49,7 @@ This is called the raw mode. In this mode, the video socket only contains codec-
 
 Raw mode is more difficult to process, because it requires the client to parse the codec-specific format directly.
 
-Tango has partial support for raw mode, all omitted fields will be `undefined`, and [built-in video decoders](#decode-and-render-video) don't work with raw mode video streams.
+Tango has partial support for raw mode, all omitted fields will be `undefined`, and [built-in video decoders](#decode-and-render-in-browsers) don't work with raw mode video streams.
 
 Advanced decoders, like ffmpeg, can decode raw video streams. If you only need to pipe the video stream to ffmpeg, raw mode can save some processing time.
 

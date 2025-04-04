@@ -49,7 +49,7 @@ This is called the raw mode. In this mode, the video socket only contains codec-
 
 Raw mode is more difficult to process, because it requires the client to parse the codec-specific format directly.
 
-Tango has partial support for raw mode, all omitted fields will be `undefined`, and [built-in video decoders](#decode-and-render-video) don't work with raw mode video streams.
+Tango has partial support for raw mode, all omitted fields will be `undefined`, and [built-in video decoders](#decode-and-render-in-browsers) don't work with raw mode video streams.
 
 Advanced decoders, like ffmpeg, can decode raw video streams. If you only need to pipe the video stream to ffmpeg, raw mode can save some processing time.
 
@@ -203,7 +203,7 @@ videoPacketStream
   });
 ```
 
-Similar to [`options.clipboard`](../options/index.mdx#watch-device-clipboard-changes), don't `await` the `pipeTo`. The returned `Promise` only resolves when `videoSocket` ends, but waiting here and not handling other streams will block `videoSocket`, causing a deadlock.
+Similar to [`options.clipboard`](../start-server.mdx#clipboard-stream), don't `await` the `pipeTo`. The returned `Promise` only resolves when `videoSocket` ends, but waiting here and not handling other streams will block `videoSocket`, causing a deadlock.
 
 #### Raw mode
 

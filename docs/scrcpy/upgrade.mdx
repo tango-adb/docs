@@ -81,7 +81,7 @@ client.videoStream.height;
 client.videoStream.sizeChanged((size) => console.log(size));
 ```
 
-### Add `AdbScrcpyClient#clipboard` to mirror `ScrcpyOptionsX_YY#clipboard`
+### Add `AdbScrcpyClient#clipboard` that forwards `ScrcpyOptionsX_YY#clipboard`
 
 Now you can also listen to clipboard changes from `AdbScrcpyClient`. Note that a `ReadableStream` can't be consumed twice.
 
@@ -111,6 +111,20 @@ void client.clipboard.pipeTo(
     },
   }),
 );
+```
+
+### Rename `AdbScrcpyClient#stdout` to `output`
+
+As part of [subprocess API redesign](../tango/upgrade.mdx#subprocess-api-redesign), `AdbScrcpyClient#stdout` has also been renamed to `output`.
+
+```ts showLineNumbers title="1.1.0"
+const client = await AdbScrcpyClient.start(adb, DefaultServerPath, options);
+client.stdout.pipeTo(/* ... */);
+```
+
+```ts showLineNumbers title="next"
+const client = await AdbScrcpyClient.start(adb, DefaultServerPath, options);
+client.output.pipeTo(/* ... */);
 ```
 
 ## `@yume-chan/adb`

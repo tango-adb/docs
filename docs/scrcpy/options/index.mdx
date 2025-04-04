@@ -77,7 +77,7 @@ declare class AdbScrcpyOptionsX_YY extends ScrcpyOptionsX_YY {
 `AdbScrcpyClientOptions` interface includes:
 
 - `version`: The server version to use. The default value matches the options class name. This option is rarely used, unless you are using a custom server binary with different version string.
-- `spawner`: A custom [process spawner](../../api/adb/subprocess.mdx) to start the server process. The default value is `undefined`, which uses `adb.subprocess.noneProtocol`. This option is rarely used, unless you have a different method (like SSH) to start processes on the device.
+- `spawner`: A custom [process spawner](../../api/adb/subprocess/index.mdx) to start the server process. The default value is `undefined`, which uses `adb.subprocess.noneProtocol`. This option is rarely used, unless you have a different method (like SSH) to start processes on the device.
 
 ```ts transpile
 import { AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
