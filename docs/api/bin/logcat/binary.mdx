@@ -104,7 +104,7 @@ import type { Adb } from "@yume-chan/adb";
 import { Logcat } from "@yume-chan/android-bin";
 
 declare const adb: Adb;
-const logcat = new Logcat();
+const logcat = new Logcat(adb);
 
 for await (const entry of logcat.binary()) {
   console.log(entry);
