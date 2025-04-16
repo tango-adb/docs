@@ -40,15 +40,15 @@ export function getSocketName(scid: number | undefined): string {
 
 Scrcpy transmits video, audio, and control messages in individual sockets. The default order is:
 
-1. Video
-2. <Version since="v2.0">Audio</Version>
-3. Control
+1. Video<Version since="2.1">, unless disabled by [`video: false`](./options/video.mdx) option</Version>
+2. <Version since="v2.0">Audio, unless disabled by [`audio: false`](./options/audio.mdx) option</Version>
+3. Control<Version since="v1.22">, unless disabled by [`control: false`](./options/control.mdx) option</Version>
 
-If some of them are disabled by options (<Version since="v2.1">[`video: false`](./options/video.mdx)</Version>, <Version since="v2.0">[`audio: false`](./options/audio.mdx)</Version>, <Version since="v1.22">and [`control: false`](./options/control.mdx)</Version>), the corresponding socket will be skipped, but the order of other sockets will be kept.
+If a socket is disabled by its corresponding option, the socket will be skipped, but the order of other sockets will be kept.
 
 :::info
 
-`control: false` in versions before v1.22 is client only. It does not actually disable the control socket.
+`control: false` in versions before v1.22 will not disable the control socket, but all messages will be ignored.
 
 :::
 
