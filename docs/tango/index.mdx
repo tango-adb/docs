@@ -14,26 +14,51 @@ import { Question, Answer } from "./select-transport";
 
 Welcome to Tango ADB's developer documentation! :tada:
 
-Tango is a TypeScript re-implementation of ADB ([Android Debug Bridge](https://developer.android.com/studio/command-line/adb)) client for Web browsers and Node.js.
+Tango is a TypeScript re-implementation of ADB ([Android Debug Bridge](https://developer.android.com/studio/command-line/adb)) client for Web browsers, Node.js, and Electron.
 
 If you are looking for our Tango Web application where you can control your Android devices, that's at https://app.tangoapp.dev.
 
 :::
 
-## Features
+## Traditional Programmatic ADB Usage
 
-- **Zero dependencies**: Don't use any third-party libraries to provide a lightweight and secure solution.
-- **Cross platform**: Runs on all recent versions of Node.js and Web browsers (supported connection methods vary).
-- **Independent**: Doesn't require Google ADB server to connect to devices (but can also work with it).
-- **Extensible**: Supports custom connection methods and ADB commands.
+Most programs that use ADB do so by spawning the Google ADB executable with specific arguments. This approach involves:
 
-:::note
+1. Installing the Google ADB executable on the system.
+2. Running the executable with command-line arguments to perform desired actions, such as connecting to a device, pushing files, or executing shell commands.
 
-The public API is not stable. Check [GitHub Releases](https://www.github.com/yume-chan/ya-webadb/releases) page for changes.
+For example, to pull some photo files from a device using the traditional approach, a program might execute the following command:
 
-If you have any questions, feel free to open a discussion on [GitHub](https://www.github.com/yume-chan/ya-webadb/discussions) :heart:
+```sh
+adb pull /sdcard/DCIM/Camera .
+```
 
-:::
+## Server Transport
+
+Tango ADB takes a different approach by directly creating sockets to the Google ADB server. While still requiring the Google ADB executable to be present and running, this approach allows Tango ADB to:
+
+1. Interact with the ADB server in a more efficient and robust way.
+2. Provide a more programmatic and flexible way of using ADB.
+
+| Web                                | Node.js | Electron |
+| ---------------------------------- | ------- | -------- |
+| Requires a native "bridge" program | ✅      | ✅       |
+
+Because Google ADB uses TCP sockets, it's not directly supported on Web platform. To use server transport on Web platform, a native "bridge" program is required to convert TCP sockets to WebSocket.
+
+## Daemon Transport
+
+Tango ADB also offers a new transport mode that directly connects to the ADB daemon running on Android devices, eliminating the need for the Google ADB executable.
+
+The daemon transport mode offers the following distinct benefits:
+
+- **No dependency on Google ADB**: By connecting directly to the ADB daemon, Tango ADB no longer requires the Google ADB executable to be installed or running.
+- **USB connections in modern Web browsers**: Using the WebUSB API, Tango ADB can establish USB connections to Android devices directly from modern Web browsers, enabling a seamless and plugin-free experience.
+
+| Connection     | Web                                | Node.js | Electron |
+| -------------- | ---------------------------------- | ------- | -------- |
+| USB            | ✅                                 | ✅      | ✅       |
+| ADB over Wi-Fi | Requires a native "bridge" program | ✅      | ✅       |
 
 ## Installation
 
@@ -45,6 +70,14 @@ Tango is split into multiple packages to support different runtime environments.
 ```sh npm2yarn
 npm i @yume-chan/adb @yume-chan/stream-extra
 ```
+
+:::note
+
+The public API is not stable. Check [migration page](./upgrade.mdx) for changes.
+
+If you have any questions, feel free to open a discussion on [GitHub](https://www.github.com/yume-chan/ya-webadb/discussions) :heart:
+
+:::
 
 ## First Step
 
@@ -254,4 +287,5 @@ Select your runtime on remote PC in Question 1 and "Connected to the same PC whe
             </Answer>
         </Question>
     </Answer>
+
 </Question>
