@@ -80,3 +80,8 @@ div[role="tabpanel"] > div:nth-child(1) > div > .prism-code {
 .theme-doc-sidebar-item-link-level-3 {
   font-size: 0.9em;
 }
+
+giscus-widget {
+    display: block;
+    margin-top: 40px;
+}

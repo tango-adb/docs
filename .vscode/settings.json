@@ -15,6 +15,7 @@
         "ffplay",
         "framebuffer",
         "getprop",
+        "Giscus",
         "Insertable",
         "libusb",
         "localabstract",
