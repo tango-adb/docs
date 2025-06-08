@@ -1,8 +1,7 @@
-import { PrismTheme, themes as prismThemes } from "prism-react-renderer";
-import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import remarkPluginNpm2yarn from "@docusaurus/remark-plugin-npm2yarn";
-import { themes } from "prism-react-renderer";
+import type { Config } from "@docusaurus/types";
+import { PrismTheme, themes } from "prism-react-renderer";
 import { fileURLToPath } from "url";
 import ts2js from "./scripts/ts2js.js";
 
@@ -187,7 +186,7 @@ const config: Config = {
     tagline: "Documentation for Tango ADB library",
     favicon: "img/logo.svg",
 
-    url: "https://docs.tangoapp.dev",
+    url: "https://tangoadb.dev",
     baseUrl: "/",
     trailingSlash: true,
 
@@ -311,7 +310,7 @@ const config: Config = {
                     items: [
                         {
                             label: "Tango Web App",
-                            href: "https://app.tangoapp.dev",
+                            href: "https://tangoapp.dev",
                         },
                         {
                             label: "OpenCollective",
