@@ -92,7 +92,7 @@ function buildFeatures(
     enableOverride: boolean
 ) {
     let prevFeatureIndex = -1;
-    const result = new Array<JSX.Element>(ALL_FEATURES.length);
+    const result = new Array<React.ReactNode>(ALL_FEATURES.length);
 
     features = features.slice();
     features.sort((a, b) => ALL_FEATURES.indexOf(a) - ALL_FEATURES.indexOf(b));
@@ -199,7 +199,7 @@ function buildFeatures(
 }
 
 function buildVersions(hover: number, setHover: (value: number) => void) {
-    const result = new Array<JSX.Element>(VERSIONS.length);
+    const result = new Array<React.ReactNode>(VERSIONS.length);
     const overriddenFeatures = new Set<string>();
 
     for (let i = VERSIONS.length - 1; i >= 0; i--) {

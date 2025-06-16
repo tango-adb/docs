@@ -159,6 +159,7 @@ export default function ts2js() {
                                     value: '@theme/Tabs',
                                     raw: "'@theme/Tabs'",
                                 },
+                                attributes: []
                             },
                             {
                                 type: 'ImportDeclaration',
@@ -173,6 +174,7 @@ export default function ts2js() {
                                     value: '@theme/TabItem',
                                     raw: "'@theme/TabItem'",
                                 },
+                                attributes: []
                             },
                         ],
                         sourceType: 'module',

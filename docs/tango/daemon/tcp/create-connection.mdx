@@ -15,6 +15,7 @@ As of writing (April 2025), it's still not clear how Direct Socket API will be i
 
     </TabItem>
     <TabItem value="node" label="Node.js">
+
 Install `@types/node` package for code suggestions and type checking of Node.js APIs:
 
 ```sh npm2yarn
@@ -27,14 +28,16 @@ The following code converts Node.js's `net.Socket` to a `TCPSocket`:
 import { PromiseResolver } from "@yume-chan/async";
 import {
   PushReadableStream,
+  tryClose,
   WritableStream,
   type ReadableStream,
 } from "@yume-chan/stream-extra";
 import { connect, type Socket } from "node:net";
 
 export interface TCPSocketOptions {
-  noDelay?: boolean;
-  unref?: boolean;
+  noDelay?: boolean | undefined;
+  // Node.js only
+  unref?: boolean | undefined;
 }
 
 export interface TCPSocketOpenInfo {
@@ -77,11 +80,7 @@ export class TCPSocket {
           this.#socket.resume();
         });
 
-        this.#socket.on("end", () => {
-          try {
-            controller.close();
-          } catch {}
-        });
+        this.#socket.on("end", () => tryClose(controller));
 
         controller.abortSignal.addEventListener("abort", () => {
           this.#socket.end();
@@ -96,7 +95,7 @@ export class TCPSocket {
         readable,
         writable: new WritableStream({
           write: async (chunk) => {
-            return new Promise<void>((resolve, reject) => {
+            return new Promise<void>((resolve) => {
               if (!this.#socket.write(chunk)) {
                 this.#socket.once("drain", resolve);
               } else {
@@ -104,9 +103,7 @@ export class TCPSocket {
               }
             });
           },
-          close: async () => {
-            this.#socket.end();
-          },
+          close: () => void this.#socket.end(),
         }),
       });
     });
@@ -176,18 +173,27 @@ export class AdbDaemonDirectSocketsDevice implements AdbDaemonDevice {
       unref: this.#options.unref,
     });
     const { readable, writable } = await socket.opened;
+    const writer = writable.getWriter();
 
     return {
-      readable: new WrapReadableStream(readable).pipeThrough(
-        new StructDeserializeStream(AdbPacket)
-      ),
-      writable: new WrapWritableStream(writable)
-        .bePipedThroughFrom(new MaybeConsumable.UnwrapStream())
-        .bePipedThroughFrom(new AdbPacketSerializeStream()),
+      readable: readable.pipeThrough(new StructDeserializeStream(AdbPacket)),
+      writable: new WrapWritableStream(
+        new Consumable.WritableStream<Uint8Array>({
+          write(chunk) {
+            return writer.write(chunk);
+          },
+        })
+      ).bePipedThroughFrom(new AdbPacketSerializeStream()),
     };
   }
 }
 ```
+
+:::note
+
+See [consumable pattern](../../consumable.mdx) page for more information about the `Consumable` type.
+
+:::
 
 ## Usage
 

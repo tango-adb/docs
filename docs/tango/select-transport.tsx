@@ -74,7 +74,7 @@ function RadioGroup<T extends string>(props: {
     onChange: (value: T) => void;
     children: React.ReactNode;
 }) {
-    const name = React.useRef<string>();
+    const name = React.useRef<string>(null);
     React.useEffect(() => {
         name.current = `radio-group-${id}`;
         id += 1;

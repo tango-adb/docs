@@ -3,7 +3,7 @@ import React from "react";
 export default function Version(props: {
     since?: string;
     until?: string;
-    children: JSX.Element | JSX.Element[];
+    children: React.ReactNode
 }) {
     return (
         <span
