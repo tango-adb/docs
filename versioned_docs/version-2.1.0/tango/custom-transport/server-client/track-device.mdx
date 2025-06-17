@@ -1,0 +1,120 @@
+---
+sidebar_position: 1
+---
+
+# Track devices
+
+The first feature of the project is to track the list of devices connected to the server, then sync the device list with the clients.
+
+## Server
+
+When a client connects to `/devices` endpoint, the server immediately sends the current device list to the client.
+
+It also saves the client, so when the device list changes, the client can be notified.
+
+```ts transpile
+import type {
+  AdbDaemonWebUsbDeviceManager,
+  AdbDaemonWebUsbDevice,
+} from "@yume-chan/adb";
+import type { WebSocket } from "ws";
+
+declare const Manager: AdbDaemonWebUsbDeviceManager;
+
+// highlight-start
+const clients = new Set<WebSocket>();
+
+function sendDeviceList(client: WebSocket, devices: AdbDaemonWebUsbDevice[]) {
+  client.send(
+    JSON.stringify(
+      devices.map((device) => ({
+        serial: device.serial,
+        name: device.name,
+        vendorId: device.raw.vendorId,
+        productId: device.raw.productId,
+      }))
+    )
+  );
+}
+// highlight-end
+
+wsServer.addListener("connection", async (client, request) => {
+  const url = new URL(request.url!, "http://localhost");
+  const segments = url.pathname.substring(1).split("/");
+
+  switch (segments[0]) {
+    // highlight-start
+    case "devices":
+      sendDeviceList(client, await Manager.getDevices());
+
+      clients.add(client);
+      client.addListener("close", () => {
+        clients.delete(client);
+      });
+
+      break;
+    // highlight-end
+    // ...
+  }
+});
+
+// highlight-start
+const observer = Manager.trackDevices();
+observer.onListChange((devices) => {
+  for (const client of clients) {
+    sendDeviceList(client, devices);
+  }
+});
+// highlight-end
+```
+
+The `sendDeviceList` method can be modified to include more information as needed.
+
+## Client
+
+`index.html` page contains a simple table template to display the device list.
+
+```html title="index.html"
+<table>
+  <thead>
+    <tr>
+      <th>Serial</th>
+      <th>Name</th>
+      <th>Vendor ID</th>
+      <th>Product ID</th>
+      <th>Open</th>
+    </tr>
+  </thead>
+  <tbody id="devices"></tbody>
+</table>
+```
+
+When page loads, a WebSocket connection to the server is created. When the server sends the device list, the client updates the table.
+
+```ts transpile
+const container = document.getElementById("devices") as HTMLTableSectionElement;
+
+// highlight-start
+const socket = new WebSocket("http://localhost:8080/devices");
+socket.addEventListener("message", ({ data }) => {
+  const devices = JSON.parse(data);
+  // highlight-end
+
+  // Clear table
+  container.replaceChildren();
+
+  for (const device of devices) {
+    const row = container.insertRow();
+
+    row.insertCell().textContent = device.serial;
+    row.insertCell().textContent = device.name;
+    row.insertCell().textContent = device.vendorId.toString(16);
+    row.insertCell().textContent = device.productId.toString(16);
+
+    const anchor = document.createElement("a");
+    anchor.href = `/device/?serial=${device.serial}`;
+    anchor.textContent = "Open";
+    row.insertCell().appendChild(anchor);
+  }
+});
+```

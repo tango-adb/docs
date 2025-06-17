@@ -1,0 +1,62 @@
+---
+sidebar_position: 4
+---
+
+# Run ADB commands
+
+## Server
+
+In this example, because the server didn't run any ADB commands, it only creates `AdbTransport`s for the clients to use.
+
+If needed, you can also run ADB commands in the server:
+
+```ts transpile title="server/index.ts"
+import { Adb, AdbDaemonTransport } from "@yume-chan/adb";
+
+const devices = new Map<string, Adb>();
+
+// ...
+
+const connection = await device.connect();
+const transport = await AdbDaemonTransport.authenticate({
+  serial,
+  connection,
+  credentialStore: CredentialStore,
+});
+
+// highlight-start
+const adb = new Adb(transport);
+devices.set(serial, adb);
+// highlight-end
+
+// ...
+```
+
+## Client
+
+The client created an `Adb` instance using the custom `AdbTransport`, ran `logcat` command, and printed the output to a `<div>` element.
+
+```ts transpile title="client/device.ts"
+import { AdbBanner, Adb } from "@yume-chan/adb";
+
+const container = document.getElementById("app")!;
+
+// ...
+
+const data = await response.json();
+const transport = new WebSocketTransport(
+  serial,
+  data.maxPayloadSize,
+  new AdbBanner(data.product, data.model, data.device, data.features),
+);
+
+// highlight-start
+const adb = new Adb(transport);
+const process = await adb.subprocess.noneProtocol.spawn("logcat");
+for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
+  container.textContent += chunk;
+}
+// highlight-end
+```
+
+You can run [other commands](../../../api/index.mdx#adb-from-yume-chanadb) using the `adb` instance.

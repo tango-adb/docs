@@ -1,0 +1,43 @@
+# clear
+
+Delete all logcat entries in the buffer.
+
+```ts showLineNumbers
+export const LogId = {
+  All: -1,
+  Main: 0,
+  Radio: 1,
+  Events: 2,
+  System: 3,
+  Crash: 4,
+  Stats: 5,
+  Security: 6,
+  Kernel: 7,
+} as const;
+
+export type LogId = (typeof LogId)[keyof typeof LogId];
+
+declare class Logcat {
+  clear(ids?: LogId[]): Promise<void>;
+}
+```
+
+## Usage
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { Logcat } from "@yume-chan/android-bin";
+
+declare const adb: Adb;
+const logcat = new Logcat(adb);
+
+await logcat.clear();
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb logcat -c
+```
+
+:::

@@ -1,0 +1,104 @@
+---
+sidebar_position: 5
+---
+
+# Watch devices
+
+Google ADB Server has a hidden command to notify the client about device added and removed, so you don't need to poll the device list.
+
+```ts
+import type { MaybePromiseLike } from "@yume-chan/async";
+import type { Event } from "@yume-chan/event";
+
+export interface DeviceObserver<T> {
+  onDeviceAdd: Event<readonly T[]>;
+  onDeviceRemove: Event<readonly T[]>;
+  onListChange: Event<readonly T[]>;
+  current: readonly T[];
+  stop(): MaybePromiseLike<void>;
+}
+
+export declare class AdbServerClient {
+  trackDevices(): Promise<AdbServerDeviceObserver>;
+}
+
+export namespace AdbServerClient {
+  export interface DeviceObserver extends DeviceObserverBase<Device> {
+    onError: Event<Error>;
+  }
+}
+```
+
+:::info[Equivalent ADB command]
+
+There is no equivalent ADB command.
+
+:::
+
+## Create an observer
+
+The `AdbServerClient#trackDevices` method creates an `AdbServerDeviceObserver`:
+
+```ts transpile
+import { AdbServerClient } from "@yume-chan/adb";
+
+declare const client: AdbServerClient;
+
+const observer = await client.trackDevices();
+```
+
+## `onError`
+
+The `onError` event is fired when an error occurs, like the connection to Google ADB Server is lost.
+
+```ts transpile
+observer.onError((error) => {
+  console.error(error);
+});
+```
+
+## `current`
+
+`current` is an immutable array containing all currently connected devices. It will be populated upon creation. When the list changes, a new array will be created and returned from `current`.
+
+```ts transpile
+for (const device of observer.current) {
+  console.log(device.serial);
+}
+```
+
+## `onListChange`
+
+When device list changes, the `onListChange` event will also fire with the new array.
+
+`onListChange` is a sticky event, meaning newly attached event listeners will be invoked immediately with latest value.
+
+This means, if you don't care about individual add or remove events, only listening to `onListChange` event is enough, reading `current` or calling `AdbServerClient#getDevices` is unnecessary.
+
+```ts transpile
+observer.onListChange((devices) => {
+  console.log(devices === observer.current); // true
+});
+```
+
+## `onDeviceAdd` and `onDeviceRemove`
+
+The `onDeviceAdd` and `onDeviceRemove` events are fired when a device is added or removed. The event argument is an array of `AdbServerClient.Device` objects that have changed.
+
+```ts transpile
+observer.onDeviceAdd((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
+
+observer.onDeviceRemove((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
+```
+
+## Stop the observer
+
+The `stop` method removes all the event listeners and releases all the resources. The device observer instance is no longer usable after calling `stop`.

@@ -1,0 +1,29 @@
+---
+sidebar_position: 7
+---
+
+# getDeviceFeatures
+
+```ts showLineNumbers
+declare class AdbServerClient {
+  getDeviceFeatures(
+    selector: AdbServerClient.DeviceSelector
+  ): Promise<{ transportId: bigint; features: AdbFeature[] }>;
+}
+```
+
+Gets the ADB features supported by the device. Tango needs to know which features the device supports, to coordinate the behavior of ADB commands.
+
+For example, if [shell protocol](../../api/adb/subprocess/index.mdx#protocols) is not supported by the device, `adb.subprocess.shellProtocol` will be `undefined`.
+
+Usually you don't need to call this method directly, the `createTransport` method calls it internally to create a `AdbTransport` object.
+
+For convenience, Tango uses a special form of this command to get both `transportId` and `features` list in one call. The `transportId` value is useful to send subsequent commands to the same device if the `selector` argument is not using `transportId` to pinpoint the target.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb features
+```
+
+:::

@@ -1,0 +1,173 @@
+# subprocess
+
+ADB includes multiple methods to start processes on the device.
+
+## Protocols
+
+From the perspective of how process's input and output are transmitted to the client, there are two protocols:
+
+- None protocol: Two ends of the ADB socket are directly bound to input and output of the subprocess. None protocol didn't have a name before shell protocol was introduced, because it is, literally, not using any protocol.
+- Shell protocol: Input and output are encapsulated in packets, allowing complex commands. Shell protocol was added in Android 7.
+
+## Modes
+
+From the perspective of how the subprocess is started, there are two modes:
+
+- Raw mode: subprocess is started using `exec` series of API directly. Input/output are redirected to pipes that the spawner can read and write.
+- PTY mode: subprocess is started using [pseudo-terminal (PTY)](https://man7.org/linux/man-pages/man7/pty.7.html) API. Input/output are forwarded by PTY kernel driver.
+
+PTY mode simulates running the program in a terminal. For example, `less` can query the window size, and print content page-by-page. In raw mode, `less` simply prints its input continuously.
+
+### ANSI escape sequences
+
+ANSI escape sequences is a protocol between the program and the terminal emulator, it can do things like:
+
+- Output colored or styled text
+- Move the cursor
+- Clear screen
+- Handle mouse movements and clicks
+- etc.
+
+Although it's more common to use ANSI escape sequences in PTY mode (for example, some programs will automatically enable color output when running in a terminal), since they are just plain text, they can also be used in raw mode.
+
+There are libraries like [xterm.js](https://xtermjs.org/) that can parse and render these escape sequences:
+
+```ts transpile
+import { AdbNoneSubprocessProtocol, encodeUtf8 } from "@yume-chan/adb";
+import { WritableStream } from "@yume-chan/stream-extra";
+import { Terminal } from "xterm";
+
+const terminal: Terminal = new Terminal();
+
+const process: AdbNoneSubprocessProtocol =
+  await adb.subprocess.noneProtocol.spawn("ls --color");
+process.output.pipeTo(
+  new WritableStream<Uint8Array>({
+    write(chunk) {
+      terminal.write(chunk);
+    },
+  }),
+);
+
+const writer = process.stdin.getWriter();
+terminal.onData((data) => {
+  const buffer = encodeUtf8(data);
+  writer.write(buffer);
+});
+
+terminal.open(document.getElementById("terminal"));
+```
+
+## Combinations
+
+Both protocols can be used with both modes, so there is a total of 4 methods to start a process.
+
+Tango has 4 classes that precisely match the behavior of each combination. Here is a summary table, and we will explain each combination in more details later.
+
+| Type                         | Protocol | Mode | `stdin` | `input` | `stdout` | `stderr` | `output` | `resize` | `sigint` | `exited`             |
+| ---------------------------- | -------- | ---- | ------- | ------- | -------- | -------- | -------- | -------- | -------- | -------------------- |
+| `AdbNoneProtocolProcess`     | None     | Raw  | ✅      | ⛔      | ⛔       | ⛔       | ✅       | ⛔       | ⛔       | `Promise<undefined>` |
+| `AdbShellProtocolProcess`    | Shell    | Raw  | ✅      | ⛔      | ✅       | ✅       | ⛔       | ⛔       | ⛔       | `Promise<number>`    |
+| `AdbNoneProtocolPtyProcess`  | None     | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ⛔       | ✅       | `Promise<undefined>` |
+| `AdbShellProtocolPtyProcess` | Shell    | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ✅       | ✅       | `Promise<number>`    |
+
+- ✅: the field/method is present
+- ⛔: the field/method isn't present
+
+### `stdin` vs `input`
+
+Raw mode has `stdin`, and PTY mode has `input`.
+
+This is because in PTY mode, the input is sent to PTY kernel driver, and some data is handled in the driver directly. For example, writing `0x03` will send a `SIGINT` to the foreground process, instead of writing `0x03` as-is to the process's stdin.
+
+In raw mode, all data written to `stdin` will be forwarded to the subprocess directly.
+
+### `stdout` + `stderr` vs `output`
+
+None protocol raw mode has `output`: none protocol only has one output stream, so it mixes `stdout` and `stderr` together.
+
+Shell protocol raw mode has `stdout` and `stderr`: shell protocol redirects `stdout` and `stderr` to different pipes, then uses different packet IDs to send them to the client separately.
+
+PTY mode all has `output`: PTY API also sends `stdout` and `stderr` together, so there is only one `output`.
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
+
+### `resize`
+
+Only shell protocol PTY mode supports changing the size of the PTY.
+
+### `sigint`
+
+Only available in PTY mode.
+
+A shortcut method to write `0x03` to the PTY input, to send a `SIGINT` to the foreground process.
+
+This is same as pressing `Ctrl + C` on the keyboard.
+
+### `exited`
+
+None protocol doesn't send the exit code to client, so their `exited` `Promise` only resolves to `undefined`.
+
+Shell protocol sends an exit code packet to the client, and their `exited` resolves to the exit code. The exit code is an unsigned byte, thus in the range of 0 to 255.
+
+## How to choose
+
+### Protocol
+
+If shell protocol has more features than none protocol on both modes, why do you still want to use none protocol?
+
+Because none protocol has two advantages:
+
+- Compatibility: none protocol is supported by all Android devices, while shell protocol was added in Android 7.
+- Performance: none protocol has less protocol overhead, so it's faster. In some test it can be 150% faster than shell protocol.
+
+When do you want to use shell protocol?
+
+- Compatibility is not an issue, and
+- You need separated `stdout` and `stderr`, or you need the exit code.
+
+### Mode
+
+To programmatically start a process and parse its output, raw mode should be enough.
+
+PTY mode is mainly for creating interactive terminal emulators. Some interactive programs works differently in raw and PTY mode, and some (like `less`) are only useful in PTY mode.
+
+Shell protocol PTY mode provides the `resize` method, allowing synchronizing the pseudo terminal size to your terminal emulator window size, improving user experience.
+
+## API
+
+The subprocess APIs are grouped by protocol:
+
+```ts showLineNumbers
+import type {
+  AdbNoneProtocolSubprocessService,
+  AdbShellProtocolSubprocessService,
+} from "@yume-chan/adb";
+
+export declare class AdbSubprocessService {
+  get noneProtocol(): AdbNoneProtocolSubprocessService;
+  get shellProtocol(): AdbShellProtocolSubprocessService | undefined;
+}
+
+export declare class Adb {
+  readonly subprocess: AdbSubprocessService;
+}
+```
+
+When shell protocol is not supported by the device, `adb.subprocess.shellProtocol` will be `undefined`.
+
+```ts transpile
+if (!adb.subprocess.shellProtocol) {
+  throw new Error("shell protocol is not supported");
+}
+```
+
+See [none protocol](./none-protocol.mdx) and [shell protocol](./shell-protocol.mdx) pages for more details.

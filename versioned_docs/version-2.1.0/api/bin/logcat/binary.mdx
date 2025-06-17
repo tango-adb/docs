@@ -1,0 +1,170 @@
+# binary
+
+Read logcat entries in binary format.
+
+Only binary format is supported, because it's easier for machine to parse than text format. The output is deserialized into `AndroidLogEntry` objects, and can be converted back to text format.
+
+```ts showLineNumbers
+export const LogId = {
+  All: -1,
+  Main: 0,
+  Radio: 1,
+  Events: 2,
+  System: 3,
+  Crash: 4,
+  Stats: 5,
+  Security: 6,
+  Kernel: 7,
+} as const;
+
+export type LogId = (typeof LogId)[keyof typeof LogId];
+
+export interface LogcatOptions {
+  dump?: boolean;
+  pid?: number;
+  ids?: LogId[];
+}
+
+export const AndroidLogPriority = {
+  Unknown: 0,
+  Default: 1,
+  Verbose: 2,
+  Debug: 3,
+  Info: 4,
+  Warn: 5,
+  Error: 6,
+  Fatal: 7,
+  Silent: 8,
+} as const;
+
+export type AndroidLogPriority =
+  (typeof AndroidLogPriority)[keyof typeof AndroidLogPriority];
+
+export interface LoggerEntry {
+  pid: number;
+  tid: number;
+  logId: number;
+  uid: number;
+  timestamp: bigint;
+}
+
+export interface AndroidLogEntry extends LoggerEntry {
+  priority: AndroidLogPriority;
+  tag: string;
+  message: string;
+}
+
+declare class Logcat {
+  binary(options?: LogcatOptions): ReadableStream<AndroidLogEntry>;
+}
+```
+
+## Options
+
+### `dump`
+
+If set to `true`, only existing entries will be returned. Otherwise, it will wait and return all future entries.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb logcat -d
+```
+
+:::
+
+### `pid`
+
+Filter entries by process ID. If not specified, all entries will be returned.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb logcat --pid <pid>
+```
+
+:::
+
+### `ids`
+
+Filter entries by log ID. If not specified, all entries will be returned.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb logcat -b <id>[,<id>]*
+```
+
+:::
+
+## Usage
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import { Logcat } from "@yume-chan/android-bin";
+
+declare const adb: Adb;
+const logcat = new Logcat(adb);
+
+for await (const entry of logcat.binary()) {
+  console.log(entry);
+}
+```
+
+## `toString()`
+
+The `toString()` method converts the entry into a string with the specified format.
+
+```ts showLineNumbers
+export const LogcatFormat = {
+  Brief: 0,
+  Process: 1,
+  Tag: 2,
+  Thread: 3,
+  Raw: 4,
+  Time: 5,
+  ThreadTime: 6,
+  Long: 7,
+} as const;
+
+export type LogcatFormat = (typeof LogcatFormat)[keyof typeof LogcatFormat];
+
+export interface LogcatFormatModifiers {
+  microseconds?: boolean;
+  nanoseconds?: boolean;
+  printable?: boolean;
+  year?: boolean;
+  timezone?: boolean;
+  epoch?: boolean;
+  monotonic?: boolean;
+  uid?: boolean;
+}
+
+declare interface AndroidLogEntry {
+  toString(format?: LogcatFormat, modifiers?: LogcatFormatModifiers): string;
+}
+```
+
+All built-in [formats](https://developer.android.com/tools/logcat#outputFormat) are supported:
+
+```ts transpile
+import type { AndroidLogEntry } from "@yume-chan/android-bin";
+import { LogcatFormat } from "@yume-chan/android-bin";
+
+declare const entry: AndroidLogEntry;
+
+console.log(entry.toString(LogcatFormat.Brief));
+console.log(entry.toString(LogcatFormat.Long));
+console.log(entry.toString()); // Defaults to `LogcatFormat.ThreadTime`
+```
+
+and all [format modifiers](https://developer.android.com/tools/logcat#formatmodify) except `color`, `printable` and `descriptive` are supported:
+
+```ts transpile
+import type { AndroidLogEntry } from "@yume-chan/android-bin";
+import { LogcatFormat } from "@yume-chan/android-bin";
+
+declare const entry: AndroidLogEntry;
+
+console.log(entry.toString(LogcatFormat.Brief, { year: true }));
+```

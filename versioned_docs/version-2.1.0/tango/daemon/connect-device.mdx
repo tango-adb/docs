@@ -1,0 +1,141 @@
+---
+sidebar_position: 5
+---
+
+# Handshake and authenticate
+
+## Authenticate with device
+
+Once a connection and a credential store is ready, use `AdbDaemonTransport.authenticate` method to initiate the handshake and authenticate with the device.
+
+```ts
+type AdbDaemonConnection = ReadableWritablePair<
+  AdbPacketData,
+  Consumable<AdbPacketInit>
+>;
+
+interface AdbDaemonAuthenticationOptions {
+  serial: string;
+  connection: AdbDaemonConnection;
+  credentialStore: AdbCredentialStore;
+  authenticators?: AdbAuthenticator[];
+  features?: readonly AdbFeature[];
+  initialDelayedAckBytes?: number;
+  preserveConnection?: boolean | undefined;
+  readTimeLimit?: number | undefined;
+}
+
+declare class AdbDaemonTransport implements AdbTransport {
+  static authenticate(
+    options: AdbDaemonAuthenticationOptions
+  ): Promise<AdbDaemonTransport>;
+}
+```
+
+### `serial`
+
+The `serial` field is not used by Tango, it helps you to identify the device associated with the transport. You can use any string to represent the device.
+
+### `connection`
+
+A pair of `ReadableStream<AdbPacketData>` and `WritableStream<Consumable<AdbPacketInit>>` is used to send and receive ADB packets. You can use any stream implementation that conforms to the interface.
+
+### `credentialStore`
+
+An `AdbDaemonCredentialStore` implementation is used to store and retrieve the private key. You can use any store that conforms to the interface.
+
+### `authenticators`
+
+An optional list of `AdbDaemonAuthenticator` to handle authentication requests. The default value is `[AdbSignatureAuthenticator, AdbPublicKeyAuthenticator]`.
+
+Unless Google added another authentication method, or you have a custom authentication method, you don't need to provide this option.
+
+:::info
+
+The Wireless Debugging feature added in Android 11 uses a different handshake process, instead of a new authenticator.
+
+Wireless Debugging can't be implemented using this option.
+
+:::
+
+### `features`
+
+An optional list of `AdbFeature` to send to the device in handshake. ADB Features are flags that can be used to enable or disable certain features in the ADB protocol. The default value contains all features supported by Tango.
+
+### `initialDelayedAckBytes`
+
+On Android 14 and newer, the Delayed Acknowledgement feature is added to improve performance, especially for high-latency connections like ADB over Wi-Fi.
+
+This optional field specifies The number of bytes the device can send before receiving an ack packet.
+
+When `features` doesn't include `AdbFeature.DelayedAck`, it must be set to 0. Otherwise, the value must be in the range of unsigned 32-bit integer.
+
+### `preserveConnection`
+
+When set to `true`, the transport will not close the `connection` when the `close` method is called.
+
+This is useful when you want to reconnect to the device later without re-authenticating.
+
+The default value is `false`.
+
+:::info
+
+If the authentication process fails, the connection will always be kept open, regardless of this option.
+
+:::
+
+### `readTimeLimit`
+
+When set, the transport will throw an error when one of the socket readable stalls for this amount of milliseconds.
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
+
+This option is helpful to detect bugs in the client code.
+
+When set to `undefined`, the transport will not enforce a time limit.
+
+The default value is `undefined`.
+
+### Example
+
+```ts transpile
+import { AdbDaemonTransport } from "@yume-chan/adb";
+
+// highlight-start
+const transport: AdbDaemonTransport = await AdbDaemonTransport.authenticate({
+  serial: device.serial,
+  connection,
+  credentialStore: CredentialStore,
+});
+// highlight-end
+```
+
+If the private key is not yet trusted by the device, a dialog will be shown on device screen to let users confirm the connection.
+
+## Create an Adb instance
+
+The transport object only contains the lower-level logic to communicate with devices, the `Adb` class provides a higher-level abstraction over ADB protocol and ADB commands.
+
+This step only initialize some internal states, but does not actually send any packets to the device.
+
+```ts transpile
+import { Adb } from "@yume-chan/adb";
+
+// highlight-start
+const adb: Adb = new Adb(transport);
+// highlight-end
+```
+
+:::note[Next Step]
+
+See [API](/api/index.mdx) section for all supported ADB commands.
+
+:::

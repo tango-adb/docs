@@ -1,0 +1,40 @@
+---
+sidebar_position: 2
+---
+
+# list
+
+```ts
+interface AdbForwardListener {
+  deviceSerial: string;
+  localName: string;
+  remoteName: string;
+}
+
+declare class AdbReverseCommand {
+  list(): Promise<AdbForwardListener[]>;
+}
+```
+
+The returned `AdbForwardListener` objects contain the following fields:
+
+- `deviceSerial`: The serial number of current ADB Client, in the view of the ADB Daemon. For example, it might be `UsbFfs` for USB connections.
+- `localName`: Socket address listening on device
+- `remoteName`: Socket address to forward to on host
+
+:::info[Equivalent ADB command]
+
+```sh
+adb reverse --list
+```
+
+:::
+
+## Example
+
+```ts transpile
+const listeners = await adb.reverse.list();
+for (const listener of listeners) {
+  console.log(listener.localName, listener.remoteName);
+}
+```

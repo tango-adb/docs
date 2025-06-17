@@ -1,0 +1,138 @@
+# Upgrade from 1.1.0
+
+This page lists changes from version 1.1.0 in Scrcpy-related packages.
+
+For changes in other packages, see [this page](../tango/upgrade.mdx).
+
+## `@yume-chan/adb-scrcpy`
+
+### Create options classes for every version
+
+In version 1.1.0 we added `ScrcpyOptionsX_YY` for every version. In this version, there are also `AdbScrcpyOptionsX_YY` classes for every version.
+
+This also means we can create the underlying `ScrcpyOptionsX_YY` class for you:
+
+```ts showLineNumbers title="1.1.0"
+const options = new AdbScrcpyOptions2_1(new ScrcpyOptions3_1({ audio: false }));
+```
+
+```ts showLineNumbers title="next"
+const options = new AdbScrcpyOptions3_1({ audio: false });
+```
+
+#### To manually specify a version
+
+```ts showLineNumbers title="1.1.0"
+const options = new AdbScrcpyOptions2_1(
+  new ScrcpyOptions3_1({ audio: false }, "3.2"),
+);
+```
+
+```ts showLineNumbers title="next"
+const options = new AdbScrcpyOptions3_1({ audio: false }, { version: "3.2" });
+```
+
+### Type of `AdbScrcpyClient#videoStream` now depends on the options type
+
+This is a QoL improvement for TypeScript users, now whether `AdbScrcpyClient#videoStream` is `undefined` will be inferred from the `video` option
+
+```ts showLineNumbers
+const client = await AdbScrcpyClient.start(
+  adb,
+  DefaultServerPath,
+  new AdbScrcpyOptions3_1({}),
+);
+client.videoStream; // AdbScrcpyVideoStream
+```
+
+```ts showLineNumbers
+const client = await AdbScrcpyClient.start(
+  adb,
+  DefaultServerPath,
+  new AdbScrcpyOptions3_1({ video: false }),
+);
+client.videoStream; // undefined
+```
+
+### `AdbScrcpyClient#screenWidth`/`Height` moved into `AdbScrcpyVideoStream`
+
+Because they are defined only when video is enabled, they have been moved into `AdbScrcpyVideoStream` type.
+
+Plus, `AdbScrcpyVideoStream` now also has a `sizeChanged` event, similar to the video decoders. This is a "sticky" event, meaning it will retain the latest value, and when a new event listener is attaching, it will be invoked immediately with that value.
+
+```ts showLineNumbers title="1.1.0"
+const client = await AdbScrcpyClient.start(
+  adb,
+  DefaultServerPath,
+  new AdbScrcpyOptions3_1({}),
+);
+client.screenWidth;
+client.videoHeight;
+```
+
+```ts showLineNumbers title="next"
+const client = await AdbScrcpyClient.start(
+  adb,
+  DefaultServerPath,
+  new AdbScrcpyOptions3_1({}),
+);
+client.videoStream.width;
+client.videoStream.height;
+client.videoStream.sizeChanged((size) => console.log(size));
+```
+
+### Add `AdbScrcpyClient#clipboard` that forwards `ScrcpyOptionsX_YY#clipboard`
+
+Now you can also listen to clipboard changes from `AdbScrcpyClient`. Note that a `ReadableStream` can't be consumed twice.
+
+```ts showLineNumbers title="1.1.0"
+const options = new AdbScrcpyOptions2_1(new ScrcpyOptions3_1({}));
+void options.clipboard.pipeTo(
+  new WritableStream({
+    write(content) {
+      console.log(content);
+    },
+  }),
+);
+
+const client = await AdbScrcpyClient.start(adb, DefaultServerPath, options);
+```
+
+```ts showLineNumbers title="next"
+const client = await AdbScrcpyClient.start(
+  adb,
+  DefaultServerPath,
+  new AdbScrcpyOptions3_1({}),
+);
+void client.clipboard.pipeTo(
+  new WritableStream({
+    write(content) {
+      console.log(content);
+    },
+  }),
+);
+```
+
+### Rename `AdbScrcpyClient#stdout` to `output`
+
+As part of [subprocess API redesign](../tango/upgrade.mdx#subprocess-api-redesign), `AdbScrcpyClient#stdout` has also been renamed to `output`.
+
+```ts showLineNumbers title="1.1.0"
+const client = await AdbScrcpyClient.start(adb, DefaultServerPath, options);
+client.stdout.pipeTo(/* ... */);
+```
+
+```ts showLineNumbers title="next"
+const client = await AdbScrcpyClient.start(adb, DefaultServerPath, options);
+client.output.pipeTo(/* ... */);
+```
+
+## `@yume-chan/adb`
+
+### `screenWidth`/`Height` renamed to `videoWidth`/`Height`
+
+For several commands relying on video size, their `screenWidth` and `screenHeigh` fields are renamed to `videoWidth` and `videoHeigh`, because video resolution could differ from actual screen size, and these commands rely on video size, instead of actual screen size.
+
+### Fix parsing some H.265 sequence parameter set
+
+Fixed https://github.com/yume-chan/ya-webadb/issues/732. Thanks to [@William Chan](https://github.com/luckyyyyy) for reporting!
