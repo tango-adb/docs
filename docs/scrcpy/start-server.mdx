@@ -88,7 +88,6 @@ const client: AdbScrcpyClient = await AdbScrcpyClient.start(
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
 import { AdbScrcpyClient, AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
-import { DefaultServerPath } from "@yume-chan/scrcpy";
 
 declare const adb: Adb;
 
@@ -120,6 +119,7 @@ import {
   AdbScrcpyOptions2_1,
   AdbScrcpyExitedError,
 } from "@yume-chan/adb-scrcpy";
+import { DefaultServerPath } from "@yume-chan/scrcpy";
 
 declare const adb: Adb;
 
@@ -191,7 +191,9 @@ declare const client: AdbScrcpyClient;
 if (client.videoStream) {
   const { metadata: videoMetadata, stream: videoPacketStream } =
     await client.videoStream;
+
   console.log(videoMetadata.codec);
+
   void videoPacketStream.pipeTo(
     new WritableStream({
       write(chunk) {

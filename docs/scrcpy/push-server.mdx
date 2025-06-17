@@ -26,7 +26,7 @@ adb push scrcpy-server.jar /data/local/tmp/scrcpy-server.jar
 
 ```ts showLineNumbers
 import type { Adb } from "@yume-chan/adb";
-import type { ReadableStream } from "@yume-chan/stream-extra";
+import type { ReadableStream, MaybeConsumable } from "@yume-chan/stream-extra";
 
 declare class AdbScrcpyClient {
   static async pushServer(
@@ -37,10 +37,10 @@ declare class AdbScrcpyClient {
 }
 ```
 
-| Parameter  | Required/Default value                                | Description                                    |
-| ---------- | ----------------------------------------------------- | ---------------------------------------------- |
-| `adb`      | Required                                              | An `Adb` instance to run ADB commands.         |
-| `file`     | Required                                              | A readable stream containing the server file.  |
+| Parameter  | Required/Default value                          | Description                                    |
+| ---------- | ----------------------------------------------- | ---------------------------------------------- |
+| `adb`      | Required                                        | An `Adb` instance to run ADB commands.         |
+| `file`     | Required                                        | A readable stream containing the server file.  |
 | `filename` | `import("@yume-chan/scrcpy").DefaultServerPath` | The path on device to push the server file to. |
 
 By default, it pushes to `/data/local/tmp/scrcpy-server.jar`. This path is also exported from `@yume-chan/scrcpy` package as `DefaultServerPath`.
