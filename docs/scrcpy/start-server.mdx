@@ -38,13 +38,39 @@ Then you need to use varies method on the options class to parse the outputs.
 
 Use `AdbScrcpyClient.start()` method with an option class to start the server.
 
+```ts showLineNumbers
+import type { AdbScrcpyOptions } from "@yume-chan/adb-scrcpy";
+import type { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+declare class AdbScrcpyClient {
+  static async start<
+    TOptions extends AdbScrcpyOptions<
+      Pick<ScrcpyOptions1_15.Init, "tunnelForward">
+    >,
+  >(
+    adb: Adb,
+    path: string,
+    options: TOptions,
+  ): Promise<AdbScrcpyClient<TOptions>>;
+}
+```
+
+| Parameter | Required/Default value | Description                                  |
+| --------- | ---------------------- | -------------------------------------------- |
+| `adb`     | Required               | An `Adb` instance to run ADB commands.       |
+| `path`    | Required               | The path on device where the server file is. |
+| `options` | Required               | The options to start the server.             |
+
 It automatically sets up port forwarding, launches the server, and connects to it.
+
+### Examples
+
+#### Using the default server path
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
 import { AdbScrcpyClient, AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
 import { DefaultServerPath } from "@yume-chan/scrcpy";
-import { WritableStream } from "@yume-chan/stream-extra";
 
 declare const adb: Adb;
 
@@ -55,6 +81,72 @@ const client: AdbScrcpyClient = await AdbScrcpyClient.start(
     // options
   }),
 );
+```
+
+#### Using custom server path
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { AdbScrcpyClient, AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
+import { DefaultServerPath } from "@yume-chan/scrcpy";
+
+declare const adb: Adb;
+
+const client: AdbScrcpyClient = await AdbScrcpyClient.start(
+  adb,
+  "/data/local/tmp/scrcpy-server.jar",
+  new AdbScrcpyOptions2_1({
+    // options
+  }),
+);
+```
+
+### Error handling
+
+If the server process exits before the connection is established, the client will throw an `AdbScrcpyExitedError`.
+
+```ts showLineNumbers
+export class AdbScrcpyExitedError extends Error {
+  output: readonly string[];
+}
+```
+
+The `output` field contains the output of the server process.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import {
+  AdbScrcpyClient,
+  AdbScrcpyOptions2_1,
+  AdbScrcpyExitedError,
+} from "@yume-chan/adb-scrcpy";
+
+declare const adb: Adb;
+
+try {
+  const client: AdbScrcpyClient = await AdbScrcpyClient.start(
+    adb,
+    DefaultServerPath,
+    new AdbScrcpyOptions2_1({}),
+  );
+} catch (e) {
+  if (e instanceof AdbScrcpyExitedError) {
+    console.error(e.output);
+  } else {
+    console.error(e);
+  }
+}
+```
+
+### Server output
+
+After the `start` process succeeds, the `output` field of the `AdbScrcpyClient` object contains the output of the server process.
+
+```ts transpile
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const client: AdbScrcpyClient;
 
 // Print output of Scrcpy server
 void client.output.pipeTo(
@@ -64,10 +156,17 @@ void client.output.pipeTo(
     },
   }),
 );
-
-// to stop the server
-await client.close();
 ```
+
+:::info
+
+`pipeTo` returns a `Promise` that resolves when the stream ends.
+
+Don't `await` this `Promise` here, as it will block the code below from executing.
+
+However, you can save the `Promise` to a variable and later use `Promise.all` to wait for all concurrent tasks to complete.
+
+:::
 
 :::danger[READ ALL STREAMS!]
 
@@ -84,7 +183,10 @@ If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if 
 `videoStream` field contains the `AdbScrcpyVideoStream` object<Version since="v2.1">, or `undefined` if [`video: false`](./options/video.mdx) option is specified.</Version>
 
 ```ts transpile
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
 import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const client: AdbScrcpyClient;
 
 if (client.videoStream) {
   const { metadata: videoMetadata, stream: videoPacketStream } =
@@ -119,9 +221,12 @@ The audio stream can have three states:
 When audio forwarding failed to start (either `disabled` or `errored`), other sockets (video and control) still work.
 
 ```ts transpile
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
 import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
 import type { ReadableStream } from "@yume-chan/stream-extra";
 import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const client: AdbScrcpyClient;
 
 if (client.audioStream) {
   const metadata = await client.audioStream;
@@ -152,12 +257,16 @@ if (client.audioStream) {
 Controller is used to send [control messages](./control/index.mdx) to server<Version since="v2.1">, or `undefined` if [`control: false`](./options/control.mdx) option is specified.</Version>
 
 ```ts transpile
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
 import type { ScrcpyControlMessageWriter } from "@yume-chan/scrcpy";
+
+declare const client: AdbScrcpyClient;
 
 const controller: ScrcpyControlMessageWriter | undefined = client.controller;
 
-// for example
-await controller.setScreenPowerMode(AndroidScreenPowerMode.Off);
+if (controller) {
+  await controller.setScreenPowerMode(AndroidScreenPowerMode.Off);
+}
 ```
 
 ### Clipboard stream
@@ -183,6 +292,16 @@ if (clipboard) {
     )
     .catch((e) => console.error(e));
 }
+```
+
+Scrcpy only supports text type in clipboard.
+
+### Stop the server
+
+The `stop` method can be used to stop the server:
+
+```ts transpile
+await client.close();
 ```
 
 ## With Tango

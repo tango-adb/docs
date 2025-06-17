@@ -24,6 +24,31 @@ adb push scrcpy-server.jar /data/local/tmp/scrcpy-server.jar
 
 `@yume-chan/adb-scrcpy` package provides a `pushServer` function as a shortcut for the Tango [`AdbSync#write`](/api/adb/sync/write.mdx) call.
 
+```ts showLineNumbers
+import type { Adb } from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare class AdbScrcpyClient {
+  static async pushServer(
+    adb: Adb,
+    file: ReadableStream<MaybeConsumable<Uint8Array>>,
+    filename?: string,
+  );
+}
+```
+
+| Parameter  | Required/Default value                                | Description                                    |
+| ---------- | ----------------------------------------------------- | ---------------------------------------------- |
+| `adb`      | Required                                              | An `Adb` instance to run ADB commands.         |
+| `file`     | Required                                              | A readable stream containing the server file.  |
+| `filename` | `import("@yume-chan/scrcpy").DefaultServerPath` | The path on device to push the server file to. |
+
+By default, it pushes to `/data/local/tmp/scrcpy-server.jar`. This path is also exported from `@yume-chan/scrcpy` package as `DefaultServerPath`.
+
+If a custom path is specified, the same value must be used when [starting the server](/scrcpy/start-server.mdx).
+
+### Examples
+
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
 import { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
@@ -39,13 +64,20 @@ await AdbScrcpyClient.pushServer(
       controller.enqueue(new Uint8Array(server));
       controller.close();
     },
-  })
+  }),
 );
 ```
 
-By default, it pushes to `/data/local/tmp/scrcpy-server.jar`. The optional third argument allows specifying a different path.
+Push to a custom path:
 
 ```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const server: ArrayBuffer;
+
 await AdbScrcpyClient.pushServer(
   adb,
   new ReadableStream({
@@ -54,7 +86,7 @@ await AdbScrcpyClient.pushServer(
       controller.close();
     },
   }),
-  "/data/local/tmp/scrcpy-server.jar"
+  "/data/local/tmp/scrcpy-server-3.2.jar",
 );
 ```
 
@@ -76,7 +108,7 @@ const response = await fetch(url);
 await AdbScrcpyClient.pushServer(
   adb,
   // The `ReadableStream` type in TypeScript `lib.dom.d.ts` is not compatible with Tango's Web Streams API typings
-  response.body as never as ReadableStream<Uint8Array>
+  response.body as never as ReadableStream<Uint8Array>,
 );
 ```
 
