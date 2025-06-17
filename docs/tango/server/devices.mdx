@@ -12,7 +12,7 @@ It returns an array of `AdbServerClient.Device` objects, which contains the devi
 namespace AdbServerClient {
   interface Device {
     serial: string;
-    authenticating: boolean;
+    state: AdbServerClient.ConnectionState;
     product?: string;
     model?: string;
     device?: string;
@@ -93,13 +93,40 @@ if (devices.length === 0) {
 const device = devices[0];
 ```
 
-### Exclude unauthenticated devices
+### Filter devices by state
 
-The `authenticating` field indicates whether the device is currently authenticating. If you want to exclude these devices, you can use the `Array#filter` method:
+`getDevices` method also accepts an optional `includeStates` parameter, to filter devices by state.
+
+It can be an array of `AdbServerClient.ConnectionState`:
+
+* `"unauthorized"`: the device is connected but not yet authorized (a popup should appear on the device)
+* `"offline"`: the device is connected previously, but now offline (for wireless devices)
+* `"device"`: the device is connected and authorized
+
+The default value is `["unauthorized", "device"]` for backward compatibility. In a future major version, the default value will be changed to `["unauthorized", "offline", "device"]`.
 
 ```ts transpile
-const devices: AdbServerClient.Device[] = await client.getDevices();
+import type { AdbServerClient } from "@yume-chan/adb";
+
+declare const client: AdbServerClient;
+
 // highlight-start
-const authenticatedDevices = devices.filter(device => !device.authenticating);
+const devices: AdbServerClient.Device[] = await client.getDevices([
+  "unauthorized",
+  "offline",
+  "device",
+]);
+// highlight-end
+```
+
+When devices with multiple states are returned, the `state` property can be used to determine which state each device is in.
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+
+declare const device: AdbServerClient.Device;
+
+// highlight-start
+console.log(device.state); // "unauthorized" | "offline" | "device"
 // highlight-end
 ```

@@ -1,147 +1,48 @@
-# Upgrade from 1.1.0
+# Upgrade from 2.1.0
 
 import DiffTable from "../tango/diff-table";
 
-This page lists changes from version 1.1.0 in core packages.
+This page lists changes from version 2.0.0 in core packages.
 
 For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
 
 ## `@yume-chan/adb`
 
-### Subprocess API redesign
+### Server client can filter devices by state
 
-The [subprocess](../api/adb/subprocess/index.mdx) has been completed redesigned.
+`AdbServerClient.prototype.getDevices` and `AdbServerClient.prototype.trackDevices` now accept an optional `includeStates` parameter.
 
-`none` protocol and `shell` protocol are now completely separated, so you can choose `none` protocol for speed and compatibility, or `shell` protocol for features.
+It can be an array of `AdbServerClient.ConnectionState`, i.e., `"unauthorized"` | `"offline"` | `"device"`
 
-`raw` mode and `pty` mode now also have separated types.
+The default value is `["unauthorized", "device"]` for backward compatibility. In a future major version, the default value will be changed to `["unauthorized", "offline", "device"]`.
 
-| Type                         | Protocol | Mode | `stdin` | `input` | `stdout` | `stderr` | `output` | `resize` | `sigint` |
-| ---------------------------- | -------- | ---- | ------- | ------- | -------- | -------- | -------- | -------- | -------- |
-| `AdbNoneProtocolProcess`     | None     | Raw  | ✅      | ⛔      | ⛔       | ⛔       | ✅       | ⛔       | ⛔       |
-| `AdbShellProtocolProcess`    | Shell    | Raw  | ✅      | ⛔      | ✅       | ✅       | ⛔       | ⛔       | ⛔       |
-| `AdbNoneProtocolPtyProcess`  | None     | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ⛔       | ✅       |
-| `AdbShellProtocolPtyProcess` | Shell    | PTY  | ⛔      | ✅      | ⛔       | ⛔       | ✅       | ✅       | ✅       |
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
 
-#### Choose protocol explicitly
+declare const client: AdbServerClient;
 
-```ts showLineNumbers title="1.1.0"
-// Will try shell protocol first and fallback to none protocol
-const process = await adb.subprocess.spawn("ls");
-```
+const devices: AdbServerClient.Device[] = await client.getDevices([
+  "unauthorized",
+  "offline",
+  "device",
+]);
 
-```ts showLineNumbers title="next"
-// Use none protocol if you don't need separated `stdout` and `stderr`
-const process = await adb.subprocess.noneProtocol.spawn("ls");
-
-// Or test if shell protocol is supported by device
-if (adb.subprocess.shellProtocol) {
-  const process = await adb.subprocess.shellProtocol.spawn("ls");
-} else {
-  // Unsupported, not possible to get separated `stdout` and `stderr`
-}
-```
-
-#### None protocol `output` stream contains both `stdout` and `stderr`
-
-```ts showLineNumbers title="1.1.0"
-const process = await adb.subprocess.spawn("ls", {
-  protocols: [AdbSubprocessNoneProtocol],
+const observer = await client.trackDevices({
+  includeStates: ["unauthorized", "offline", "device"],
 });
-// `stdout` field actually contains both `stdout` and `stderr`
-for (const chunk of process.stdout) {
-  console.log(chunk);
-}
 ```
 
-```ts showLineNumbers title="next"
-const process = await adb.subprocess.noneProtocol.spawn("ls");
-// It has been renamed to `output`
-for (const chunk of process.output) {
-  console.log(chunk);
-}
+### Add device state to `AdbServerClient.Device`
+
+To comply with the new API, `AdbServerClient.Device` now has a `state` property.
+
+The old `authenticating` property is deprecated, and will be removed in a future major version. It now only returns `true` when `state` is `"unauthorized"`.
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+
+declare const device: AdbServerClient.Device;
+
+console.log(device.state); // "unauthorized" | "offline" | "device"
+console.log(device.authenticating); // `true` when `device.state === "unauthorized"`
 ```
-
-#### `shell` renamed to `pty`
-
-```ts showLineNumbers title="1.1.0"
-const process = await adb.subprocess.shell();
-// PTY mode only has one output stream
-for (const chunk of process.stdout) {
-  console.log(chunk);
-}
-```
-
-```ts showLineNumbers title="next"
-const process = await adb.subprocess.noneProtocol.pty();
-// It has been renamed to `output`
-for (const chunk of process.output) {
-  console.log(chunk);
-}
-```
-
-#### `spawnAndWait` enhancements
-
-```ts showLineNumbers title="1.1.0"
-const { exitCode, stdout, stderr } = await adb.subprocess.spawnAndWait("ls");
-```
-
-| Field      | None protocol                | Shell protocol   |
-| ---------- | ---------------------------- | ---------------- |
-| `exitCode` | Always 0                     | Actual exit code |
-| `stdout`   | Mix of `stdout` and `stderr` | `stdout`         |
-| `stderr`   | Always an empty string       | `stderr`         |
-
-```ts showLineNumbers title="next"
-const binaryOutput: Uint8Array =
-  await adb.subprocess.noneProtocol.spawnWait("ls");
-const textOutput: string =
-  await adb.subprocess.noneProtocol.spawnWaitText("ls");
-
-const {
-  exitCode /* : number */,
-  stdout /* : Uint8Array */,
-  stderr /* : Uint8Array */,
-} = await adb.subprocess.shellProtocol.spawnWait("ls");
-const {
-  exitCode /* : number */,
-  stdout /* : string */,
-  stderr /* : string */,
-} = await adb.subprocess.shellProtocol.spawnWaitText("ls");
-```
-
-### Creating `AdbDaemonWebUsbDeviceObserver` is now asynchronous
-
-[`AdbDaemonWebUsbDeviceObserver`](./daemon/usb/watch-devices.mdx) needs to retrieve initial device list and set the `current` field, so the creating process needs to be asynchronous.
-
-- `AdbDaemonWebUsbDeviceManager#trackDevices` has became asynchronous.
-
-  ```ts showLineNumbers title="1.1.0"
-  const observer = manager.trackDevices();
-  console.log(observer.current); // []
-  ```
-
-  ```ts showLineNumbers title="next"
-  const observer = await manager.trackDevices();
-  console.log(observer.current); // [device1, ...]
-  ```
-
-- `AdbDaemonWebUsbDeviceObserver`'s constructor now require an `initial` parameter. Generally, it should not be used directly.
-- `AdbDaemonWebUsbDeviceObserver.create` static method has been added to asynchronously create an `AdbDaemonWebUsbDeviceObserver`
-
-  ```ts showLineNumbers title="1.1.0"
-  const observer = new AdbDaemonWebUsbDeviceObserver(navigator.usb);
-  console.log(observer.current); // []
-  ```
-
-  ```ts showLineNumbers title="next"
-  const observer = await AdbDaemonWebUsbDeviceObserver.create(navigator.usb);
-  console.log(observer.current); // [device1, ...]
-  ```
-
-### `DeviceObserver` behavior normalization
-
-`DeviceObserver` is the common interface behind [daemon transport WebUSB connection device observer `AdbDaemonWebUsbDeviceObserver`](./daemon/usb/watch-devices.mdx) and [server transport device observer `AdbServerDeviceObserver`](./server/watch.mdx).
-
-- The `current` field is now an immutable array. It will be guaranteed to contain current device list when the observer is created. Every time the list changes, a new array will be created and returned.
-- `onListChange` event is now sticky, meaning newly attached event listeners will be invoked immediately with the latest value.
