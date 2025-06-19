@@ -42,7 +42,7 @@ It only handles data. It's up to the user to send and receive those data with Sc
 ```mermaid
 flowchart LR
     subgraph PC
-        A[@yume-chan/scrcpy] <-->|Parse/serialize data| B[Your Code]
+        A["@yume-chan/scrcpy"] <-->|Parse/serialize data| B[Your Code]
     end
     subgraph Device
         B <-->|Your own transport| C[Scrcpy server]
@@ -72,8 +72,8 @@ It uses [`@yume-chan/adb`](../tango/index.mdx) package to control the device, an
 ```mermaid
 flowchart LR
     subgraph PC
-        A[@yume-chan/scrcpy] <--> B[@yume-chan/adb-scrcpy]
-        B <--> C[@yume-chan/adb]
+        A["@yume-chan/scrcpy"] <--> B["@yume-chan/adb-scrcpy"]
+        B <--> C["@yume-chan/adb"]
     end
     subgraph Device
         C <--> D[ADB daemon]
