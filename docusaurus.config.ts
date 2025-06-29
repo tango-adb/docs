@@ -295,6 +295,16 @@ const config: Config = {
                     dropdownItemsAfter: [],
                     dropdownActiveClassDisabled: true,
                 },
+                {
+                    label: "Tango Web App",
+                    href: "https://tangoapp.dev",
+                    position: "right",
+                },
+                {
+                    href: "https://opencollective.com/ya-webadb",
+                    label: "❤ Sponsor",
+                    position: "right",
+                },
             ],
         },
         footer: {
@@ -308,7 +318,7 @@ const config: Config = {
                             href: "https://tangoapp.dev",
                         },
                         {
-                            label: "OpenCollective",
+                            label: "Sponsor on OpenCollective",
                             href: "https://opencollective.com/ya-webadb",
                         },
                         {
