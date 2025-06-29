@@ -295,11 +295,6 @@ const config: Config = {
                     dropdownItemsAfter: [],
                     dropdownActiveClassDisabled: true,
                 },
-                {
-                    href: "https://github.com/yume-chan/ya-webadb",
-                    label: "Source code",
-                    position: "right",
-                },
             ],
         },
         footer: {
@@ -316,6 +311,14 @@ const config: Config = {
                             label: "OpenCollective",
                             href: "https://opencollective.com/ya-webadb",
                         },
+                        {
+                            label: "Tango's GitHub Repository",
+                            href: "https://github.com/yume-chan/ya-webadb"
+                        },
+                        {
+                            label: "Doc Website GitHub Repository",
+                            href: "https://github.com/tango-adb/docs"
+                        }
                     ],
                 },
                 {
@@ -326,12 +329,16 @@ const config: Config = {
                             href: "https://github.com/yume-chan/ya-webadb",
                         },
                         {
-                            label: "Reddit",
-                            href: "https://www.reddit.com/r/tango_adb",
+                            label: "Discord",
+                            href: "https://tangoadb.dev/discord",
                         },
                         {
-                            label: "Discord",
-                            href: "https://discord.gg/26k3ttC2PN",
+                            label: "WeChat",
+                            href: "https://tangoadb.dev/wechat",
+                        },
+                        {
+                            label: "Reddit",
+                            href: "https://www.reddit.com/r/tango_adb",
                         },
                     ],
                 },
