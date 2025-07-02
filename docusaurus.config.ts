@@ -302,7 +302,7 @@ const config: Config = {
                 },
                 {
                     href: "https://opencollective.com/ya-webadb",
-                    label: "❤ Sponsor",
+                    label: "❤ Sponsor us",
                     position: "right",
                 },
             ],
@@ -318,7 +318,7 @@ const config: Config = {
                             href: "https://tangoapp.dev",
                         },
                         {
-                            label: "Sponsor on OpenCollective",
+                            label: "Sponsor us on OpenCollective",
                             href: "https://opencollective.com/ya-webadb",
                         },
                         {
