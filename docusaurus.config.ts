@@ -322,11 +322,11 @@ const config: Config = {
                             href: "https://opencollective.com/ya-webadb",
                         },
                         {
-                            label: "Tango's GitHub Repository",
+                            label: "Source code of Tango ADB library",
                             href: "https://github.com/yume-chan/ya-webadb"
                         },
                         {
-                            label: "Doc Website GitHub Repository",
+                            label: "Source code of this website",
                             href: "https://github.com/tango-adb/docs"
                         }
                     ],
