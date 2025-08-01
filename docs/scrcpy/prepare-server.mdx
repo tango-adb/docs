@@ -7,7 +7,17 @@ import TabItem from "@theme/TabItem";
 
 # Prepare server
 
-Scrcpy server is a Java application that runs on Android devices. Tango is compatible with many versions of Scrcpy server, but it doesn't include the server binary in the package. You need to download or build the server binary yourself.
+Scrcpy server is a Java application that runs on Android devices.
+
+Tango's Scrcpy client requires Scrcpy server to run, but it doesn't bundle the server binary in the package. You need to include the server binary in your project.
+
+Tango is compatible with many versions of Scrcpy server, see [versions](./versions.mdx) page for details.
+
+To get a server binary, you can either:
+
+* [Download from official releases](#download-from-official-releases)
+* [Download using `@yume-chan/fetch-scrcpy-server` package](#use-yume-chanfetch-scrcpy-server)
+* [Build from source](#build-from-source)
 
 The server binary is subject to [Apache License 2.0](https://github.com/Genymobile/scrcpy/blob/master/LICENSE).
 
@@ -176,7 +186,7 @@ After installing the package, you can add it to your `package.json`, so every ti
 }
 ```
 
-## Build the server yourself
+## Build from source
 
 You can also build the server binary yourself. This is useful if you want to modify the server, or if you want to use the latest version from Scrcpy Git repository.
 
