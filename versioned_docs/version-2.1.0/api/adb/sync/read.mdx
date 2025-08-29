@@ -1,0 +1,44 @@
+---
+sidebar_position: 5
+---
+
+# read
+
+Read file content on the device filesystem.
+
+```ts
+declare class AdbSync {
+  read(filename: string): ReadableStream<Uint8Array>;
+}
+```
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
+
+## Example
+
+```ts transpile
+const content = sync.read("/sdcard/Download/hello.txt");
+await content.pipeTo(
+  new WritableStream({
+    write(chunk) {
+      console.log(chunk);
+    },
+  }),
+);
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb pull /sdcard/Download/hello.txt
+```
+
+:::

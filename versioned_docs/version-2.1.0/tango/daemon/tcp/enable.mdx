@@ -1,0 +1,50 @@
+---
+sidebar_position: 1
+---
+
+# Enable ADB over Wi-Fi
+
+ADB over Wi-Fi allows you to connect to your device wirelessly. This is useful when you want to connect to your device without using a USB cable, or if you want to connect multiple devices to the same computer.
+
+## Android 11 and above
+
+Android 11 added a Wireless Debugging feature in Developer Options, which allows you connect to the device wirelessly.
+
+However, Wireless Debugging is different from ADB over Wi-Fi, and not supported by Tango.
+
+Technical details:
+
+* Wireless Debugging uses mDNS to automatically discover devices in the same network.
+  * It's not implemented on Windows
+  * Some Linux distributions compiles ADB themselves, and doesn't include mDNS support.
+* Wireless Debugging uses TLS to validate the client and encrypt the connection.
+* Wireless Debugging adds trusted client certificates using the new ADB pairing feature.
+
+## Rooted devices
+
+On rooted devices, ADB over Wi-Fi can be enabled by running the following command on the device:
+
+```sh
+su
+setprop service.adb.tcp.port 5555
+stop adbd
+start adbd
+```
+
+`5555` is the port ADB daemon will listen at, and can be freely changed.
+
+## Other devices
+
+On non-rooted devices with Android 10 and below, enabling ADB over Wi-Fi requires first connecting the device using a USB cable.
+
+- To enable ADB over Wi-Fi using Google ADB, run the following command in a terminal:
+
+  ```sh
+  adb tcpip 5555
+  ```
+
+  `5555` is the port ADB daemon will listen at, and can be freely changed.
+
+- To enable ADB over Wi-Fi using Tango, use the [`tcpip` command](/api/adb/tcpip.mdx).
+
+When device is restarted, ADB over Wi-Fi will be disabled. To re-enable it, connect the device using a USB cable and follow the steps above again.

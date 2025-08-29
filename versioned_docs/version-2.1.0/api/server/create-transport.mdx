@@ -1,0 +1,47 @@
+---
+sidebar_position: 9
+---
+
+# createTransport
+
+```ts showLineNumbers
+declare class AdbServerTransport implements AdbTransport {}
+
+declare class AdbServerClient {
+  createTransport(
+    device: AdbServerClient.DeviceSelector
+  ): Promise<AdbServerTransport>;
+}
+```
+
+Creates an `AdbTransport` object for the device. It will issue multiple server commands internally, to fetch the required information about the specified device.
+
+:::note
+
+`AdbTransport` is a low-level API. If you just want to call ADB APIs, use [`createAdb`](./create-adb.mdx) instead.
+
+:::
+
+## Example
+
+```ts transpile
+import type { AdbServerClient, AdbServerTransport } from "@yume-chan/adb";
+
+declare const client: AdbServerClient;
+
+const transport: AdbServerTransport = await client.createTransport({
+  transportId: 123n,
+});
+```
+
+The returned transport object can be used to construct an `Adb` instance:
+
+```ts transpile
+import type { Adb, AdbServerTransport } from "@yume-chan/adb";
+
+declare const transport: AdbServerTransport;
+
+const adb: Adb = new Adb(transport);
+```
+
+Or it could be used to implement a [custom transport](../../tango/custom-transport/server-client/transport.mdx).

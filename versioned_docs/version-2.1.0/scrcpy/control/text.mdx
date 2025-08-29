@@ -1,0 +1,22 @@
+---
+sidebar_position: 2
+---
+
+# Text input
+
+`injectText` is a shorthand for injecting multiple keyboard events. The server converts the text to a sequence of key events and injects them into the device.
+
+Because it's essentially a sequence of key events, only printable characters are supported. To inject Unicode text, the only method is using the device clipboard.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.injectText("Hello, world!");
+
+// Using `ScrcpyControlMessageWriter`
+await writer.injectText("Hello, world!");
+
+// Using `AdbScrcpyClient`
+await client.controller!.injectText("Hello, world!");
+```

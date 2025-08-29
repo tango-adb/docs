@@ -1,0 +1,40 @@
+---
+sidebar_position: 2
+---
+
+# videoCodec
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `"h264" | "h265" | "av1"`
+* **Default value**: `"h264"`
+
+Specifies the video codec to use by the server.
+
+The specified `videoCodec` must be supported by the device (has an encoder for it), otherwise an error will be thrown in the startup process.
+
+It's also recommended to use a hardware-based encoder for best experience. From Scrcpy 3.0, the output of `--list-encoders` (or `AdbScrcpyClient.getEncoders` method) will include the hardware type of each encoder.
+
+## H.264
+
+H.264 is the default value, and the only supported video codec in earlier versions of Scrcpy.
+
+Most devices since Android 5 has hardware-based H.264 encoders.
+
+## H.265 (HEVC)
+
+H.265 can provide better video quality at the same bitrate compared to H.264.
+
+H.265 encoder is not required by Google, but many devices since Android 7 have hardware-based H.265 encoders.
+
+## AV1
+
+AV1 can provide even better video quality at the same bitrate compared to H.265.
+
+AV1 encoder is mandatory since Android 14, however, the built-in, software-based encoder by Google is too slow to be used in production.
+
+Support for hardware-based AV1 encoders can be found at https://en.wikipedia.org/wiki/AV1#Hardware.

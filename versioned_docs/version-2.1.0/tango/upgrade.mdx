@@ -1,0 +1,48 @@
+# Upgrade from 2.0.0
+
+import DiffTable from "../tango/diff-table";
+
+This page lists changes from version 2.0.0 in core packages.
+
+For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
+
+## `@yume-chan/adb`
+
+### Server client can filter devices by state
+
+`AdbServerClient.prototype.getDevices` and `AdbServerClient.prototype.trackDevices` now accept an optional `includeStates` parameter.
+
+It can be an array of `AdbServerClient.ConnectionState`, i.e., `"unauthorized"` | `"offline"` | `"device"`
+
+The default value is `["unauthorized", "device"]` for backward compatibility. In a future major version, the default value will be changed to `["unauthorized", "offline", "device"]`.
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+
+declare const client: AdbServerClient;
+
+const devices: AdbServerClient.Device[] = await client.getDevices([
+  "unauthorized",
+  "offline",
+  "device",
+]);
+
+const observer = await client.trackDevices({
+  includeStates: ["unauthorized", "offline", "device"],
+});
+```
+
+### Add device state to `AdbServerClient.Device`
+
+To comply with the new API, `AdbServerClient.Device` now has a `state` property.
+
+The old `authenticating` property is deprecated, and will be removed in a future major version. It now only returns `true` when `state` is `"unauthorized"`.
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+
+declare const device: AdbServerClient.Device;
+
+console.log(device.state); // "unauthorized" | "offline" | "device"
+console.log(device.authenticating); // `true` when `device.state === "unauthorized"`
+```

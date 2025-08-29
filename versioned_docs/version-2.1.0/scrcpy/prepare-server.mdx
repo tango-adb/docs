@@ -1,0 +1,214 @@
+---
+sidebar_position: 3
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Prepare server
+
+Scrcpy server is a Java application that runs on Android devices.
+
+Tango's Scrcpy client requires Scrcpy server to run, but it doesn't bundle the server binary in the package. You need to include the server binary in your project.
+
+Tango is compatible with many versions of Scrcpy server, see [versions](./versions.mdx) page for details.
+
+To get a server binary, you can either:
+
+* [Download from official releases](#download-from-official-releases)
+* [Download using `@yume-chan/fetch-scrcpy-server` package](#use-yume-chanfetch-scrcpy-server)
+* [Build from source](#build-from-source)
+
+The server binary is subject to [Apache License 2.0](https://github.com/Genymobile/scrcpy/blob/master/LICENSE).
+
+## Download from official releases
+
+You can download the official server binary from [Scrcpy GitHub releases](https://github.com/Genymobile/scrcpy/releases) and copy into your project.
+
+### Import the server binary
+
+Depends on your runtime, bundler and framework, you may need to consume `server.bin` differently.
+
+For full-stack JavaScript frameworks (Next.js, Nuxt, Solid Start, etc.), usually there are two ways to include a binary file:
+
+1. Put it in `public` folder, and reference it using a fixed URL (e.g. `https://your-domain.com/server.bin`)
+2. Import it in a JavaScript source file and let the bundler handle it
+
+We recommend the second approach, because it's more flexible, less error-prone, and has better cache control.
+
+Assume you have saved the server binary to `src/server.bin`:
+
+<Tabs className="runtime-tabs" groupId="bundler">
+    <TabItem label="Webpack 5" value="webpack-5">
+
+```ts transpile title="src/index.ts"
+const url = new URL("./server.bin", import.meta.url);
+const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
+```
+
+    </TabItem>
+    <TabItem label="Vite" value="vite">
+
+```ts transpile title="src/index.ts"
+const url = new URL("./server.bin", import.meta.url);
+const server: ArrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
+```
+
+    </TabItem>
+    <TabItem label="Node.js" value="node">
+
+```ts transpile title="src/index.ts"
+import fs from "fs/promises";
+
+const url = new URL("./server.bin", import.meta.url);
+const server: Buffer = await fs.readFile(url);
+```
+
+    </TabItem>
+
+</Tabs>
+
+Note that bundlers usually handle imports based on the file extension. `.bin` extension usually triggers asset handling by default, if you saved the server binary with another extension, you may need to check your bundler's documentation for how to configure it.
+
+## Use `@yume-chan/fetch-scrcpy-server`
+
+`@yume-chan/fetch-scrcpy-server` package provides a script to download the server binary and save the version string automatically.
+
+```sh npm2yarn
+npm i -D @yume-chan/fetch-scrcpy-server
+```
+
+Usage:
+
+```sh
+npx fetch-scrcpy-server <version>
+```
+
+:::info
+
+Because the package name (`@yume-chan/fetch-scrcpy-server`) and script name (`fetch-scrcpy-server`) are different, `npx` will not work unless the package is installed.
+
+:::
+
+For example:
+
+```sh
+npx fetch-scrcpy-server 2.1
+```
+
+The server binary is written to `server.bin` and the version is written to `version.js` in this package's root directory (in your `node_modules`).
+
+:::info[Note for Scrcpy 2.2]
+
+Usually the version number is `X.Y.Z`, but for Scrcpy 2.2, due to a packaging error (from Scrcpy side), the server expects the version number to be `v2.2` instead of just `2.2`.
+
+`npx fetch-scrcpy-server 2.2` writes the version as `2.2`, causing the server to fail to start. A workaround is added to the package that, by specifying the version as `v2.2`, the script will write `v2.2` to the version file.
+
+```sh
+npx fetch-scrcpy-server v2.2
+```
+
+:::
+
+Importing this package will give you two variables:
+
+- `BIN`: A URL to the server binary. It can be used in `fetch` or `fs.readFile` similar to the manual approach.
+- `VERSION`: A string containing the downloaded server version. It's required when starting the server.
+
+<Tabs className="runtime-tabs" groupId="bundler">
+    <TabItem label="Webpack 5" value="webpack-5">
+
+```ts transpile
+import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
+
+console.log(VERSION); // 2.1
+const server: ArrayBuffer = await fetch(BIN).then((res) => res.arrayBuffer());
+```
+
+    </TabItem>
+    <TabItem label="Vite" value="vite">
+
+:::warning
+
+Vite's dependency "optimizer" will break this package: https://github.com/vitejs/vite/issues/8427
+
+Add this to your `vite.config.js`/`vite.config.ts`:
+
+```js
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  optimizeDeps: {
+    exclude: ["@yume-chan/fetch-scrcpy-server"],
+  },
+});
+```
+
+:::
+
+```ts transpile
+import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
+
+console.log(VERSION); // 2.1
+const server: ArrayBuffer = await fetch(BIN).then((res) => res.arrayBuffer());
+```
+
+    </TabItem>
+    <TabItem label="Node.js" value="node">
+
+```ts transpile
+import fs from "fs/promises";
+import { BIN, VERSION } from "@yume-chan/fetch-scrcpy-server";
+
+console.log(VERSION); // 2.1
+const server: Buffer = await fs.readFile(BIN);
+```
+
+    </TabItem>
+
+</Tabs>
+
+### Run the script automatically
+
+After installing the package, you can add it to your `package.json`, so every time you run `npm install`, the script will be executed automatically.
+
+```js title="package.json"
+{
+  "name": "...",
+  "devDependencies": {
+    "@yume-chan/fetch-scrcpy-server": "^0.0.24"
+  },
+  // highlight-start
+  "scripts": {
+    "postinstall": "fetch-scrcpy-server 2.1"
+  }
+  // highlight-end
+}
+```
+
+## Build from source
+
+You can also build the server binary yourself. This is useful if you want to modify the server, or if you want to use the latest version from Scrcpy Git repository.
+
+The easiest way is to use [Android Studio](https://developer.android.com/studio).
+
+1. Clone Scrcpy
+
+   ```sh title="Shell"
+   $ git clone https://github.com/Genymobile/scrcpy.git
+   ```
+
+2. Open the root folder in Android Studio
+3. (Optional) Change `Build Variant` to `release` from `Build` -> `Select Build Variant` menu item
+5. Select `Build` -> `Make Project` menu item
+
+You may be prompted to accept the license agreement for installing extra Android SDK components.
+
+
+After successful building, The server binary will be written to `server/build/outputs/apk/debug/server-debug.apk` (`debug` variant) or `server/build/outputs/apk/release/server-release-unsigned.apk` (`release` variant). You can copy it into your project, the exact file name doesn't matter, as long as you reference it by the correct name following [import the server binary](#import-the-server-binary).
+
+:::note
+
+Check [Scrcpy documentation](https://github.com/Genymobile/scrcpy/blob/master/doc/build.md) for more details on building both the client and server.
+
+:::

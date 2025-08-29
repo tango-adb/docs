@@ -1,0 +1,189 @@
+---
+sidebar_position: 3
+---
+
+# Touch event
+
+Inject a touch event into the device.
+
+Both mouse and touch events are supported. Multiple fingers are also supported.
+
+## Options
+
+```ts
+const ScrcpyPointerId = {
+  Mouse: -1n,
+  Finger: -2n,
+  VirtualMouse: -3n,
+  VirtualFinger: -4n,
+} as const;
+
+interface ScrcpyInjectTouchControlMessage {
+  action: AndroidMotionEventAction;
+  pointerId: bigint;
+  pointerX: number;
+  pointerY: number;
+  videoWidth: number;
+  videoHeight: number;
+  pressure: number;
+  actionButton: number;
+  buttons: number;
+}
+```
+
+- `action`: The action of the event.
+- `pointerId`: The ID of the pointer. It can be one of the predefined values in `ScrcpyPointerId`, or any non-negative bigints for each individual finger.
+- `pointerX`: The X coordinate of the event.
+- `pointerY`: The Y coordinate of the event.
+- `actionButton`: The button that changed. It's a value of `AndroidMotionEventButton` enum.
+- `buttons`: The state of all the buttons. It's a bit-or combination of `AndroidMotionEventButton` values.
+
+### `videoWidth` and `videoHeight`
+
+The size of latest video frame.
+
+The server will validate these values, and ignore the command if they don't match. This is to prevent invalid `pointerX` and `pointerY` values from being sent to the device, for example when device orientation is changed.
+
+When using `AdbScrcpyClient`, it will parse and save the size (if video stream is enabled):
+
+```ts transpile
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+
+declare const client: AdbScrcpyClient;
+
+console.log(client.videoWidth, client.videoHeight);
+```
+
+When using one of the [built-in video decoders](../video/index.mdx#decode-and-render-in-browsers), the [`sizeChanged` event](../video/tiny-h264.mdx#handle-size-changes) can be used to get the latest `videoWidth` and `videoHeight` values.
+
+```ts transpile
+import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+let videoWidth = 0;
+let videoHeight = 0;
+
+declare const decoder: ScrcpyVideoDecoder;
+
+decoder.sizeChanged(({ width, height }) => {
+  videoWidth = width;
+  videoHeight = height;
+});
+```
+
+## Usage
+
+```ts transpile
+import {
+  AndroidMotionEventAction,
+  AndroidMotionEventButton,
+  ScrcpyPointerId,
+} from "@yume-chan/scrcpy";
+
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.injectTouch({
+  action: AndroidMotionEventAction.Down,
+  pointerId: ScrcpyPointerId.Finger,
+  pointerX: 100,
+  pointerY: 200,
+  videoWidth: 1920,
+  videoHeight: 1080,
+  pressure: 0.5,
+  actionButton: AndroidMotionEventButton.Primary,
+  buttons: AndroidMotionEventButton.Primary,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.injectTouch({
+  action: AndroidMotionEventAction.Down,
+  pointerId: ScrcpyPointerId.Finger,
+  pointerX: 100,
+  pointerY: 200,
+  videoWidth: 1920,
+  videoHeight: 1080,
+  pressure: 0.5,
+  actionButton: AndroidMotionEventButton.Primary,
+  buttons: AndroidMotionEventButton.Primary,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.injectTouch({
+  action: AndroidMotionEventAction.Down,
+  pointerId: ScrcpyPointerId.Finger,
+  pointerX: 100,
+  pointerY: 200,
+  videoWidth: 1920,
+  videoHeight: 1080,
+  pressure: 0.5,
+  actionButton: AndroidMotionEventButton.Primary,
+  buttons: AndroidMotionEventButton.Primary,
+});
+```
+
+### DOM Events Example
+
+The `pointerdown`, `pointermove` and `pointerup` events can be mapped to Scrcpy touch events.
+
+```ts transpile
+import type { ScrcpyControlMessageSerializer } from "@yume-chan/scrcpy";
+import { AndroidMotionEventAction, clamp } from "@yume-chan/scrcpy";
+
+declare const serializer: ScrcpyControlMessageSerializer; // ScrcpyControlMessageWriter` and `AdbScrcpyClient` can also be used
+declare let videoWidth: number;
+declare let videoHeight: number;
+
+const PointerEventButtonToAndroidButton = [
+  AndroidMotionEventButton.Primary,
+  AndroidMotionEventButton.Tertiary,
+  AndroidMotionEventButton.Secondary,
+  AndroidMotionEventButton.Back,
+  AndroidMotionEventButton.Forward,
+];
+
+function handlePointerEvent(event: PointerEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const target = e.currentTarget as HTMLElement;
+  target.setPointerCapture(e.pointerId);
+
+  const { type, clientX, clientY, button, buttons } = e;
+
+  let action: AndroidMotionEventAction;
+  switch (type) {
+    case "pointerdown":
+      action = AndroidMotionEventAction.Down;
+      break;
+    case "pointermove":
+      if (buttons === 0) {
+        action = AndroidMotionEventAction.HoverMove;
+      } else {
+        action = AndroidMotionEventAction.Move;
+      }
+      break;
+    case "pointerup":
+      action = AndroidMotionEventAction.Up;
+      break;
+    default:
+      throw new Error(`Unsupported event type: ${type}`);
+  }
+
+  const rect = target.getBoundingClientRect();
+  const percentageX = clamp((clientX - rect.x) / rect.width, 0, 1);
+  const percentageY = clamp((clientY - rect.y) / rect.height, 0, 1);
+
+  const pointerX = percentageX * videoWidth;
+  const pointerY = percentageY * videoHeight;
+
+  return serializer.injectTouch({
+    action,
+    pointerId: BigInt(e.pointerId),
+    pointerX,
+    pointerY,
+    videoWidth,
+    videoHeight,
+    pressure: buttons === 0 ? 0 : 1,
+    actionButton: PointerEventButtonToAndroidButton[button],
+    buttons,
+  });
+}
+```

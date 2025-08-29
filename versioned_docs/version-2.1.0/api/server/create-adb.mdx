@@ -1,0 +1,31 @@
+---
+sidebar_position: 10
+---
+
+# createAdb
+
+```ts showLineNumbers
+import { Adb } from "@yume-chan/adb";
+
+declare class AdbServerClient {
+  createAdb(device: AdbServerClient.DeviceSelector): Promise<Adb>;
+}
+```
+
+Creates an `Adb` object for the device.
+
+It's a shortcut for [`client.createTransport(device)`](./create-transport.mdx) and `new Adb(transport)`.
+
+`AdbTransport` is a low-level API, `Adb` is a higher-level API.
+
+## Example
+
+```ts transpile
+import type { AdbServerClient, Adb } from "@yume-chan/adb";
+
+declare const client: AdbServerClient;
+
+const adb: Adb = await client.createAdb({
+  transportId: 123n,
+});
+```

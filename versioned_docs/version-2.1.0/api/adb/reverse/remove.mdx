@@ -1,0 +1,55 @@
+---
+sidebar_position: 3
+---
+
+# remove
+
+## Remove one port forwarding
+
+```ts
+declare class AdbReverseCommand {
+  remove(deviceAddress: string): Promise<void>;
+}
+```
+
+Remove a port forwarding from the device using the socket address on device.
+
+### Example
+
+```ts transpile
+await adb.reverse.remove("tcp:1234");
+```
+
+:::info[Equivalent ADB command]
+
+```sh
+adb reverse --remove tcp:1234
+```
+
+:::
+
+## Remove all port forwardings
+
+```ts
+declare class AdbReverseCommand {
+  removeAll(): Promise<void>;
+}
+```
+
+Remove all port forwardings from the device.
+
+Be careful when using this method, as it will remove all port forwardings, including those added by other apps.
+
+### Example
+
+```ts transpile
+await adb.reverse.removeAll();
+```
+
+:::info[Equivalent ADB command]
+
+```sh
+adb reverse --remove-all
+```
+
+:::

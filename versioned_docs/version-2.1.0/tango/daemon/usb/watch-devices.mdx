@@ -1,0 +1,154 @@
+---
+sidebar_position: 6
+---
+
+# Watch devices
+
+The `AdbDaemonWebUsbDeviceObserver` class in `@yume-chan/adb-daemon-webusb` package wraps WebUSB API to monitor device changes.
+
+## Declaration
+
+```ts
+import { Event } from "@yume-chan/event";
+import { DeviceObserver } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+export declare class AdbDaemonWebUsbDeviceObserver
+  implements DeviceObserver<AdbDaemonWebUsbDevice>
+{
+  onDeviceAdd: Event<readonly AdbDaemonWebUsbDevice[], unknown>;
+  onDeviceRemove: Event<readonly AdbDaemonWebUsbDevice[], unknown>;
+  onListChange: Event<readonly AdbDaemonWebUsbDevice[], unknown>;
+
+  current: readonly AdbDaemonWebUsbDevice[];
+
+  stop(): void;
+}
+```
+
+## Create observer
+
+There are two ways to create an `AdbDaemonWebUsbDeviceObserver`.
+
+### From `AdbDaemonWebUsbDeviceManager`
+
+[`AdbDaemonWebUsbDeviceManager`](./device-manager.mdx)'s `trackDevices` method creates an `AdbDaemonWebUsbDeviceObserver` using its `USB` handle and filters:
+
+```ts transpile
+import {
+  AdbDaemonWebUsbDeviceManager,
+  AdbDaemonWebUsbDeviceObserver,
+} from "@yume-chan/adb-daemon-webusb";
+
+declare const Manager: AdbDaemonWebUsbDeviceManager;
+
+// highlight-start
+const observer: AdbDaemonWebUsbDeviceObserver = await Manager.trackDevices();
+// highlight-end
+```
+
+### Standalone usage
+
+`AdbDaemonWebUsbDeviceObserver.create` method can also be used to create an `AdbDaemonWebUsbDeviceObserver` directly:
+
+```ts showLineNumbers
+import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
+
+export declare class AdbDaemonWebUsbDeviceObserver {
+  static create(
+    usb: USB,
+    options?: AdbDaemonWebUsbDeviceManager.RequestDeviceOptions,
+  ): Promise<AdbDaemonWebUsbDeviceObserver>;
+
+  // ...
+}
+```
+
+```ts transpile
+import { AdbDaemonWebUsbDeviceObserver } from "@yume-chan/adb-daemon-webusb";
+
+// highlight-start
+const observer = await AdbDaemonWebUsbDeviceObserver.create(navigator.usb);
+// highlight-end
+```
+
+Similar to [`AdbDaemonWebUsbDeviceManager#requestDevice`](./request-device.mdx) and [`AdbDaemonWebUsbDeviceManager#getDevices`](./get-devices.mdx), it accepts an optional `options` parameter to filter the list.
+
+For example, to only receive events for a specific manufacturer and model:
+
+```ts transpile
+import { AdbDaemonWebUsbDeviceObserver } from "@yume-chan/adb-daemon-webusb";
+
+const observer = new AdbDaemonWebUsbDeviceObserver(navigator.usb, {
+  filters: [
+    {
+      // highlight-start
+      vendorId: 0x18d1,
+      productId: 0x4ee2,
+      // highlight-end
+    },
+  ],
+});
+```
+
+When `options` is omitted, it defaults to only include devices that match the [default ADB interface](./device-filter.mdx#filters-in-tango).
+
+## `current`
+
+`current` is an immutable array containing all currently connected devices. It will be populated upon creation. When the list changes, a new array will be created and returned from `current`.
+
+For added devices, a new `AdbDaemonWebUsbDevice` instance will be created for each of them.
+
+```ts transpile
+for (const device of observer.current) {
+  console.log(device.serial);
+}
+```
+
+## `onListChange`
+
+When device list changes, the `onListChange` event will also fire with the new array.
+
+`onListChange` is a sticky event, meaning newly attached event listeners will be invoked immediately with latest value.
+
+This means, if you don't care about individual add or remove events, only listening to `onListChange` event is enough, reading `current` or calling `AdbDaemonWebUsbDeviceManager#getDevices` is unnecessary.
+
+```ts transpile
+observer.onListChange((devices) => {
+  console.log(devices === observer.current); // true
+});
+```
+
+## `onDeviceAdd` and `onDeviceRemove`
+
+When a device is added or connected, the `onDeviceAdd` event will fire with the list of new devices. It automatically creates `AdbDaemonWebUsbDevice` instances for them.
+
+When a device is removed or disconnected, the `onDeviceRemove` event will fire with the list of removed devices. Calling `AdbDaemonWebUsbDevice#connect` method on disconnected devices will throw an error.
+
+```ts transpile
+observer.onDeviceAdd((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
+
+observer.onDeviceRemove((devices) => {
+  for (const device of devices) {
+    console.log(device.serial);
+  }
+});
+```
+
+To remove an event listener, save and call the return value:
+
+```ts transpile
+const removeListener = observer.onDeviceAdd((devices) => {
+  // ...
+});
+
+removeListener();
+```
+
+## Stop the observer
+
+The `stop` method removes all the event listeners and releases all the resources. The `AdbDaemonWebUsbDeviceObserver` instance is no longer usable after calling `stop`.

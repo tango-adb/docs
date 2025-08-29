@@ -1,0 +1,27 @@
+# reverse
+
+{/*
+cspell: ignore localabstract
+*/}
+
+Manage reverse port forwarding.
+
+Reverse port forwarding (reverse tunnel) allows you to listen on a socket address on the device. When an app on Android connects to that address, the connection can be handled by your program on the host.
+
+## Errors
+
+```ts
+declare class AdbReverseError extends Error {}
+
+declare class AdbReverseNotSupportedError extends AdbReverseError {}
+```
+
+ADB daemon on Android 8 and below had a bug that prevented reverse port forwarding from working when ADB is connected over Wi-Fi. When this happens, an `AdbReverseNotSupportedError` will be thrown.
+
+ADB daemon may also return other errors, a general `AdbReverseError` will be thrown in this case. The `message` field contains a human-readable error message from ADB Daemon.
+
+## Commands
+
+* [`add` / `addExternal`](./add.mdx): Add a reverse port forwarding.
+* [`list`](./list.mdx): List all reverse port forwardings.
+* [`remove` / `removeAll`](./remove.mdx): Remove reverse port forwardings.

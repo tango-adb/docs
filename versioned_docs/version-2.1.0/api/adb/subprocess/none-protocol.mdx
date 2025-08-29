@@ -1,0 +1,242 @@
+---
+sidebar_position: 1
+---
+
+# None protocol
+
+```ts showLineNumbers
+export declare class AdbNoneProtocolSubprocessService {
+  spawn(
+    command: string | string[],
+    signal?: AbortSignal,
+  ): Promise<AdbNoneProtocolProcess>;
+  spawnWait(command: string | string[]): Promise<Uint8Array>;
+  spawnWaitText(command: string | string[]): Promise<string>;
+
+  pty(command?: string | string[]): Promise<AdbNoneProtocolPtyProcess>;
+}
+```
+
+An instance of `AdbNoneProtocolSubprocessService` is available at `adb.subprocess.noneProtocol`.
+
+## `spawn`
+
+Start a process in raw mode.
+
+```ts showLineNumbers
+import type { MaybePromiseLike } from "@yume-chan/async";
+import type {
+  MaybeConsumable,
+  ReadableStream,
+  WritableStream,
+} from "@yume-chan/stream-extra";
+
+export interface AdbNoneProtocolProcess {
+  get stdin(): WritableStream<MaybeConsumable<Uint8Array>>;
+  get output(): ReadableStream<Uint8Array>;
+  get exited(): Promise<void>;
+
+  kill(): MaybePromiseLike<void>;
+}
+
+export declare class AdbNoneProtocolSubprocessService {
+  spawn(
+    command: string | string[],
+    signal?: AbortSignal,
+  ): Promise<AdbNoneProtocolProcess>;
+}
+```
+
+### `command`
+
+The `command` parameter can either be a single string, or an array of strings
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { TextDecoderStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+await adb.subprocess.noneProtocol.spawn("ls -al /");
+// same as
+await adb.subprocess.noneProtocol.spawn(["ls", "-al", "/"]);
+```
+
+### `signal`
+
+A optional `AbortSignal` to kill the process.
+
+When the process is killed by `signal`:
+
+- [`stdin`](#stdin) will be closed, writing to it will throw an error.
+- [`output`](#output) will be closed after all buffered data is consumed.
+- [`exited`](#exited) will be rejected with `signal.reason`
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { TextDecoderStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const abortController = new AbortController();
+setTimeout(() => abortController.abort(), 1000);
+
+const process = await adb.subprocess.noneProtocol.spawn(
+  "logcat",
+  abortController.signal,
+);
+```
+
+### `stdin`
+
+Writes to the process's stdin.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { encodeUtf8 } from "@yume-chan/adb";
+import { TextDecoderStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+// `cat` will output whatever is written to its `stdin`
+const process = await adb.subprocess.noneProtocol.spawn("cat");
+const writer = process.stdin.getWriter();
+await writer.write(encodeUtf8("Hello World!"));
+
+for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
+  console.log(chunk); // "Hello World!"
+  await process.exit();
+}
+```
+
+### `output`
+
+Read from the process's `stdout` and `stderr`. The stream ends when the process exits.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { TextDecoderStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const process = await adb.subprocess.noneProtocol.spawn("ls -al /");
+for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
+  console.log(chunk);
+}
+```
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+
+:::
+
+:::info[Equivalent ADB command]
+
+```sh
+adb exec-out ls -al /
+```
+
+Note: `adb exec-out` doesn't forward `stdin` to the process, so it's not 100% equal.
+
+:::
+
+### `exited`
+
+A `Promise` that resolves when the process exits.
+
+If the process is killed by `signal`, its `exited` promise will be rejected with `signal.reason`.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { TextDecoderStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const process = await adb.subprocess.noneProtocol.spawn("sleep 1");
+await process.exited; // Resolves after 1 second
+```
+
+### `kill`
+
+Forcefully kill the process.
+
+If there are any remaining data in `output`, they can still be read after the process has exited.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { TextDecoderStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const process = await adb.subprocess.noneProtocol.spawn("logcat");
+setTimeout(() => process.kill(), 1000);
+
+for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
+  console.log(chunk);
+}
+```
+
+## `spawnWait` and `spawnWaitText`
+
+```ts showLineNumbers
+export declare class AdbNoneProtocolSubprocessService {
+  spawnWait(command: string | string[]): Promise<Uint8Array>;
+  spawnWaitText(command: string | string[]): Promise<string>;
+}
+```
+
+Start a process in raw mode, buffer its output, wait for it to exit, then return the buffered output all at once.
+
+`spawnWait` returns binary output, while `spawnWaitText` returns text output.
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const output: Uint8Array =
+  await adb.subprocess.noneProtocol.spawnWait("ls -al /");
+```
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const output: string =
+  await adb.subprocess.noneProtocol.spawnWaitText("ls -al /");
+```
+
+## `pty`
+
+Start a process in PTY mode.
+
+```ts showLineNumbers
+export declare class AdbNoneProtocolPtyProcess {
+  get input(): WritableStream<MaybeConsumable<Uint8Array>>;
+  get output(): ReadableStream<Uint8Array>;
+  get exited(): Promise<undefined>;
+
+  sigint(): Promise<void>;
+  kill(): MaybePromiseLike<void>;
+}
+
+export declare class AdbNoneProtocolSubprocessService {
+  pty(command?: string | string[]): Promise<AdbNoneProtocolPtyProcess>;
+}
+```
+
+`input`, `output`, `exited` and `kill` is basically same as raw mode's [`stdin`](#stdin), [`output`](#output), [`exited`](#exited) and [`kill`](#kill).
+
+### `command`
+
+If `command` parameter is `undefined`, the default shell will be started.
+
+### `sigint`
+
+A shortcut method to write `0x03` to the PTY input, to send a `SIGINT` to the foreground process.

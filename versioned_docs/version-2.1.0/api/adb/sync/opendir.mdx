@@ -1,0 +1,69 @@
+---
+sidebar_position: 4
+---
+
+# opendir/readdir
+
+List files in a directory
+
+```ts
+interface AdbSyncEntry extends AdbSyncStat {
+  mode: number;
+  size: bigint;
+  mtime: bigint;
+  get type(): LinuxFileType;
+  get permission(): number;
+
+  uid?: number;
+  gid?: number;
+  atime?: bigint;
+  ctime?: bigint;
+
+  name: string;
+}
+
+declare class AdbSync {
+  opendir(path: string): AsyncGenerator<AdbSyncEntry, void, void>;
+  readdir(path: string): Promise<AdbSyncEntry[]>;
+}
+```
+
+|                                           | Android 10 and below | Android 11 and above |
+| ----------------------------------------- | -------------------- | -------------------- |
+| Adb feature name                          | None                 | `ls_v2`              |
+| Sync command                              | `LIST`               | `LST2`               |
+| Size larger than 4GB                      | No                   | Yes                  |
+| Returns `uid`, `gid`, `atime` and `ctime` | No                   | Yes                  |
+
+`opendir` returns an async generator that yields file entries in the directory. `readdir` collects all entries and returns an array.
+
+For a large directory with hundreds of files, `readdir` may take tens of seconds to finish. `opendir` can provide a better user experience by yielding entries as they are received.
+
+## Example
+
+### Use `opendir`
+
+```ts transpile
+for await (const entry of sync.opendir('/sdcard')) {
+  console.log(entry.name);
+}
+```
+
+:::danger[READ ALL STREAMS!]
+
+ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+
+You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+
+For example, you can't create another sync connection or call other methods on `Adb` when `opendir` is still running. Upcoming data for `opendir` will block other operations.
+
+:::
+
+### Use `readdir`
+
+```ts transpile
+const entries = await sync.readdir("/sdcard");
+for (const entry of entries) {
+  console.log(entry.name);
+}
+```

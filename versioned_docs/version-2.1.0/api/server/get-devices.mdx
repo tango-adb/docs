@@ -1,0 +1,38 @@
+---
+sidebar_position: 4
+---
+
+# getDevices
+
+```ts showLineNumbers
+namespace AdbServerClient {
+  interface Device {
+    serial: string;
+    authenticating: boolean;
+    product?: string;
+    model?: string;
+    device?: string;
+    transportId: bigint;
+  }
+}
+
+declare class AdbServerClient {
+  getDevices(): Promise<AdbServerClient.Device[]>;
+}
+```
+
+Gets all connected devices.
+
+:::note
+
+See [Get devices](/tango/server/devices.mdx) page for details.
+
+:::
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb devices -l
+```
+
+:::

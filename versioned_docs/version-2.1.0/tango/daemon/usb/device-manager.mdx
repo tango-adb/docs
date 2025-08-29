@@ -1,0 +1,117 @@
+---
+sidebar_position: 1
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import CanIUse from "../../../can-i-use";
+
+# Create device manager
+
+WebUSB provides APIs for discovering and communicating with USB devices. The `AdbDaemonWebUsbDeviceManager` class wraps the WebUSB API to better work with ADB devices.
+
+## Usage
+
+The usage of `AdbDaemonWebUsbDeviceManager` is different in Node.js and Web browsers:
+
+<Tabs className="runtime-tabs" groupId="runtime">
+<TabItem value="web" label="Web">
+
+Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
+
+<CanIUse feature="webusb" />
+
+:::info[Electron Support]
+
+- To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API in Electron, then follow the instructions below
+- To use Tango in Electron main processes, follow the instructions for Node.js instead
+
+:::
+
+:::info[Secure Context Required]
+
+WebUSB API requires a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts). Basically it means the page must be served over HTTPS or `localhost`.
+
+- If you have a domain name, you can easily get a free SSL certificate from [Let's Encrypt](https://letsencrypt.org/).
+- If you only have an IP address, you can create a self-signed certificate and trust it in every device that will access your server (or ignore the warning every time).
+- For Chromium-based browser, you can also add your origin to `chrome://flags/#unsafely-treat-insecure-origin-as-secure`.
+
+:::
+
+Create a device manager for browsers:
+
+```ts transpile
+import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
+
+// highlight-start
+const Manager: AdbDaemonWebUsbDeviceManager | undefined =
+  AdbDaemonWebUsbDeviceManager.BROWSER;
+// highlight-end
+```
+
+:::info
+
+`AdbDaemonWebUsbDeviceManager.BROWSER` is a shorthand of:
+
+```ts
+navigator.usb ? new AdbDaemonWebUsbDeviceManager(navigator.usb) : undefined;
+```
+
+:::
+
+In two cases, `Manager` may be `undefined`:
+
+1. Current page isn't in a [Secure Context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
+1. Current browser does not support WebUSB API
+
+It's your responsibility to make sure the first case doesn't happen. So there is only one reason left:
+
+```ts transpile
+if (!Manager) {
+  alert("WebUSB is not supported in this browser");
+  return;
+}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Node.js doesn't support WebUSB natively, but the [`usb`](https://www.npmjs.com/package/usb) package provides a WebUSB implementation for it.
+
+It uses libusb library to access USB devices, which should work perfectly on Linux and macOS, but [may have some issues on Windows](https://github.com/node-usb/node-usb?tab=readme-ov-file#windows).
+
+```sh npm2yarn
+npm i usb
+```
+
+Create a device manager using `WebUSB` from `usb` package:
+
+```ts transpile
+import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
+import { WebUSB } from "usb";
+
+const WebUsb: WebUSB = new WebUSB({ allowAllDevices: true });
+const Manager: AdbDaemonWebUsbDeviceManager = new AdbDaemonWebUsbDeviceManager(
+  WebUsb
+);
+```
+
+:::info
+
+By default, `WebUSB` from `usb` package has the same permission system as browsers:
+
+- Each device must be authorized separately using `requestDevice` method and [a custom `devicesFound` callback](https://github.com/node-usb/node-usb?tab=readme-ov-file#use-webusb-approach-to-find-a-device-with-custom-selection-method)
+- `getDevices` method only returns devices that have been authorized
+
+Passing [`allowAllDevices: true` option](https://github.com/node-usb/node-usb?tab=readme-ov-file#use-webusb-approach-to-list-all-devices) disables the permission system and returns all connected devices from `getDevices` methods.
+
+:::
+
+</TabItem>
+</Tabs>
+
+:::note[Next Step]
+
+[Request device permission](./request-device.mdx)
+
+:::

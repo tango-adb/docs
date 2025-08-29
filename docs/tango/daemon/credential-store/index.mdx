@@ -1,10 +1,10 @@
 ---
-sidebar_position: 4
+sidebar_position: 1
 ---
 
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
-import CanIUse from "../../can-i-use";
+import CanIUse from "../../../can-i-use";
 
 # Credential store
 
@@ -12,8 +12,8 @@ Directly connecting to devices requires authentication. The authentication proce
 
 ADB protocol has two authentication methods:
 
-1. Public key: The client sends its public key to the device. The device displays a dialog asking its user to confirm the connection. If the user confirms, the connection will be established. If the user also checks "Always allow from this computer", the device will trust the public key.
-2. Signature: The device generates a challenge and sends it to the client. The client signs the challenge with its private key and sends the signature back to the device. The device verifies if the signature is produced by one of its trusted public keys.
+1. Public key: The client sends its public key to the device. The device displays a dialog asking its user to confirm the connection. If the user confirms, the connection will be established. If the user also checks "Always allow from this computer", the device will save the public key and use signature authentication next time.
+2. Signature: The device generates a random challenge and sends it to the client. The client signs the challenge with its private key and sends the signature back to the device. The device verifies if the signature is produced by one of its trusted public keys.
 
 :::info
 

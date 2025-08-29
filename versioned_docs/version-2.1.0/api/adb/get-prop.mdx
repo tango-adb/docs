@@ -1,0 +1,47 @@
+---
+sidebar_position: 7
+---
+
+# getProp
+
+Shorthand for `getprop` executable.
+
+```ts
+declare class Adb {
+    getProp(key: string): Promise<string>;
+}
+```
+
+It will trim the last newline character from the output.
+
+## Examples
+
+### Get Android OS version
+
+```ts transpile
+const version = await adb.getProp("ro.build.version.release");
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb shell getprop ro.build.version.release
+```
+
+:::
+
+### Get ADB over Wi-Fi listen port
+
+```ts transpile
+const port = await this.adb.getProp("service.adb.tcp.port");
+```
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb shell getprop service.adb.tcp.port
+```
+
+:::
+
+The [`tcpip`](./tcpip.mdx) command provides a more reliable way to get and set ADB over Wi-Fi settings.

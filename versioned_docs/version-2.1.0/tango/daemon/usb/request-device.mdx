@@ -1,0 +1,140 @@
+---
+sidebar_position: 2
+---
+
+# Request device permission
+
+{/* spell: ignore RNDIS */}
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::note
+
+This page only applies to browsers. For Node.js, you can skip to the [next step](./get-devices.mdx).
+
+:::
+
+## With WebUSB
+
+In Web browsers, each website needs to request the permission to access each device separately using WebUSB's [`USB#requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice) method.
+
+### User activation
+
+`USB#requestDevice` method requires [user activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation), it must be called in response to a mouse click or keyboard press event.
+
+### Device picker
+
+After calling `USB#requestDevice`, the browser shows a list of connected devices to the user. The user can select one (and only one) device from the list, or cancel the picker without selecting any device.
+
+You can filter the devices shown in the picker using the [`filters` and `exclusionFilters` options](./device-filter.mdx), but otherwise you can't control the picker's appearance or behavior.
+
+### Return value
+
+It will return an `USBDevice` instance representing the selected device, or throws an `DOMException` with `name` set to `NotFoundError` if the user cancelled the picker.
+
+:::note
+
+This code is for demonstration purposes only. You should use `AdbDaemonWebUsbDeviceManager#requestDevice` described below in Tango.
+
+:::
+
+```ts transpile
+document.getElementById("button").addEventListener("click", () => {
+  try {
+    // highlight-start
+    const device: USBDevice = await navigator.usb.requestDevice({
+      filters: [
+        {
+          classCode: 0xff,
+          subclassCode: 0x42,
+          protocolCode: 1,
+        },
+      ],
+    });
+    // highlight-end
+    alert(`Selected device: ${device.serialNumber}`);
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "NotFoundError") {
+      alert("No device selected");
+      return;
+    }
+
+    throw e;
+  }
+});
+```
+
+### Permission persistence
+
+The permission will be persisted by the browser, so from next time, the website can access that device without calling `requestDevice` again. The user can revoke the permission in "Settings -> Site Permissions -> USB devices" at any time.
+
+### USB mode affects permissions
+
+When Android devices works in USB peripheral mode, they can have multiple USB interfaces, like MTP (file transfer), ADB, RNDIS (reverse tethering), MIDI, etc.
+
+When any interface is turned on or off from system UI, the device will disconnect and reconnect to the USB host and report a different set of interfaces.
+
+As a result, in Web browsers, the same Android device with different sets of interfaces will be treated as different devices, and have different permissions. The website might need to request permission again when Android device switches to another mode.
+
+## With Tango
+
+`AdbDaemonWebUsbDeviceManager#requestDevice` method provides a more convenient way to request permission for Android devices with ADB interface enabled.
+
+```ts
+namespace AdbDaemonWebUsbDeviceManager {
+  interface RequestDeviceOptions {
+    filters?: USBDeviceFilter[] | undefined;
+    exclusionFilters?: USBDeviceFilter[] | undefined;
+  }
+}
+
+declare class AdbDaemonWebUsbDeviceManager {
+  requestDevice(
+    options?: AdbDaemonWebUsbDeviceManager.RequestDeviceOptions
+  ): Promise<AdbDaemonWebUsbDevice | undefined>;
+}
+```
+
+It calls `USB#requestDevice` internally, thus the [user activation](#user-activation), [device picker](#device-picker), and [permission persistence](#permission-persistence) behaviors are the same as `USB#requestDevice`.
+
+### Options
+
+The [`options` parameter](./device-filter.mdx) allows filtering the devices shown in the picker. By default, it only includes devices with ADB interface enabled.
+
+### Return value
+
+The only difference is the return value:
+
+- When the user selects a device, it creates and returns an `AdbDaemonWebUsbDevice` instance, which includes the raw `USBDevice` handle and additional information required by later steps.
+- If the user cancels the picker, it returns `undefined`, instead of throwing an error.
+
+```ts transpile
+import {
+  AdbDaemonWebUsbDevice,
+  AdbDaemonWebUsbDeviceManager,
+} from "@yume-chan/adb-daemon-webusb";
+
+declare const Manager: AdbDaemonWebUsbDeviceManager;
+
+document.getElementById("button").addEventListener("click", () => {
+  // highlight-start
+  const device: AdbDaemonWebUsbDevice | undefined =
+    await Manager.requestDevice();
+  // highlight-end
+  if (!device) {
+    alert("No device selected");
+    return;
+  }
+});
+```
+
+## Drop permission
+
+If a device is connected and the permission to access it was granted, but you don't want to access it anymore, you can drop the permission.
+
+```ts transpile
+device.raw.forget();
+```
+
+Because there is no way to retrieve permission-granted but disconnected devices (unless you got the `device` before it was disconnected), it's also not possible to drop permissions for them. (See https://github.com/WICG/webusb/issues/166)

@@ -1,0 +1,97 @@
+---
+sidebar_position: 5
+---
+
+import Version from "../version-span";
+
+# Options
+
+Scrcpy protocol changes over time, and are usually not backward compatible. Tango is compatible with many versions of Scrcpy server, by providing a set of options classes for each server version (or range).
+
+The options class serves two purposes:
+
+- It defines which server options are available (for you, the user)
+- It normalize the behavior between different server versions (for internal use)
+
+It's important to use the correct options class for the server version you're using. Using an incorrect version almost always results in errors.
+
+If the latest version of Scrcpy server doesn't have a matching options class, the last supported version can be tried. If it doesn't work, you may need to wait for an update.
+
+## With `@yume-chan/scrcpy`
+
+Tango supports all version between 1.15 and 3.1, by providing a set of options classes for each server version.
+
+For example, `ScrcpyOptions1_15` is the options class for server version 1.15, `ScrcpyOptions1_15_1` for version 1.15.1, and `ScrcpyOptions3_1` for version 3.1, and so on.
+
+:::info
+
+These options classes are fully tree-shakeable. When using a bundler/minifier, only code related to the version you're using will be included.
+
+:::
+
+All options classes take a single object parameter for server options:
+
+```ts showLineNumber
+export class ScrcpyOptionsX_YY {
+  constructor(init: Partial<ScrcpyOptionsX_YY.Init>);
+}
+```
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+  videoSource: "camera",
+  // ...
+});
+```
+
+Check the TypeScript definition files for available server options in each version.
+
+Some part of the options class is stateful, so reuse an instance between multiple connections is not recommended. Don't do this unless you checked the source code to make sure only the stateless part is being used.
+
+## With `@yume-chan/adb-scrcpy`
+
+`@yume-chan/adb-scrcpy` needs to do some additional behavior normalizations, so it has its own options classes.
+
+Similar to `@yume-chan/scrcpy`, there is an option class for each server version. The naming convention is the same as `@yume-chan/scrcpy`, but with an `Adb` prefix. For example, `AdbScrcpyOptions2_1` is the options class for server version 2.1.
+
+`AdbScrcpyOptionsX_YY` classes take the same server options parameter, and an optional client options object:
+
+```ts showLineNumbers
+import type { AdbNoneProtocolSpawner } from "@yume-chan/adb";
+
+export interface AdbScrcpyClientOptions {
+  version?: string;
+  spawner?: AdbNoneProtocolSpawner | undefined;
+}
+
+declare class AdbScrcpyOptionsX_YY extends ScrcpyOptionsX_YY {
+  constructor(
+    init: ScrcpyOptions1_15_1.Init,
+    clientOptions?: AdbScrcpyClientOptions,
+  );
+}
+```
+
+`AdbScrcpyClientOptions` interface includes:
+
+- `version`: The server version to use. The default value matches the options class name. This option is rarely used, unless you are using a custom server binary with different version string.
+- `spawner`: A custom [process spawner](../../api/adb/subprocess/index.mdx) to start the server process. The default value is `undefined`, which uses `adb.subprocess.noneProtocol`. This option is rarely used, unless you have a different method (like SSH) to start processes on the device.
+
+```ts transpile
+import { AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new AdbScrcpyOptions2_1({
+  videoSource: "camera",
+  // ...
+});
+```
+
+## List of server options
+
+* <Version since="v2.1">[`video: boolean`](./video.mdx): Disables the video socket</Version>
+* <Version since="v2.0">[`videoCodec: string`](./video-codec.mdx): Use H.265 or AV1 video codecs</Version>
+* <Version since="v2.0">[`audio: boolean`](./audio.mdx): Disables the audio socket</Version>
+* <Version since="v1.22">[`control: boolean`](./control.mdx): Disables the control socket</Version>
