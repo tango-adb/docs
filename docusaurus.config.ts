@@ -248,6 +248,7 @@ const config: Config = {
         mermaid: {
             options: {
                 flowchart: {
+                    defaultRenderer: "elk",
                     subGraphTitleMargin: {
                         top: 8,
                         bottom: 8,
@@ -323,12 +324,12 @@ const config: Config = {
                         },
                         {
                             label: "Source code of Tango ADB library",
-                            href: "https://github.com/yume-chan/ya-webadb"
+                            href: "https://github.com/yume-chan/ya-webadb",
                         },
                         {
                             label: "Source code of this website",
-                            href: "https://github.com/tango-adb/docs"
-                        }
+                            href: "https://github.com/tango-adb/docs",
+                        },
                     ],
                 },
                 {

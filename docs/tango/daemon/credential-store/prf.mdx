@@ -18,24 +18,76 @@ When implemented in security solutions like [FIDO2 HMAC secret ("hmac-secret" ex
 
 The output value can then be used in various key derivation function (KDF), such as [HKDF](https://en.wikipedia.org/wiki/HKDF), to create a symmetric key to encrypt or decrypt data.
 
-Because the hidden secret key is not extractable, generating the PRF output can only be performed within the security solution. Doing so would usually also require user interaction (pressing a button, biometric authentication, entering a password, etc.). This enables softwares to securely store sensitive data in untrusted environments.
-
 ```mermaid
 
 graph LR
 
 A[/Secret Key/] --> PRF[PRF]
-B[/Challenge/] --> PRF
+B[/Input/] --> PRF
 PRF --> C[/Random Value/]
 C --Key Derivation Algorithm--> D[\Encryption Key\]
 
 ```
+
+Because the hidden secret key is not extractable, generating the PRF output can only be performed within the security solution. Doing so would usually also require user interaction (pressing a button, biometric authentication, entering a password, etc.). This enables softwares to securely store sensitive data in untrusted environments.
 
 ## Architecture
 
 The `TangoPrfStorage` class uses PRF to encrypt the ADB key.
 
 It takes another `TangoDataStorage` to actually store the encrypted data, and a `TangoPrfSource` for runtime-specified PRF API.
+
+The key derivation step uses HKDF to derive an AES-256 key from the PRF output.
+
+All random number generations, key derivations and encryptions are performed using Web Crypto API.
+
+### Create a new key
+
+```mermaid
+sequenceDiagram
+
+participant AdbWebCryptoCredentialStore
+participant TangoPrfStorage
+participant TangoDataStorage
+participant TangoPrfSource
+
+AdbWebCryptoCredentialStore->>+AdbWebCryptoCredentialStore: Generate private key
+AdbWebCryptoCredentialStore->>+TangoPrfStorage: save()
+
+TangoPrfStorage->>+TangoPrfSource: create()
+TangoPrfSource->>-TangoPrfStorage: Return PRF output
+
+TangoPrfStorage->>TangoPrfStorage: Derive the encryption key
+TangoPrfStorage->>TangoPrfStorage: Encrypt the ADB key
+
+TangoPrfStorage->>+TangoDataStorage: save()
+TangoDataStorage->>-TangoPrfStorage: Return success
+
+TangoPrfStorage->>-AdbWebCryptoCredentialStore: Return success
+```
+
+#### Data flow
+
+```mermaid
+flowchart TB
+
+R[[Random Number Generator]]
+
+R --> A[\32-byte PRF Input\] --> B[TangoPrfSource] --> C[\PRF Key ID\] & D[\PRF Output\]
+
+R --> E[\32-byte HKDF Info\] & F[\64-byte HKDF Salt\]
+D & E & F --> G[HKDF] --> H[\AES Key\]
+
+R --> I[\12-byte AES Initialization Vector\]
+N@{ shape: sm-circ, label: "Input" } --> J[/Original Data/]
+H & I & J --> K[Encrypt] --> L[/Encrypted Data/]
+
+C ------> M[(TangoDataStorage)]
+E & F & I & L --> M
+
+```
+
+PRF key ID, HKDF info and salt, AES initialization vector, and the encrypted data are all stored in the underlying `TangoDataStorage` for the decryption process.
 
 ### Enumerate existing keys
 
@@ -61,29 +113,22 @@ TangoPrfStorage->>TangoPrfStorage: Decrypt data
 TangoPrfStorage->>-AdbWebCryptoCredentialStore: Return decrypted key
 ```
 
-### Create a new key
+The stored information is used to produce the same PRF output, the same AES key, and the same cleartext data.
+
+#### Data flow
 
 ```mermaid
-sequenceDiagram
+flowchart TB
 
-participant AdbWebCryptoCredentialStore
-participant TangoPrfStorage
-participant TangoDataStorage
-participant TangoPrfSource
+M[(TangoDataStorage)]
 
-AdbWebCryptoCredentialStore->>+AdbWebCryptoCredentialStore: Generate private key
-AdbWebCryptoCredentialStore->>+TangoPrfStorage: save()
+M --> A[/PRF Key ID/] & C[/PRF Input/] --> B[TangoPrfSource] --> D[\PRF Output\]
 
-TangoPrfStorage->>+TangoPrfSource: create()
-TangoPrfSource->>-TangoPrfStorage: Return PRF output
+M --> F[/HKDF Info/] & G[/HKDF Salt/]
+D & F & G --> E[HKDF] --> H[\AES Key\]
 
-TangoPrfStorage->>TangoPrfStorage: Derive encryption key
-TangoPrfStorage->>TangoPrfStorage: Encrypt data
-
-TangoPrfStorage->>+TangoDataStorage: save()
-TangoDataStorage->>-TangoPrfStorage: Return success
-
-TangoPrfStorage->>-AdbWebCryptoCredentialStore: Return success
+M --> J[/AES Initialization Vector/] & K[/Encrypted Data/]
+H & J & K --> I[Decrypt] --> L[\Original Data\] --> N@{ shape: framed-circle, label: "Output" }
 ```
 
 ## PRF source
@@ -190,7 +235,9 @@ export declare namespace TangoWebAuthnPrfSource {
 }
 ```
 
-## Usage
+## Basic Usage
+
+The most basic usage is with a LocalStorage storage and a WebAuthn PRF source.
 
 ```ts transpile
 import {
@@ -204,3 +251,41 @@ const storage = new TangoPrfStorage(
   new TangoWebAuthnPrfSource("Tango", "ADB Key")
 );
 ```
+
+Or, an IndexedDB storage can also be used. Note that since `TangoWebAuthnPrfSource` can't run in Web Workers, so using IndexedDB storage doesn't have any big benefits.
+
+```ts transpile
+import {
+  TangoPrfStorage,
+  TangoIndexedDbStorage,
+  TangoWebAuthnPrfSource,
+} from "@yume-chan/adb-credential-web";
+
+const storage = new TangoPrfStorage(
+  new TangoIndexedDbStorage("key"),
+  new TangoWebAuthnPrfSource("Tango", "ADB Key")
+);
+```
+
+## Two-factor authentication
+
+For a more secure authentication, you can chain the password storage and the PRF store to get two-factor authentication.
+
+```ts transpile
+import {
+  TangoPrfStorage,
+  TangoLocalStorage,
+  TangoPasswordProtectedStorage,
+  TangoWebAuthnPrfSource,
+} from "@yume-chan/adb-credential-web";
+
+const storage = new TangoPrfStorage(
+  new TangoPasswordProtectedStorage(
+    new TangoLocalStorage("key"),
+    () => "password"
+  ),
+  new TangoWebAuthnPrfSource("Tango", "ADB Key")
+);
+```
+
+This will first ask for a password (here we just return `"password"`), then ask for WebAuthn user authentication.
