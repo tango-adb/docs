@@ -6,11 +6,11 @@ sidebar_position: 2
 
 import CanIUse from "../../../can-i-use";
 
-[`@yume-chan/adb-credential-web`](https://www.npmjs.com/package/@yume-chan/adb-credential-web) package uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate ADB private keys, and [IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store them.
+[`@yume-chan/adb-credential-web`](https://www.npmjs.com/package/@yume-chan/adb-credential-web) package provides a credential store that uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate ADB private keys.
 
 <CanIUse feature="cryptography" />
 
-We use IndexedDB because it's available in Web Workers. ADB protocol is computationally heavy, so it's better to run it in a Web Worker to avoid blocking the main thread. (Except the WebUSB part, which is not available in Web Workers).
+To support
 
 ```sh npm2yarn
 npm i @yume-chan/adb-credential-web

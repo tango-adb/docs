@@ -1,0 +1,206 @@
+# PRF encrypted store
+
+import CanIUse from "../../../can-i-use";
+
+PRF (pseudo-random function) is a deterministic function that generates a random value from two input values.
+
+```mermaid
+
+graph LR
+
+A[/Input A/] --> PRF[PRF]
+B[/Input B/] --> PRF
+PRF --> C[\Output\]
+
+```
+
+When implemented in security solutions like [FIDO2 HMAC secret ("hmac-secret" extension)](https://docs.yubico.com/yesdk/users-manual/application-fido2/hmac-secret.html) and [Web Authentication API's PRF extension](https://w3c.github.io/webauthn/#prf), it can generate a random but deterministic value from the hidden secret key and a developer-specified input.
+
+The output value can then be used in various key derivation function (KDF), such as [HKDF](https://en.wikipedia.org/wiki/HKDF), to create a symmetric key to encrypt or decrypt data.
+
+Because the hidden secret key is not extractable, generating the PRF output can only be performed within the security solution. Doing so would usually also require user interaction (pressing a button, biometric authentication, entering a password, etc.). This enables softwares to securely store sensitive data in untrusted environments.
+
+```mermaid
+
+graph LR
+
+A[/Secret Key/] --> PRF[PRF]
+B[/Challenge/] --> PRF
+PRF --> C[/Random Value/]
+C --Key Derivation Algorithm--> D[\Encryption Key\]
+
+```
+
+## Architecture
+
+The `TangoPrfStorage` class uses PRF to encrypt the ADB key.
+
+It takes another `TangoDataStorage` to actually store the encrypted data, and a `TangoPrfSource` for runtime-specified PRF API.
+
+### Enumerate existing keys
+
+```mermaid
+sequenceDiagram
+
+participant AdbWebCryptoCredentialStore
+participant TangoPrfStorage
+participant TangoDataStorage
+participant TangoPrfSource
+
+AdbWebCryptoCredentialStore->>+TangoPrfStorage: load()
+
+TangoPrfStorage->>+TangoDataStorage: load()
+TangoDataStorage->>-TangoPrfStorage: Return encrypted data
+
+TangoPrfStorage->>+TangoPrfSource: get()
+TangoPrfSource->>-TangoPrfStorage: Return PRF output
+
+TangoPrfStorage->>TangoPrfStorage: Derive decryption key
+TangoPrfStorage->>TangoPrfStorage: Decrypt data
+
+TangoPrfStorage->>-AdbWebCryptoCredentialStore: Return decrypted key
+```
+
+### Create a new key
+
+```mermaid
+sequenceDiagram
+
+participant AdbWebCryptoCredentialStore
+participant TangoPrfStorage
+participant TangoDataStorage
+participant TangoPrfSource
+
+AdbWebCryptoCredentialStore->>+AdbWebCryptoCredentialStore: Generate private key
+AdbWebCryptoCredentialStore->>+TangoPrfStorage: save()
+
+TangoPrfStorage->>+TangoPrfSource: create()
+TangoPrfSource->>-TangoPrfStorage: Return PRF output
+
+TangoPrfStorage->>TangoPrfStorage: Derive encryption key
+TangoPrfStorage->>TangoPrfStorage: Encrypt data
+
+TangoPrfStorage->>+TangoDataStorage: save()
+TangoDataStorage->>-TangoPrfStorage: Return success
+
+TangoPrfStorage->>-AdbWebCryptoCredentialStore: Return success
+```
+
+## PRF source
+
+To support different runtime environments, `TangoPrfStorage` uses a `TangoPrfSource` to create and get the PRF output:
+
+```ts
+import type { MaybePromiseLike } from "@yume-chan/async";
+
+interface TangoPrfCreationResult {
+  /**
+   * The generated PRF output (random number)
+   */
+  output: BufferSource;
+
+  /**
+   * ID of the created secret key
+   */
+  id: Uint8Array<ArrayBuffer>;
+}
+
+export interface TangoPrfSource {
+  /**
+   * Create a new secret key and generate PRF output using the key and input data.
+   *
+   * @param input The input data
+   */
+  create(
+    input: Uint8Array<ArrayBuffer>
+  ): MaybePromiseLike<TangoPrfCreationResult>;
+
+  /**
+   * Generate PRF output using the secret key and input data.
+   *
+   * @param id ID of the secret key
+   * @param input The input data
+   */
+  get(
+    id: BufferSource,
+    input: Uint8Array<ArrayBuffer>
+  ): MaybePromiseLike<BufferSource>;
+}
+```
+
+## WebAuthn PRF extension
+
+An implementation of `TangoPrfSource` is provided for WebAuthn PRF extension.
+
+### Support
+
+To use the PRF extension, both the runtime (browser) and the authenticator (the hardware, software or cloud service that actually stores the credentials) must both support it.
+
+#### Runtime
+
+<CanIUse feature="mdn-api_CredentialsContainer_create_publicKey_option_extensions_prf" />
+
+#### Authenticators
+
+| Authenticator           | Support                                |
+| ----------------------- | -------------------------------------- |
+| Windows Hello           | Requires Windows 11 insider preview    |
+| iCloud Keychain         | Requires macOS 15.0 or iOS/iPadOS 18.3 |
+| Google Password Manager | Yes                                    |
+| FIDO2 security keys     | Yes                                    |
+
+### Definition
+
+```ts
+export declare class TangoWebAuthnPrfSource implements TangoPrfSource {
+  /**
+   * Checks if the runtime supports WebAuthn PRF extension.
+   *
+   * Note that using the extension also requires a supported authenticator.
+   * Whether an authenticator supports the extension can only be checked
+   * during the `create` process.
+   * @returns `true` if the runtime supports WebAuthn PRF extension
+   */
+  static isSupported(): Promise<boolean>;
+
+  /**
+   * Create a new instance of `TangoWebAuthnPrfSource`
+   *
+   * @param appName Name of your website shows in Passkey manager
+   * @param userName Display name of the credential shows in Passkey manager
+   */
+  constructor(appName: string, userName: string);
+
+  create(input: Uint8Array<ArrayBuffer>): Promise<{
+    output: BufferSource;
+    id: Uint8Array<ArrayBuffer>;
+  }>;
+
+  get(id: BufferSource, input: Uint8Array<ArrayBuffer>): Promise<BufferSource>;
+}
+
+export declare namespace TangoWebAuthnPrfSource {
+  declare class NotSupportedError extends Error {
+    constructor();
+  }
+
+  declare class AssertionFailedError extends Error {
+    constructor();
+  }
+}
+```
+
+## Usage
+
+```ts transpile
+import {
+  TangoPrfStorage,
+  TangoLocalStorage,
+  TangoWebAuthnPrfSource,
+} from "@yume-chan/adb-credential-web";
+
+const storage = new TangoPrfStorage(
+  new TangoLocalStorage("key"),
+  new TangoWebAuthnPrfSource("Tango", "ADB Key")
+);
+```
