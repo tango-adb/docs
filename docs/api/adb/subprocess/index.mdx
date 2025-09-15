@@ -6,7 +6,7 @@ ADB includes multiple methods to start processes on the device.
 
 From the perspective of how process's input and output are transmitted to the client, there are two protocols:
 
-- None protocol: Two ends of the ADB socket are directly bound to input and output of the subprocess. None protocol didn't have a name before shell protocol was introduced, because it is, literally, not using any protocol.
+- None protocol: Two ends of the ADB socket are directly bound to input and output of the subprocess. None protocol didn't have a name before Shell protocol was introduced, because it is, literally, not using any protocol.
 - Shell protocol: Input and output are encapsulated in packets, allowing complex commands. Shell protocol was added in Android 7.
 
 ## Modes
@@ -84,11 +84,11 @@ In raw mode, all data written to `stdin` will be forwarded to the subprocess dir
 
 ### `stdout` + `stderr` vs `output`
 
-None protocol raw mode has `output`: none protocol only has one output stream, so it mixes `stdout` and `stderr` together.
+None protocol raw mode has `output`: None protocol only has one output stream, containing content from both `stdout` and `stderr`.
 
-Shell protocol raw mode has `stdout` and `stderr`: shell protocol redirects `stdout` and `stderr` to different pipes, then uses different packet IDs to send them to the client separately.
+Shell protocol raw mode has `stdout` and `stderr`: Shell protocol redirects the subprocess's `stdout` and `stderr` to different pipes, then uses different packet IDs to send them to the client separately.
 
-PTY mode all has `output`: PTY API also sends `stdout` and `stderr` together, so there is only one `output`.
+Both None protocol and Shell protocol in PTY mode only has `output`: PTY API also sends `stdout` and `stderr` together, so there is only one `output`.
 
 :::danger[READ ALL STREAMS!]
 
@@ -102,7 +102,7 @@ If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if 
 
 ### `resize`
 
-Only shell protocol PTY mode supports changing the size of the PTY.
+Only Shell protocol PTY mode supports changing the size of the PTY.
 
 ### `sigint`
 
@@ -122,14 +122,14 @@ Shell protocol sends an exit code packet to the client, and their `exited` resol
 
 ### Protocol
 
-If shell protocol has more features than none protocol on both modes, why do you still want to use none protocol?
+If Shell protocol has more features than None protocol on both modes, why do you still want to use None protocol?
 
-Because none protocol has two advantages:
+Because None protocol has two advantages:
 
-- Compatibility: none protocol is supported by all Android devices, while shell protocol was added in Android 7.
-- Performance: none protocol has less protocol overhead, so it's faster. In some test it can be 150% faster than shell protocol.
+- Compatibility: None protocol is supported by all Android devices, while Shell protocol was added in Android 7.
+- Performance: None protocol has less protocol overhead, so it's faster. In some test it can be 150% faster than Shell protocol.
 
-When do you want to use shell protocol?
+When do you want to use Shell protocol?
 
 - Compatibility is not an issue, and
 - You need separated `stdout` and `stderr`, or you need the exit code.
@@ -162,12 +162,16 @@ export declare class Adb {
 }
 ```
 
-When shell protocol is not supported by the device, `adb.subprocess.shellProtocol` will be `undefined`.
+If the device doesn't support Shell protocol, `adb.subprocess.shellProtocol` will be `undefined`.
 
 ```ts transpile
 if (!adb.subprocess.shellProtocol) {
-  throw new Error("shell protocol is not supported");
+  throw new Error("Shell protocol is not supported");
 }
 ```
 
-See [none protocol](./none-protocol.mdx) and [shell protocol](./shell-protocol.mdx) pages for more details.
+:::note[Next Step]
+
+See [None protocol](./none-protocol.mdx) and [Shell protocol](./shell-protocol.mdx) pages for more details.
+
+:::

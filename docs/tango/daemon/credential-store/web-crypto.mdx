@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # Web Crypto
@@ -9,8 +9,6 @@ import CanIUse from "../../../can-i-use";
 [`@yume-chan/adb-credential-web`](https://www.npmjs.com/package/@yume-chan/adb-credential-web) package provides a credential store that uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate ADB private keys.
 
 <CanIUse feature="cryptography" />
-
-To support
 
 ```sh npm2yarn
 npm i @yume-chan/adb-credential-web
@@ -35,3 +33,33 @@ const CredentialStore: AdbWebCredentialStore = new AdbWebCredentialStore(
 );
 // highlight-end
 ```
+
+## Web
+
+Two unencrypted storages are provided:
+
+### `TangoLocalStorage`
+
+Stores data in `LocalStorage`. Only one key-value pair can be stored at a time.
+
+```ts transpile
+import { TangoLocalStorage } from "@yume-chan/adb-credential-web";
+
+const storage = new TangoLocalStorage("key");
+```
+
+### `TangoIndexedDbStorage`
+
+Stores data using IndexedDB API. It will create a database named `"Tango"` and a store (table) named `"Authentication"` in it.
+
+It can store multiple key-value pairs. And it can be used in Web Workers.
+
+```ts transpile
+import { TangoIndexedDbStorage } from "@yume-chan/adb-credential-web";
+
+const storage = new TangoIndexedDbStorage();
+```
+
+## Node.js
+
+To interop with Google ADB, don't chain `TangoNodeStorage` with any other encrypted storages.

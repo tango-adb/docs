@@ -46,3 +46,86 @@ declare const device: AdbServerClient.Device;
 console.log(device.state); // "unauthorized" | "offline" | "device"
 console.log(device.authenticating); // `true` when `device.state === "unauthorized"`
 ```
+
+### Subprocess `spawnWait` and `spawnWaitText` methods has been moved to method chaining
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+// Before
+const output = await adb.subprocess.noneProtocol.spawnWait("ls -al /");
+// After
+const output = await adb.subprocess.noneProtocol.spawn("ls -al /").wait();
+
+// Before
+const output = await adb.subprocess.noneProtocol.spawnWaitText("ls -al /");
+// After
+const output = await adb.subprocess.noneProtocol
+  .spawn("ls -al /")
+  .wait()
+  .toString();
+```
+
+The `wait` method now accepts a `ReadableStream` for `stdin`:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
+  stdin: new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encodeUtf8("Hello World!"));
+      // highlight-start
+      controller.close();
+      // highlight-end
+    },
+  }),
+});
+```
+
+### Shell protocol raw mode now supports closing `stdin`
+
+Shell protocol in raw mode is the only combination that supports [closing `stdin`](../api/adb/subprocess/shell-protocol.mdx#closing-stdin). Some programs (like `cat`) might rely on this behavior to properly function.
+
+When using `spawn`, `stdin` can be closed by closing the `WritableStream`:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { encodeUtf8 } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const process = await adb.subprocess.shellProtocol!.spawn("cat");
+
+const writer = process.stdin.getWriter();
+await writer.write(encodeUtf8("Hello World!"));
+// highlight-start
+await writer.close();
+// highlight-end
+```
+
+When using `spawn.wait`, `stdin` can be closed by closing the `ReadableStream`:
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+import { encodeUtf8 } from "@yume-chan/adb";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
+  stdin: new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encodeUtf8("Hello World!"));
+      // highlight-start
+      controller.close();
+      // highlight-end
+    },
+  }),
+});
+```

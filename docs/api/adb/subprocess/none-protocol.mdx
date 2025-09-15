@@ -8,10 +8,8 @@ sidebar_position: 1
 export declare class AdbNoneProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<AdbNoneProtocolProcess>;
-  spawnWait(command: string | string[]): Promise<Uint8Array>;
-  spawnWaitText(command: string | string[]): Promise<string>;
 
   pty(command?: string | string[]): Promise<AdbNoneProtocolPtyProcess>;
 }
@@ -42,7 +40,7 @@ export interface AdbNoneProtocolProcess {
 export declare class AdbNoneProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<AdbNoneProtocolProcess>;
 }
 ```
@@ -62,6 +60,28 @@ await adb.subprocess.noneProtocol.spawn("ls -al /");
 await adb.subprocess.noneProtocol.spawn(["ls", "-al", "/"]);
 ```
 
+#### Escaping arguments
+
+Because the command is executed by a shell, and different shells have different escaping rules, we can't escape the command automatically.
+
+If the command is an array, whitespace characters in an element will split the argument into two:
+
+```ts transpile
+adb.subprocess.noneProtocol.spawn(["mv", "a b", "c d"]);
+// is actually
+adb.subprocess.noneProtocol.spawn(["mv", "a", "b", "c", "d"]);
+```
+
+A `escapeArg` method is provided which follows basic sh rules. It uses single quotes to wrap the argument, meaning that it will also prevent shell expansion:
+
+```ts transpile
+import { escapeArg } from "@yume-chan/adb";
+
+adb.subprocess.noneProtocol.spawn(["mv", escapeArg("a b"), escapeArg("c d")]);
+// evaluates to
+adb.subprocess.noneProtocol.spawn("mv 'a b' 'c d'");
+```
+
 ### `signal`
 
 A optional `AbortSignal` to kill the process.
@@ -70,7 +90,7 @@ When the process is killed by `signal`:
 
 - [`stdin`](#stdin) will be closed, writing to it will throw an error.
 - [`output`](#output) will be closed after all buffered data is consumed.
-- [`exited`](#exited) will be rejected with `signal.reason`
+- [`exited`](#exited) will be rejected with `signal.reason`.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -83,7 +103,7 @@ setTimeout(() => abortController.abort(), 1000);
 
 const process = await adb.subprocess.noneProtocol.spawn(
   "logcat",
-  abortController.signal,
+  abortController.signal
 );
 ```
 
@@ -105,9 +125,17 @@ await writer.write(encodeUtf8("Hello World!"));
 
 for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
   console.log(chunk); // "Hello World!"
-  await process.exit();
+  await process.kill();
 }
 ```
+
+#### Closing `stdin`
+
+None protocol doesn't support closing `stdin` stream manually, so if the child process keeps reading from it, it will hang (like the `cat` example above).
+
+If closing `stdin` feature is required, use [Shell protocol](./shell-protocol.mdx#closing-stdin) instead.
+
+If you know when the child process can be stopped, use [`signal`](#signal) or [`kill()`](#kill) to stop it manually.
 
 ### `output`
 
@@ -181,35 +209,68 @@ for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
 }
 ```
 
-## `spawnWait` and `spawnWaitText`
+## `spawn.wait`
+
+The result of `spawn` is a mixin between `Promise<AdbNoneProtocolProcess>` and a `Wait` helper.
+
+It provides a simple way to wait for the process to exit, and read its output.
 
 ```ts showLineNumbers
-export declare class AdbNoneProtocolSubprocessService {
-  spawnWait(command: string | string[]): Promise<Uint8Array>;
-  spawnWaitText(command: string | string[]): Promise<string>;
+export interface WaitOptions {
+  stdin?: ReadableStream<MaybeConsumable<Uint8Array>> | undefined;
+}
+
+export interface Wait {
+  wait(options?: WaitOptions): Promise<Uint8Array>;
 }
 ```
 
-Start a process in raw mode, buffer its output, wait for it to exit, then return the buffered output all at once.
-
-`spawnWait` returns binary output, while `spawnWaitText` returns text output.
+Basic usage:
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
 
 declare const adb: Adb;
 
-const output: Uint8Array =
-  await adb.subprocess.noneProtocol.spawnWait("ls -al /");
+const output: Uint8Array = await adb.subprocess.noneProtocol
+  .spawn("ls -al /")
+  .wait();
 ```
 
+Optionally, you can provide a `stdin` stream to write to the process's stdin.
+
+```ts transpile
+import type { Adb, encodeUtf8 } from "@yume-chan/adb";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const output: Uint8Array = await adb.subprocess.noneProtocol.spawn("cat").wait({
+  stdin: new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encodeUtf8("Hello World!"));
+    },
+  }),
+});
+```
+
+Note that `cat` doesn't work with `wait`, as it will wait for the `stdin` to be closed before exiting, but [None protocol doesn't support closing `stdin` stream manually](#closing-stdin).
+
+## `spawn.wait.toString`
+
+The result of `spawn.wait` is also a mixin between `Promise<Uint8Array>` and a `WaitToString` helper.
+
+It does the same thing as `wait`, but decodes the output to a UTF-8 string.
+
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
 
 declare const adb: Adb;
 
-const output: string =
-  await adb.subprocess.noneProtocol.spawnWaitText("ls -al /");
+const output: string = await adb.subprocess.noneProtocol
+  .spawn("ls -al /")
+  .wait()
+  .toString();
 ```
 
 ## `pty`

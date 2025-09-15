@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # PRF encrypted store
 
 import CanIUse from "../../../can-i-use";
@@ -33,7 +37,7 @@ Because the hidden secret key is not extractable, generating the PRF output can 
 
 ## Architecture
 
-The `TangoPrfStorage` class uses PRF to encrypt the ADB key.
+The `TangoPrfStorage` class uses PRF to encrypt the ADB key. It encrypts the whole input (usually a PKCS#8 RSA private key), and doesn't use encrypted PKCS#8 format.
 
 It takes another `TangoDataStorage` to actually store the encrypted data, and a `TangoPrfSource` for runtime-specified PRF API.
 
@@ -237,7 +241,7 @@ export declare namespace TangoWebAuthnPrfSource {
 
 ## Basic Usage
 
-The most basic usage is with a LocalStorage storage and a WebAuthn PRF source.
+The most basic usage is with a [LocalStorage storage](./web-crypto.mdx#tangolocalstorage) and a WebAuthn PRF source.
 
 ```ts transpile
 import {
@@ -252,7 +256,7 @@ const storage = new TangoPrfStorage(
 );
 ```
 
-Or, an IndexedDB storage can also be used. Note that since `TangoWebAuthnPrfSource` can't run in Web Workers, so using IndexedDB storage doesn't have any big benefits.
+Or, an [IndexedDB storage](./web-crypto.mdx#tangoindexeddbstorage) can also be used. Note that since `TangoWebAuthnPrfSource` can't run in Web Workers, so using it doesn't have any big benefits.
 
 ```ts transpile
 import {
@@ -262,7 +266,7 @@ import {
 } from "@yume-chan/adb-credential-web";
 
 const storage = new TangoPrfStorage(
-  new TangoIndexedDbStorage("key"),
+  new TangoIndexedDbStorage(),
   new TangoWebAuthnPrfSource("Tango", "ADB Key")
 );
 ```

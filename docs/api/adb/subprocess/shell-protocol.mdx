@@ -8,14 +8,8 @@ sidebar_position: 2
 export declare class AdbShellProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<AdbShellProtocolProcess>;
-  spawnWait(
-    command: string | string[],
-  ): Promise<AdbShellProtocolSpawner.WaitResult<Uint8Array>>;
-  spawnWaitText(
-    command: string | string[],
-  ): Promise<AdbShellProtocolSpawner.WaitResult<string>>;
 
   pty(options?: {
     command?: string | string[] | undefined;
@@ -51,7 +45,7 @@ export interface AdbShellProtocolProcess {
 export declare class AdbShellProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<AdbShellProtocolProcess>;
 }
 ```
@@ -69,6 +63,28 @@ declare const adb: Adb;
 await adb.subprocess.shellProtocol!.spawn("ls -al /");
 // same as
 await adb.subprocess.shellProtocol!.spawn(["ls", "-al", "/"]);
+```
+
+#### Escaping arguments
+
+Because the command is executed by a shell, and different shells have different escaping rules, we can't escape the command automatically.
+
+If the command is an array, whitespace characters in an element will split the argument into two:
+
+```ts transpile
+adb.subprocess.shellProtocol!.spawn(["mv", "a b", "c d"]);
+// is actually
+adb.subprocess.shellProtocol!.spawn(["mv", "a", "b", "c", "d"]);
+```
+
+A `escapeArg` method is provided which follows basic sh rules. It uses single quotes to wrap the argument, meaning that it will also prevent shell expansion:
+
+```ts transpile
+import { escapeArg } from "@yume-chan/adb";
+
+adb.subprocess.shellProtocol!.spawn(["mv", escapeArg("a b"), escapeArg("c d")]);
+// evaluates to
+adb.subprocess.shellProtocol!.spawn("mv 'a b' 'c d'");
 ```
 
 ### `signal`
@@ -92,7 +108,7 @@ setTimeout(() => abortController.abort(), 1000);
 
 const process = await adb.subprocess.shellProtocol!.spawn(
   "logcat",
-  abortController.signal,
+  abortController.signal
 );
 ```
 
@@ -111,12 +127,18 @@ declare const adb: Adb;
 const process = await adb.subprocess.shellProtocol!.spawn("cat");
 const writer = process.stdin.getWriter();
 await writer.write(encodeUtf8("Hello World!"));
+await writer.close();
 
 for await (const chunk of process.stdout.pipeThrough(new TextDecoderStream())) {
   console.log(chunk); // "Hello World!"
-  await process.exit();
 }
 ```
+
+#### Closing `stdin`
+
+Shell protocol can propagate the end of `stdin` stream to the child process, causing `read(STDIN_FILENO)` to return EOF (`0`).
+
+Some programs (like `cat`) might rely on this behavior, they will hang if `stdin` stream is not closed.
 
 ### `stdout` and `stderr`
 
@@ -135,14 +157,14 @@ await Promise.all([
       write(chunk) {
         console.log("stdout", chunk);
       },
-    }),
+    })
   ),
   process.stderr.pipeThrough(new TextDecoderStream()).pipeTo(
     new WritableStream({
       write(chunk) {
         console.log("stderr", chunk);
       },
-    }),
+    })
   ),
 ]);
 ```
@@ -202,44 +224,41 @@ await Promise.all([
       write(chunk) {
         console.log("stdout", chunk);
       },
-    }),
+    })
   ),
   process.stderr.pipeThrough(new TextDecoderStream()).pipeTo(
     new WritableStream({
       write(chunk) {
         console.log("stderr", chunk);
       },
-    }),
+    })
   ),
 ]);
 ```
 
-## `spawnWait` and `spawnWaitText`
+## `spawn.wait`
+
+The result of `spawn` is a mixin between `Promise<AdbShellProtocolProcess>` and a `Wait` helper.
+
+It provides a simple way to wait for the process to exit, and read its output.
 
 ```ts showLineNumbers
-export declare namespace AdbShellProtocolSpawner {
-  interface WaitResult<T> {
-    stdout: T;
-    stderr: T;
-    exitCode: number;
-  }
+export interface WaitOptions {
+  stdin?: ReadableStream<MaybeConsumable<Uint8Array>> | undefined;
 }
 
-export declare class AdbShellProtocolSubprocessService {
-  spawnWait(
-    command: string | string[],
-  ): Promise<AdbShellProtocolSpawner.WaitResult<Uint8Array>>;
-  spawnWaitText(
-    command: string | string[],
-  ): Promise<AdbShellProtocolSpawner.WaitResult<string>>;
+interface WaitResult {
+  stdout: Uint8Array;
+  stderr: Uint8Array;
+  exitCode: number;
+}
+
+export interface Wait {
+  wait(options?: WaitOptions): Promise<WaitResult>;
 }
 ```
 
-Start a process in raw mode, buffer its output, wait for it to exit, then return the buffered output all at once.
-
-`spawnWait` returns binary output, while `spawnWaitText` returns text output.
-
-Unlike [none protocol](./none-protocol.mdx#spawnwait-and-spawnwaittext), shell protocol's `spawnWait` and `spawnWaitText` will return an object with `stdout`, `stderr` and `exitCode` properties.
+Basic usage:
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -250,8 +269,36 @@ const {
   exitCode /* : number */,
   stdout /* : Uint8Array */,
   stderr /* : Uint8Array */,
-} = await adb.subprocess.shellProtocol!.spawnWait("ls -al /");
+} = await adb.subprocess.shellProtocol!.spawn("ls -al /").wait();
 ```
+
+Optionally, you can provide a `stdin` stream to write to the process's stdin.
+
+```ts transpile
+import type { Adb, encodeUtf8 } from "@yume-chan/adb";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const {
+  exitCode /* : number */,
+  stdout /* : Uint8Array */,
+  stderr /* : Uint8Array */,
+} = await adb.subprocess.shellProtocol!.spawn("cat").wait({
+  stdin: new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encodeUtf8("Hello World!"));
+      controller.close();
+    },
+  }),
+});
+```
+
+## `spawn.wait.toString`
+
+The result of `spawn.wait` is also a mixin between `Promise<WaitResult>` and a `WaitToString` helper.
+
+It does the same thing as `wait`, but decodes the output to UTF-8 strings.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -262,7 +309,7 @@ const {
   exitCode /* : number */,
   stdout /* : string */,
   stderr /* : string */,
-} = await adb.subprocess.shellProtocol!.spawnWaitText("ls -al /");
+} = await adb.subprocess.shellProtocol!.spawn("ls -al /").wait().toString();
 ```
 
 ## `pty`
