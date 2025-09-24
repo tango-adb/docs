@@ -10,6 +10,8 @@ import CanIUse from "../../../can-i-use";
 
 <CanIUse feature="cryptography" />
 
+## Web
+
 ```sh npm2yarn
 npm i @yume-chan/adb-credential-web
 ```
@@ -33,8 +35,6 @@ const CredentialStore: AdbWebCredentialStore = new AdbWebCredentialStore(
 );
 // highlight-end
 ```
-
-## Web
 
 Two unencrypted storages are provided:
 
@@ -61,5 +61,16 @@ const storage = new TangoIndexedDbStorage();
 ```
 
 ## Node.js
+
+Node.js also supports Web Crypto API, so we have a dedicated `@yume-chan/adb-credential-nodejs` package that provides `TangoKeyStore`s for Node.js:
+
+```sh npm2yarn
+npm i @yume-chan/adb-credential-nodejs
+```
+
+It's mostly compatible with Google ADB:
+
+* It reads ADB keys from `~/.android/adbkey` and `ADB_VENDOR_KEYS` environment variable
+* It saves new ADB key pair to `~/.android/adbkey` and `~/.android/adbkey.pub`
 
 To interop with Google ADB, don't chain `TangoNodeStorage` with any other encrypted storages.
