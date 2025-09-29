@@ -50,7 +50,7 @@ declare class AdbScrcpyClient {
   >(
     adb: Adb,
     path: string,
-    options: TOptions,
+    options: TOptions
   ): Promise<AdbScrcpyClient<TOptions>>;
 }
 ```
@@ -62,6 +62,48 @@ declare class AdbScrcpyClient {
 | `options` | Required               | The options to start the server.             |
 
 It automatically sets up port forwarding, launches the server, and connects to it.
+
+### Overview
+
+```mermaid
+flowchart TD
+    A[/"an Adb instance"/] & B[/"an AdbScrcpyOptions instance"/] --> C["AdbScrcpyClient.start()"]
+
+    subgraph D["an AdbScrcpyClient instance"]
+        E[output]
+        G[videoStream]
+        J[audioStream]
+        L[controller]
+        N[clipboard]
+    end
+
+    C --> D
+
+    E --> F[\Logger\]
+    G --> H[\Video decoder\]
+    G & J --> I[\Media recorder\]
+    J --> K[\Audio decoder\]
+    M[/"Input source"/] --> L
+    N --> O[\System clipboard\]
+
+    classDef link text-decoration: underline;
+    class B,E,G,J,L,N,H,I link;
+
+    click B "../options/#with-yume-chanadb-scrcpy"
+    click E "#server-output"
+    click G "#video-stream"
+    click J "#audio-stream"
+    click L "#controller"
+    click N "#clipboard-stream"
+    click H "../video/"
+    click I "../video/record/"
+```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
 
 ### Examples
 
@@ -79,7 +121,7 @@ const client: AdbScrcpyClient = await AdbScrcpyClient.start(
   DefaultServerPath,
   new AdbScrcpyOptions2_1({
     // options
-  }),
+  })
 );
 ```
 
@@ -96,7 +138,7 @@ const client: AdbScrcpyClient = await AdbScrcpyClient.start(
   "/data/local/tmp/scrcpy-server.jar",
   new AdbScrcpyOptions2_1({
     // options
-  }),
+  })
 );
 ```
 
@@ -127,7 +169,7 @@ try {
   const client: AdbScrcpyClient = await AdbScrcpyClient.start(
     adb,
     DefaultServerPath,
-    new AdbScrcpyOptions2_1({}),
+    new AdbScrcpyOptions2_1({})
   );
 } catch (e) {
   if (e instanceof AdbScrcpyExitedError) {
@@ -154,7 +196,7 @@ void client.output.pipeTo(
     write(chunk) {
       console.log(chunk);
     },
-  }),
+  })
 );
 ```
 
@@ -199,7 +241,7 @@ if (client.videoStream) {
       write(chunk) {
         console.log(chunk.type);
       },
-    }),
+    })
   );
 }
 ```
@@ -246,7 +288,7 @@ if (client.audioStream) {
             write(packet) {
               console.log(packet);
             },
-          }),
+          })
         )
         .catch((e) => console.error(e));
       break;
@@ -290,7 +332,7 @@ if (clipboard) {
           // Handle device clipboard change
           console.log(chunk);
         },
-      }),
+      })
     )
     .catch((e) => console.error(e));
 }
@@ -317,7 +359,7 @@ import { TextDecoderStream } from "@yume-chan/stream-extra";
 declare const adb: Adb;
 
 const process = await adb.subprocess.noneProtocol.spawn(
-  "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1",
+  "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 2.1"
 );
 
 // Print output of Scrcpy server
@@ -326,7 +368,7 @@ await process.output.pipeThrough(new TextDecoderStream()).pipeTo(
     write(chunk) {
       console.log(chunk);
     },
-  }),
+  })
 );
 ```
 

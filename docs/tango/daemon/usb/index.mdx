@@ -131,26 +131,24 @@ Google ADB solves this problem by using a server program (also called "host") th
 ```mermaid
 flowchart TD
     N["AdbDaemonWebUsbDeviceManager.BROWSER<br/>(Shortcut for browser environments)"] --> M
-    A[/"A USB instance<br/>(Runtime WebUSB API)"/] --> B["new AdbDaemonWebUsbDeviceManager()"]
-    B --> M[\"an AdbDaemonWebUsbDeviceManager instance"\]
-    M --> O[".trackDevices()<br/>(Watch device changes)"]
-    M --> D[".getDevices()<br/>(Get existing devices)"]
-    M --> C[".requestDevice()<br/>(Add a new device)"]
-    C & D & O --> E[\an AdbDaemonWebUsbDevice instance\]
-    E --> F[".connect()"]
-    F --> G[\an AdbDaemonConnection instance\]
+    A[/"a USB instance<br/>(Runtime WebUSB API)"/] --> B["new AdbDaemonWebUsbDeviceManager()"]
 
-    subgraph Auth ["Common steps"]
-        G --> H["AdbDaemonTransport.authenticate()"]
-        I[/an AdbCredentialStore instance/] --> H
-        G --> P["new AdbDaemonTransport()<br/>(If authentication not required)"]
-        H & P --> J[\an AdbDaemonTransport instance\]
-        J --> K["new Adb()"]
-        K --> L[\an Adb instance\]
+    subgraph M ["a AdbDaemonWebUsbDeviceManager instance"]
+        C["requestDevice()<br/>(Add a new device)"]
+        D["getDevices()<br/>(Get existing devices)"]
+        O["trackDevices()<br/>(Watch device changes)"]
     end
 
+    subgraph E ["a AdbDaemonWebUsbDevice instance"]
+        F["connect()"]
+    end
+
+    B --> M
+    C & D & O --> E
+    F --> G[\an AdbDaemonConnection instance\]
+
     classDef link text-decoration: underline;
-    class B,N,C,D,O,F,H,I,L link;
+    class B,N,C,D,O,F link;
 
     click B "./device-manager"
     click N "./device-manager"
@@ -158,9 +156,6 @@ flowchart TD
     click D "./get-devices"
     click O "./watch-devices"
     click F "./create-connection"
-    click H "../connect-device"
-    click I "../credential-store"
-    click L "../../../api/"
 ```
 
 :::note

@@ -251,7 +251,7 @@ During the `get` process, if the assertion operation fails (for example, user ca
 
 ## Basic Usage
 
-The most basic usage is with a [LocalStorage storage](./web-crypto.mdx#tangolocalstorage) and a WebAuthn PRF source.
+The most basic usage is with a [LocalStorage storage](./index.mdx#tangolocalstorage) and a WebAuthn PRF source.
 
 ```ts transpile
 import {
@@ -267,7 +267,7 @@ const storage = new TangoPrfStorage(innerStorage, prfSource);
 const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
-Or, an [IndexedDB storage](./web-crypto.mdx#tangoindexeddbstorage) can also be used. Note that since `TangoWebAuthnPrfSource` can't run in Web Workers, so using it doesn't have any big benefits.
+Or, an [IndexedDB storage](./index.mdx#tangoindexeddbstorage) can also be used. Note that since `TangoWebAuthnPrfSource` can't run in Web Workers, so using it doesn't have any big benefits.
 
 ```ts transpile
 import {

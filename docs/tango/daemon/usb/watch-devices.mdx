@@ -26,6 +26,23 @@ export declare class AdbDaemonWebUsbDeviceObserver
 }
 ```
 
+## Overview
+
+```mermaid
+flowchart TB
+    A[/"An AdbDaemonWebUsbDeviceObserver instance"/] --> B[".trackDevices()"]
+    D[/"A USB instance<br/>(Runtime WebUSB API)"/] --> E["AdbDaemonWebUsbDeviceObserver.create()"]
+    B & E --> C[\"An AdbDaemonWebUsbDeviceObserver instance"\]
+
+    C --> F[current]
+    C --> G[onListChange]
+    C --> H[onDeviceAdd]
+    C --> I[onDeviceRemove]
+
+    F & G --> J[\"An AdbDaemonWebUsbDevice[]<br/>(For all devices)"\]
+    H & I --> K[\"An AdbDaemonWebUsbDevice[]<br/>(For changed devices)"\]
+```
+
 ## Create observer
 
 There are two ways to create an `AdbDaemonWebUsbDeviceObserver`.
@@ -57,7 +74,7 @@ import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
 export declare class AdbDaemonWebUsbDeviceObserver {
   static create(
     usb: USB,
-    options?: AdbDaemonWebUsbDeviceManager.RequestDeviceOptions,
+    options?: AdbDaemonWebUsbDeviceManager.RequestDeviceOptions
   ): Promise<AdbDaemonWebUsbDeviceObserver>;
 
   // ...
