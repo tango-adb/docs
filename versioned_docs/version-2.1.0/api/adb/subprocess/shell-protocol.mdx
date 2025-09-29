@@ -237,7 +237,7 @@ const process = await adb.subprocess.shellProtocol!.spawn("logcat");
 setTimeout(() => process.kill(), 1000);
 
 void process.exited.catch((e) => {
-  console.log(e.message); // "Socket ended without exit message"
+  console.log((e as Error).message); // "Socket ended without exit message"
 });
 
 await Promise.all([
