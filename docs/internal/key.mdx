@@ -1,0 +1,29 @@
+# ADB Key
+
+Google ADB uses RSA keys for authentication. It supports multiple keys, and the client will try each key in order until one is accepted by the device.
+
+## Private key
+
+The private key is in [PEM format](https://datatracker.ietf.org/doc/html/rfc7468#page-12), which means the content is a RSA private key in [PKCS#8](https://datatracker.ietf.org/doc/html/rfc5208) format.
+
+## Public key
+
+The public key is a [mincrypt RSA public key](https://android.googlesource.com/platform/system/core/+/bb0c180e62703c2068a1b2c9f8ba6d634bf1553c/include/mincrypt/rsa.h#46), encoded in Base64, followed by a comment (usually the email address of the key owner).
+
+mincrypt was a minimal cryptography library used before Android 7. From Android 7, it's replaced by OpenSSL, but the old public key format is still used for compatibility.
+
+:::info
+
+Google ADB never reads the public key file. It always generates the public key from the private key. The key name sent to devices is always `username@hostname`, not the comment in the public key file.
+
+:::
+
+## User key
+
+User key is stored at `~/.android/adbkey` (private key) and `~/.android/adbkey.pub` (public key). If it doesn't exist, ADB will generate a new key pair when it starts.
+
+## Vendor keys
+
+The `ADB_VENDOR_KEYS` environment variable can be set to list of paths to additional private key files. The list is separated by the platform-specific path delimiter (`:` on Unix-like systems, `;` on Windows).
+
+Each item in `ADB_VENDOR_KEYS` can be either a file or a directory. If it's a directory, all `*.adb_key` files in the directory will be treated as private key files.

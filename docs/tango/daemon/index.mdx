@@ -30,26 +30,56 @@ This class is included in the core package:
 npm i @yume-chan/adb
 ```
 
-To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize Daemon Protocol packets. An `AdbDaemonConnection` implementation is required to send and receive those packets, and an `AdbCredentialStore` implementation is required to manage client certificates.
+## Overview
+
+To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize Daemon Protocol packets.
+
+The most common usage is to use `AdbDaemonTransport.authenticate()` static method to create an authenticated transport instance. It handles the handshake and authentication process automatically using an `AdbDaemonConnection` implementation to send and receive packets and an `AdbCredentialStore` implementation to manage client certificates.
 
 ```mermaid
 flowchart TD
-    subgraph A ["@yume-chan/adb"]
-        AdbDaemonTransport -. requires .-> AdbDaemonConnection
-        AdbDaemonTransport -. requires .-> AdbCredentialStore
-    end
+    A[/an AdbDaemonConnection instance/] --> B["AdbDaemonTransport.authenticate()"]
+    C[/an AdbCredentialStore instance/] --> B
+    B --> D[\an AdbDaemonTransport instance\]
+    D --> E["new Adb()"]
+    E --> F[\an Adb instance\]
+
+    classDef link text-decoration: underline;
+    class A,B,C,F link;
+
+    click A "#connections"
+    click B "./connect-device"
+    click C "./credential-store/"
+    click F "../../api/"
 ```
 
-## Overview
+:::note
 
-Here are the steps to create an `Adb` instance with `AdbDaemonTransport`:
+Click underlined nodes to open their relevant documentations.
 
-1. Creates an `AdbDaemonConnection` for the desired connection method.
-2. Creates an `AdbCredentialStore` that works on the target runtime environment.
-3. Creates an `AdbDaemonTransport` instance with the connection and credential store.
-    1. The transport instance uses the connection to send and receive handshake packets.
-    2. The transport instance uses the credential store to authenticate with the device.
-4. If authentication is successful, user creates an `Adb` instance with the transport object.
+:::
+
+Alternatively, if your connection doesn't require authentication or you handle it yourself, you can directly create an `AdbDaemonTransport` instance using its constructor.
+
+```mermaid
+flowchart TD
+    A[/an AdbDaemonConnection instance/] --> B["new AdbDaemonTransport()"]
+    B --> C[\an AdbDaemonTransport instance\]
+    C --> D["new Adb()"]
+    D --> E[\an Adb instance\]
+
+    classDef link text-decoration: underline;
+    class A,E link;
+
+    click A "#connections"
+    click E "../../api/"
+```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
 
 ## Connections
 

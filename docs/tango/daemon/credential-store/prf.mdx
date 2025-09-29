@@ -1,8 +1,8 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
-# PRF encrypted store
+# PRF encrypted storage
 
 import CanIUse from "../../../can-i-use";
 
@@ -50,13 +50,13 @@ All random number generations, key derivations and encryptions are performed usi
 ```mermaid
 sequenceDiagram
 
-participant AdbWebCryptoCredentialStore
+participant AdbWebCryptoCredentialManager
 participant TangoPrfStorage
 participant TangoDataStorage
 participant TangoPrfSource
 
-AdbWebCryptoCredentialStore->>+AdbWebCryptoCredentialStore: Generate private key
-AdbWebCryptoCredentialStore->>+TangoPrfStorage: save()
+AdbWebCryptoCredentialManager->>+AdbWebCryptoCredentialManager: Generate private key
+AdbWebCryptoCredentialManager->>+TangoPrfStorage: save()
 
 TangoPrfStorage->>+TangoPrfSource: create()
 TangoPrfSource->>-TangoPrfStorage: Return PRF output
@@ -67,7 +67,7 @@ TangoPrfStorage->>TangoPrfStorage: Encrypt the ADB key
 TangoPrfStorage->>+TangoDataStorage: save()
 TangoDataStorage->>-TangoPrfStorage: Return success
 
-TangoPrfStorage->>-AdbWebCryptoCredentialStore: Return success
+TangoPrfStorage->>-AdbWebCryptoCredentialManager: Return success
 ```
 
 #### Data flow
@@ -98,12 +98,12 @@ PRF key ID, HKDF info and salt, AES initialization vector, and the encrypted dat
 ```mermaid
 sequenceDiagram
 
-participant AdbWebCryptoCredentialStore
+participant AdbWebCryptoCredentialManager
 participant TangoPrfStorage
 participant TangoDataStorage
 participant TangoPrfSource
 
-AdbWebCryptoCredentialStore->>+TangoPrfStorage: load()
+AdbWebCryptoCredentialManager->>+TangoPrfStorage: load()
 
 TangoPrfStorage->>+TangoDataStorage: load()
 TangoDataStorage->>-TangoPrfStorage: Return encrypted data
@@ -114,7 +114,7 @@ TangoPrfSource->>-TangoPrfStorage: Return PRF output
 TangoPrfStorage->>TangoPrfStorage: Derive decryption key
 TangoPrfStorage->>TangoPrfStorage: Decrypt data
 
-TangoPrfStorage->>-AdbWebCryptoCredentialStore: Return decrypted key
+TangoPrfStorage->>-AdbWebCryptoCredentialManager: Return decrypted key
 ```
 
 The stored information is used to produce the same PRF output, the same AES key, and the same cleartext data.
@@ -239,36 +239,48 @@ export declare namespace TangoWebAuthnPrfSource {
 }
 ```
 
+### Errors
+
+#### `NotSupportedError`
+
+During the `create` process, if no authenticator supporting PRF extension is found, a `TangoWebAuthnPrfSource.NotSupportedError` will be thrown.
+
+#### `AssertionFailedError`
+
+During the `get` process, if the assertion operation fails (for example, user cancels the operation), a `TangoWebAuthnPrfSource.AssertionFailedError` will be thrown.
+
 ## Basic Usage
 
 The most basic usage is with a [LocalStorage storage](./web-crypto.mdx#tangolocalstorage) and a WebAuthn PRF source.
 
 ```ts transpile
 import {
+  AdbWebCryptoCredentialManager,
   TangoPrfStorage,
   TangoLocalStorage,
   TangoWebAuthnPrfSource,
 } from "@yume-chan/adb-credential-web";
 
-const storage = new TangoPrfStorage(
-  new TangoLocalStorage("key"),
-  new TangoWebAuthnPrfSource("Tango", "ADB Key")
-);
+const innerStorage = new TangoLocalStorage("key");
+const prfSource = new TangoWebAuthnPrfSource("Tango", "ADB Key");
+const storage = new TangoPrfStorage(innerStorage, prfSource);
+const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
 Or, an [IndexedDB storage](./web-crypto.mdx#tangoindexeddbstorage) can also be used. Note that since `TangoWebAuthnPrfSource` can't run in Web Workers, so using it doesn't have any big benefits.
 
 ```ts transpile
 import {
+  AdbWebCryptoCredentialManager,
   TangoPrfStorage,
   TangoIndexedDbStorage,
   TangoWebAuthnPrfSource,
 } from "@yume-chan/adb-credential-web";
 
-const storage = new TangoPrfStorage(
-  new TangoIndexedDbStorage(),
-  new TangoWebAuthnPrfSource("Tango", "ADB Key")
-);
+const innerStorage = new TangoIndexedDbStorage();
+const prfSource = new TangoWebAuthnPrfSource("Tango", "ADB Key");
+const storage = new TangoPrfStorage(innerStorage, prfSource);
+const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
 ## Two-factor authentication

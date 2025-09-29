@@ -2,9 +2,9 @@ import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 import CanIUse from "../../../can-i-use";
 
-# Credential store
+# Credential manager
 
-Directly connecting to devices requires authentication. The authentication process uses [RSA algorithm](<https://en.wikipedia.org/wiki/RSA_(cryptosystem)>), except it uses a custom public key format.
+Directly connecting to the ADB Daemon on device requires authentication. The authentication process uses [RSA algorithm](<https://en.wikipedia.org/wiki/RSA_(cryptosystem)>), except it uses a custom public key format.
 
 ADB protocol has two authentication methods:
 
@@ -21,129 +21,252 @@ Even if the user checked "Always allow from this computer", the public key may b
 
 :::
 
-Tango supports both authentication methods, and can use varies credential stores to support different runtimes.
+Tango supports both authentication methods, and can use varies credential managers to support different runtimes.
 
-<Tabs className="runtime-tabs" groupId="runtime">
-<TabItem value="web" label="Web">
+## `AdbWebCryptoCredentialManager`
 
-[`@yume-chan/adb-credential-web`](https://www.npmjs.com/package/@yume-chan/adb-credential-web) package uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate ADB private keys, and [IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store them.
+[Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) is a standard API for performing cryptographic operations including key generation, encryption, decryption, and digital signatures.
+
+:::info
+
+ADB doesn't use standard RSA signature scheme, thus signing the challenge is implemented by Tango, instead of using Web Crypto API's `sign` method directly.
+
+:::
 
 <CanIUse feature="cryptography" />
 
-We use IndexedDB because it's available in Web Workers. ADB protocol is computationally heavy, so it's better to run it in a Web Worker to avoid blocking the main thread. (Except the WebUSB part, which is not available in Web Workers).
+Both Web browsers and Node.js support Web Crypto API, so we provide the `AdbWebCryptoCredentialManager` class that uses Web Crypto API to generate ADB private keys.
+
+However, Web browsers and Node.js don't share a common API to store data. Thus, the `AdbWebCryptoCredentialManager` class requires a `TangoKeyStore` instance to store the generated keys.
+
+```mermaid
+flowchart TD
+    A[/A TangoKeyStore instance/] --> B["new AdbWebCryptoCredentialManager()"]
+    B --> C[\An AdbWebCryptoCredentialManager instance\]
+    C --> D["AdbDaemonTransport.authenticate()"]
+```
+
+### Definition
+
+```ts
+import type {
+  AdbCredentialStore,
+  AdbPrivateKey,
+  MaybeError,
+} from "@yume-chan/adb";
+import type { TangoKeyStorage } from "@yume-chan/adb-credential-web";
+
+export declare class AdbWebCryptoCredentialManager
+  implements AdbCredentialStore
+{
+  constructor(storage: TangoKeyStorage, name?: string);
+
+  generateKey(): Promise<AdbPrivateKey>;
+  iterateKeys(): AsyncGenerator<MaybeError<AdbPrivateKey>, void, void>;
+}
+```
+
+### Constructor parameters
+
+#### `storage`
+
+A `TangoKeyStore` instance to store the generated keys.
+
+#### `name`
+
+An optional name for the keys. On Android 11 and above, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices".
+
+If not provided, Android will display it as `nouser@nohostname`.
+
+## Web
+
+`@yume-chan/adb-credential-web` package provides the `AdbWebCryptoCredentialManager` class, along with various `TangoKeyStore` implementations for Web browsers.
 
 ```sh npm2yarn
 npm i @yume-chan/adb-credential-web
 ```
 
-```ts transpile
-import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
+Two unencrypted and two encrypted storages are provided:
 
-// highlight-start
-const CredentialStore: AdbWebCredentialStore = new AdbWebCredentialStore();
-// highlight-end
+### `TangoLocalStorage`
+
+Stores the key in `localStorage`.
+
+| Characteristic | Description |
+| -------------- | ----------- |
+| Number of keys | 1           |
+| Encrypted      | No          |
+| Web Worker     | No          |
+
+The constructor accepts a key name to store the key (`localStorage.getItem(name)`). If you want, you can create multiple `TangoLocalStorage` instances with different names to store multiple keys.
+
+```ts transpile
+import {
+  AdbWebCryptoCredentialManager,
+  TangoLocalStorage,
+} from "@yume-chan/adb-credential-web";
+
+const storage = new TangoLocalStorage("key");
+const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
-Optionally, you can provide a name for your keys. On Android 11 and above, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `Tango@<current host name>`, e.g. `Tango@app.tangoapp.dev`.
+### `TangoIndexedDbStorage`
+
+Stores keys using IndexedDB API. It will create a database named `"Tango"` and a store (table) named `"Authentication"` in it.
+
+| Characteristic | Description |
+| -------------- | ----------- |
+| Number of keys | Unlimited   |
+| Encrypted      | No          |
+| Web Worker     | Yes         |
 
 ```ts transpile
-import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
+import {
+  AdbWebCryptoCredentialManager,
+  TangoIndexedDbStorage,
+} from "@yume-chan/adb-credential-web";
 
-// highlight-start
-const CredentialStore: AdbWebCredentialStore = new AdbWebCredentialStore(
-  "Your Key Name"
-);
-// highlight-end
+const storage = new TangoIndexedDbStorage();
+const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
-</TabItem>
-<TabItem value="node" label="Node.js">
+### `TangoPasswordProtectedStorage`
 
-There is currently no NPM package for a Node.js compatible credential store, but here is a reference implementation:
+Encrypts the ADB key using a password. It requires another `TangoKeyStore` instance to store the encrypted data.
 
-It uses [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to generate private keys, and stores them in `~/.android/adbkey` and `~/.android/adbkey.pub` files, same as Google ADB.
+| Characteristic | Description                                                |
+| -------------- | ---------------------------------------------------------- |
+| Number of keys | Depends on the inner `TangoKeyStore`                       |
+| Encrypted      | Yes                                                        |
+| Web Worker     | Depends on the inner `TangoKeyStore` and password callback |
 
-```ts transpile
-import { AdbCredentialStore, adbGeneratePublicKey } from "@yume-chan/adb";
-import { webcrypto } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
-import { homedir, hostname, userInfo } from "node:os";
-import { join } from "node:path";
+```ts
+export namespace TangoPasswordProtectedStorage {
+  export type RequestPassword = (
+    reason: "save" | "load",
+    name: string | undefined
+  ) => MaybePromiseLike<string>;
 
-class AdbNodeJsCredentialStore implements AdbCredentialStore {
-  #name: string;
-
-  constructor(name: string) {
-    this.#name = name;
-  }
-
-  #privateKeyPath() {
-    return join(homedir(), ".android", "adbkey");
-  }
-
-  #publicKeyPath() {
-    return join(homedir(), ".android", "adbkey.pub");
-  }
-
-  async generateKey() {
-    const { privateKey: cryptoKey } = await webcrypto.subtle.generateKey(
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        modulusLength: 2048,
-        // 65537
-        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-        hash: "SHA-1",
-      },
-      true,
-      ["sign", "verify"]
-    );
-
-    const privateKey = new Uint8Array(
-      await crypto.subtle.exportKey("pkcs8", cryptoKey)
-    );
-    await writeFile(
-      this.#privateKeyPath(),
-      Buffer.from(privateKey).toString("utf8")
-    );
-    await writeFile(
-      this.#publicKeyPath(),
-      `${Buffer.from(adbGeneratePublicKey(privateKey)).toString("base64")} ${
-        this.#name
-      }\n`
-    );
-
-    return {
-      buffer: privateKey,
-      name: this.#name,
-    };
-  }
-
-  async #readPubKeyName() {
-    const content = await readFile(this.#publicKeyPath(), "utf8");
-    const pubKeyName = content.split(" ")[1];
-    return pubKeyName || `${userInfo().username}@${hostname()}`;
-  }
-
-  async *iterateKeys() {
-    const content = await readFile(this.#privateKeyPath(), "utf8");
-    const privateKey = Buffer.from(
-      content.split("\n").slice(1, -2).join(""),
-      "base64"
-    );
-    yield {
-      buffer: privateKey,
-      name: await this.#readPubKeyName(),
-    };
+  declare class PasswordIncorrectError extends Error {
+    get keyName(): string | undefined;
+    constructor(keyName: string | undefined);
   }
 }
 
-const CredentialStore = new AdbNodeJsCredentialStore(
-  `${userInfo().username}@${hostname()}`
-);
+export declare class TangoPasswordProtectedStorage implements TangoKeyStorage {
+  constructor(
+    storage: TangoKeyStorage,
+    requestPassword: TangoPasswordProtectedStorage.RequestPassword
+  );
+}
 ```
 
-</TabItem>
-<TabItem value="custom" label="Custom">
+#### Constructor parameters
+
+##### `storage`
+
+The inner `TangoKeyStore` instance to store the encrypted data.
+
+##### `requestPassword`
+
+A callback function to get the password.
+
+Parameters:
+
+- `reason`: `"save"` when saving (encrypting) the key, `"load"` when loading (decrypting) the key.
+- `name`: The name of the key. When saving, it's the `AdbWebCryptoCredentialManager`'s `name` parameter. When loading, it's the name of the loaded key from its inner `TangoKeyStore`.
+
+#### Example
+
+```ts transpile
+import {
+  AdbWebCryptoCredentialManager,
+  TangoPasswordProtectedStorage,
+  TangoIndexedDbStorage,
+} from "@yume-chan/adb-credential-web";
+
+const innerStorage = new TangoIndexedDbStorage();
+const storage = new TangoPasswordProtectedStorage(
+  innerStorage,
+  (reason, name) =>
+    prompt(
+      `Password for ${reason === "save" ? "encrypting" : "decrypting"} ${name}:`
+    )
+);
+const manager = new AdbWebCryptoCredentialManager(storage);
+```
+
+#### Error
+
+If the password is incorrect when loading (decrypting) the key, a `TangoPasswordProtectedStorage.PasswordIncorrectError` will be thrown.
+
+The `keyName` property contains the name of the key that failed to decrypt.
+
+### `TangoPrfStorage`
+
+Encrypts the ADB key using a PRF (pseudo-random function) derived key. It requires another `TangoKeyStore` instance to store the encrypted data.
+
+| Characteristic | Description                          |
+| -------------- | ------------------------------------ |
+| Number of keys | Depends on the inner `TangoKeyStore` |
+| Encrypted      | Yes                                  |
+| Web Worker     | No                                   |
+
+See [its dedicated page](./prf.mdx) for more details.
+
+```ts transpile
+import {
+  AdbWebCryptoCredentialManager,
+  TangoPrfStorage,
+  TangoIndexedDbStorage,
+  TangoWebAuthnPrfSource,
+} from "@yume-chan/adb-credential-web";
+
+const innerStorage = new TangoIndexedDbStorage();
+const prfSource = new TangoWebAuthnPrfSource("Tango", "ADB Key");
+const storage = new TangoPrfStorage(innerStorage, prfSource);
+const manager = new AdbWebCryptoCredentialManager(storage);
+```
+
+## Node.js
+
+The `@yume-chan/adb-credential-nodejs` package re-exports `AdbWebCryptoCredentialManager` from `@yume-chan/adb-credential-web`, and provides a `TangoKeyStore` for Node.js:
+
+```sh npm2yarn
+npm i @yume-chan/adb-credential-nodejs
+```
+
+### `TangoNodeStorage`
+
+| Characteristic   | Description                         |
+| ---------------- | ----------------------------------- |
+| Number of keys   | Unlimited for loading, 1 for saving |
+| Encrypted        | No                                  |
+| `worker_threads` | Yes                                 |
+
+This storage uses a file to store the ADB key.
+
+It follows the same convention as [Google ADB](../../../internal/key.mdx), plus it will read the public key for key name (and fallback to the default name if not found).
+
+To interop with Google ADB, don't chain `TangoNodeStorage` with any other encrypted storages.
+
+```ts transpile
+import {
+  AdbWebCryptoCredentialManager,
+  TangoNodeStorage,
+} from "@yume-chan/adb-credential-nodejs";
+
+const storage = new TangoNodeStorage();
+const manager = new AdbWebCryptoCredentialManager(storage);
+```
+
+## Custom Credential Store
+
+:::danger
+
+This part of the documentation is out of date. To be updated.
+
+:::
 
 In Tango, each private key is a plain object with the following fields:
 
@@ -174,8 +297,3 @@ The authentication process is as follows:
 2. Tango calls `iterateKeys` again
    1. If it returns at least one key, Tango uses the first key in public key authentication. No matter the authentication succeeds or not, no further steps will be taken.
 3. `generateKey` is called, and the generated key is used in public key authentication.
-
-See the Node.js tab for an example.
-
-</TabItem>
-</Tabs>

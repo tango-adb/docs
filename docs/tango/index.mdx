@@ -90,10 +90,23 @@ The end goal is to create an `Adb` instance, but first, an `AdbTransport` object
 
 ```mermaid
 flowchart TD
-    subgraph A ["@yume-chan/adb"]
-        Adb -. requires .-> AdbTransport
-    end
+    A[/an AdbTransport instance/] --> B["new Adb()"]
+    B --> C[\an Adb instance\]
+
+    classDef link text-decoration: underline;
+    class A,C link;
+
+    click A "#transport"
+    click C "./api/"
 ```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
+
+## Transport
 
 The **AdbTransport** interface defines how to communicate with ADB Daemons (basically, your devices). ADB Daemon is the program on Android devices (when USB Debugging or Wireless Debugging options are enabled) that handles incoming ADB connections and commands.
 
