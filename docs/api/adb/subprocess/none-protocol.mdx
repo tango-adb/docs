@@ -177,7 +177,8 @@ Note: `adb exec-out` doesn't forward `stdin` to the process, so it's not 100% eq
 
 A `Promise` that resolves when the process exits.
 
-If the process is killed by `signal`, its `exited` promise will be rejected with `signal.reason`.
+* If the process exits normally, was killed by a signal, or was killed by calling [`kill()`](#kill), the promise resolves with `undefined`.
+* If the [`signal`](#signal) option aborts the process, the promise rejects with `signal.reason`.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -191,7 +192,7 @@ await process.exited; // Resolves after 1 second
 
 ### `kill`
 
-Forcefully kill the process.
+Send a `SIGHUP` to the process, which usually causes it to terminate.
 
 If there are any remaining data in `output`, they can still be read after the process has exited.
 

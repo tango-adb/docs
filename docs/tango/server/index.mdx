@@ -52,14 +52,16 @@ flowchart TB
         G["getDevices()"]
         M["trackDevices()"]
         H["createTransport()"]
+        N["createAdb()"]
     end
 
     C & E --> F
 
     G & M --> I[\"an AdbServerClient.Device instance"\] --> H --> J[\"an AdbTransport instance"\] --> K["new Adb()"] --> L[\"an Adb instance"\]
+    I --> N --> L
 
     classDef link text-decoration: underline;
-    class A,B,C,E,G,H,L,M link;
+    class A,B,C,E,G,H,L,M,N link;
 
     click A "./client#nodejs"
     click B "./client#nodejs"
@@ -69,6 +71,7 @@ flowchart TB
     click H "./transport"
     click L "../../api"
     click M "./watch"
+    click N "./transport/#create-an-adb-instance"
 ```
 
 :::note

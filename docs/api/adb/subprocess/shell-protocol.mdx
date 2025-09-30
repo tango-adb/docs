@@ -183,10 +183,10 @@ If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if 
 
 A `Promise` that resolves with the process's exit code.
 
-* If the process exits normally using `exit(code)`, the promise resolves to `code & 0x7f`.
-* If the process is killed by a signal, the promise resolves to `128 + signal number`. (For example, `SIGKILL` is signal number `9`, so the exit code will be `128 + 9 = 137`)
-* If the [`signal`](#signal) option aborts the process, the promise is rejected with `signal.reason`.
-* If the process is killed by [`kill()`](#kill), the promise is rejected with a "Socket ended without exit message" error.
+* If the process exits normally using `exit(code)`, the promise resolves with `code & 0x7f`.
+* If the process is killed by a signal, the promise resolves with `128 + signal number`. (For example, `SIGKILL` is signal number `9`, so the exit code will be `128 + 9 = 137`)
+* If the [`signal`](#signal) option aborts the process, the promise rejects with `signal.reason`.
+* If the process is killed by calling [`kill()`](#kill), the promise rejects with a "Socket ended without exit message" error.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -200,7 +200,7 @@ const exitCode: number = await process.exited; // Resolves after 1 second
 
 ### `kill`
 
-Forcefully kill the process.
+Send a `SIGHUP` to the process, which usually causes it to terminate.
 
 The remaining data in [`stdout`](#stdout-and-stderr) and [`stderr`](#stdout-and-stderr) (if any) can still be read after calling this method, the streams will be closed after all buffered data is consumed.
 

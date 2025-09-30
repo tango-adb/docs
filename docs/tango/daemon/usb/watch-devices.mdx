@@ -6,7 +6,7 @@ sidebar_position: 6
 
 The `AdbDaemonWebUsbDeviceObserver` class in `@yume-chan/adb-daemon-webusb` package wraps WebUSB API to monitor device changes.
 
-## Declaration
+## Definition
 
 ```ts
 import { Event } from "@yume-chan/event";
@@ -30,18 +30,40 @@ export declare class AdbDaemonWebUsbDeviceObserver
 
 ```mermaid
 flowchart TB
-    A[/"An AdbDaemonWebUsbDeviceObserver instance"/] --> B[".trackDevices()"]
-    D[/"A USB instance<br/>(Runtime WebUSB API)"/] --> E["AdbDaemonWebUsbDeviceObserver.create()"]
-    B & E --> C[\"An AdbDaemonWebUsbDeviceObserver instance"\]
+    subgraph A["An AdbDaemonWebUsbDeviceManager instance"]
+        B["trackDevices()"]
+    end
 
-    C --> F[current]
-    C --> G[onListChange]
-    C --> H[onDeviceAdd]
-    C --> I[onDeviceRemove]
+    D[/"A USB instance<br/>(Runtime WebUSB API)"/] --> E["AdbDaemonWebUsbDeviceObserver.create()"]
+
+    subgraph C["An AdbDaemonWebUsbDeviceObserver instance"]
+        F[current]
+        G[onListChange]
+        H[onDeviceAdd]
+        I[onDeviceRemove]
+    end
+
+    B & E --> C[\"An AdbDaemonWebUsbDeviceObserver instance"\]
 
     F & G --> J[\"An AdbDaemonWebUsbDevice[]<br/>(For all devices)"\]
     H & I --> K[\"An AdbDaemonWebUsbDevice[]<br/>(For changed devices)"\]
+
+    classDef link text-decoration: underline;
+    class B,E,F,G,H,I link;
+
+    click B "#from-adbdaemonwebusbdevicemanager"
+    click E "#standalone-usage"
+    click F "#current"
+    click G "#onlistchange"
+    click H "#ondeviceadd-and-ondeviceremove"
+    click I "#ondeviceadd-and-ondeviceremove"
 ```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
 
 ## Create observer
 
