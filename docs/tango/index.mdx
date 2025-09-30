@@ -90,8 +90,7 @@ The end goal is to create an `Adb` instance, but first, an `AdbTransport` object
 
 ```mermaid
 flowchart TD
-    A[/an AdbTransport instance/] --> B["new Adb()"]
-    B --> C[\an Adb instance\]
+    A[/an AdbTransport instance/] --> B["new Adb()"] --> C[\an Adb instance\]
 
     classDef link text-decoration: underline;
     class A,C link;
@@ -111,6 +110,34 @@ Click underlined nodes to open their relevant documentations.
 The **AdbTransport** interface defines how to communicate with ADB Daemons (basically, your devices). ADB Daemon is the program on Android devices (when USB Debugging or Wireless Debugging options are enabled) that handles incoming ADB connections and commands.
 
 Tango provides two built-in transports: [**Daemon Transport**](./daemon/index.mdx) and [**Server Transport**](./server/index.mdx), and also accepts [custom transport implementations](./custom-transport/index.mdx).
+
+```mermaid
+flowchart TD
+    A["AdbDaemonTransport.authenticate()"] --> B[/an AdbTransport instance/]
+
+    subgraph C ["an AdbServerClient instance"]
+        D["createTransport()"]
+    end
+
+    D --> B
+    E[Custom Transport] --> B
+
+    B --> F["new Adb()"] --> G[\an Adb instance\]
+
+    classDef link text-decoration: underline;
+    class A,D,E,G link;
+
+    click A "./tango/daemon/"
+    click D "./tango/server/"
+    click E "./tango/custom-transport/"
+    click G "./api/"
+```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
 
 Answer several questions to determine which transport you need:
 

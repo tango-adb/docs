@@ -77,14 +77,14 @@ import { ReadableStream } from "@yume-chan/stream-extra";
 declare const adb: Adb;
 
 const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
+  // highlight-start
   stdin: new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(encodeUtf8("Hello World!"));
-      // highlight-start
       controller.close();
-      // highlight-end
     },
   }),
+  // highlight-end
 });
 ```
 

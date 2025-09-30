@@ -10,23 +10,13 @@ import CanIUse from "../../../can-i-use";
 
 WebUSB provides APIs for discovering and communicating with USB devices. The `AdbDaemonWebUsbDeviceManager` class wraps the WebUSB API to better work with ADB devices.
 
-## Usage
-
 The usage of `AdbDaemonWebUsbDeviceManager` is different in Node.js and Web browsers:
 
-<Tabs className="runtime-tabs" groupId="runtime">
-<TabItem value="web" label="Web">
+## Web
 
 Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
 
 <CanIUse feature="webusb" />
-
-:::info[Electron Support]
-
-- To use Tango in Electron renderer processes, see https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api for how to enable WebUSB API in Electron, then follow the instructions below
-- To use Tango in Electron main processes, follow the instructions for Node.js instead
-
-:::
 
 :::info[Secure Context Required]
 
@@ -73,8 +63,13 @@ if (!Manager) {
 }
 ```
 
-</TabItem>
-<TabItem value="node" label="Node.js">
+:::note[Next Step]
+
+[Request device permission](./request-device.mdx)
+
+:::
+
+## Node.js
 
 Node.js doesn't support WebUSB natively, but the [`usb`](https://www.npmjs.com/package/usb) package provides a WebUSB implementation for it.
 
@@ -107,11 +102,21 @@ Passing [`allowAllDevices: true` option](https://github.com/node-usb/node-usb?ta
 
 :::
 
-</TabItem>
-</Tabs>
-
 :::note[Next Step]
 
 [Request device permission](./request-device.mdx)
 
 :::
+
+## Electron
+
+### Renderer Process
+
+To use Tango in Electron renderer processes:
+
+1. Enable WebUSB API in Electron following https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api
+2. Follow the instructions for [Web](#web).
+
+### Main Process
+
+To use Tango in Electron main processes, follow the instructions for [Node.js](#nodejs).

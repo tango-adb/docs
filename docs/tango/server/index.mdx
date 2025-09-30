@@ -28,8 +28,8 @@ To use the server transport, Google ADB server must already be running on the PC
 
 The latest version of Google ADB for Windows, Linux and macOS can be downloaded at https://developer.android.com/tools/releases/platform-tools.
 
-* For Windows, `adb.exe`, `AdbWinApi.dll` and `AdbWinUsbApi.dll` are required.
-* For other platforms, only `adb` executable is needed.
+* For Windows: `adb.exe`, `AdbWinApi.dll` and `AdbWinUsbApi.dll` are required.
+* For other platforms: only `adb` executable is needed.
 
 To start ADB in server mode, run `adb server nodaemon`.
 
@@ -44,24 +44,35 @@ npm i @yume-chan/adb
 To support different runtime environments, `AdbServerClient` uses an `AdbServerConnector` implementation to create those TCP sockets. Currently, there is no built-in connector for Web platforms, as TCP sockets are not supported there. Tango provides a Node.js implementation using its `net` module, and also accepts custom connector implementations for other runtime environments.
 
 ```mermaid
-flowchart TD
-    subgraph A ["@yume-chan/adb"]
-        AdbServerClient -. requires .-> AdbServerConnector
+flowchart TB
+    A["new AdbServerNodeTcpConnector()"] --> B[/"an AdbServerNodeTcpConnector instance"/] --> C["new AdbServerClient()"]
+    D[/Custom connector/] --> E["new AdbServerClient()"]
+
+    subgraph F ["an AdbServerClient instance"]
+        G["getDevices()"]
+        M["trackDevices()"]
+        H["createTransport()"]
     end
-    subgraph B ["@yume-chan/adb-server-node-tcp"]
-        AdbServerNodeTcpConnector -- implements --> AdbServerConnector
-    end
-    subgraph C ["your package"]
-        YourConnector -- implements --> AdbServerConnector
-    end
+
+    C & E --> F
+
+    G & M --> I[\"an AdbServerClient.Device instance"\] --> H --> J[\"an AdbTransport instance"\] --> K["new Adb()"] --> L[\"an Adb instance"\]
+
+    classDef link text-decoration: underline;
+    class A,B,C,E,G,H,L,M link;
+
+    click A "./client#nodejs"
+    click B "./client#nodejs"
+    click C "./client#create-client-1"
+    click E "./client#create-client-1"
+    click G "./devices"
+    click H "./transport"
+    click L "../../api"
+    click M "./watch"
 ```
 
-## Overview
+:::note
 
-Here are the overall steps to create an `Adb` instance from `AdbServerClient`:
+Click underlined nodes to open their relevant documentations.
 
-1. Creates an `AdbServerClient.ServerConnector` that works on the target runtime environment.
-2. Creates an `AdbServerClient` instance with the connector.
-3. Queries the device list and selects an already authenticated device.
-4. Creates an `AdbServerTransport` instance for the selected device.
-5. Creates an `Adb` instance with the transport object.
+:::

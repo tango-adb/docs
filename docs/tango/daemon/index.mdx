@@ -34,22 +34,18 @@ npm i @yume-chan/adb
 
 To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize Daemon Protocol packets.
 
-The most common usage is to use `AdbDaemonTransport.authenticate()` static method to create an authenticated transport instance. It handles the handshake and authentication process automatically using an `AdbDaemonConnection` implementation to send and receive packets and an `AdbCredentialStore` implementation to manage client certificates.
+The most common usage is to use `AdbDaemonTransport.authenticate()` static method to create an authenticated transport instance. It uses an `AdbDaemonConnection` object to send and receive packets and an `AdbDaemonAuthenticator` implementation to handle handshake and authentication.
 
 ```mermaid
 flowchart TD
-    A[/an AdbDaemonConnection instance/] --> B["AdbDaemonTransport.authenticate()"]
-    C[/an AdbCredentialStore instance/] --> B
-    B --> D[\an AdbDaemonTransport instance\]
-    D --> E["new Adb()"]
-    E --> F[\an Adb instance\]
+    A[/an AdbDaemonConnection instance/] & B[/an AdbDaemonAuthenticator instance/] --> C["AdbDaemonTransport.authenticate()"] --> D[\an AdbDaemonTransport instance\] --> E["new Adb()"] --> F[\an Adb instance\]
 
     classDef link text-decoration: underline;
     class A,B,C,F link;
 
     click A "#connections"
-    click B "./connect-device"
-    click C "./credential-store/"
+    click B "./credential-store/"
+    click C "./connect-device"
     click F "../../api/"
 ```
 
@@ -111,16 +107,31 @@ Safari and not supported.
 
 ```mermaid
 flowchart TD
-    subgraph A ["@yume-chan/adb"]
-        AdbDaemonTransport -. requires .-> AdbDaemonConnection
+    subgraph A [an AdbDaemonWebUsbDevice instance]
+        B["connect()"]
     end
-    subgraph B ["@yume-chan/adb-daemon-webusb"]
-        AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
-    end
-    subgraph C ["your package"]
-        YourConnection -- implements --> AdbDaemonConnection
-    end
+
+    B & C[/ADB over Wi-Fi connection/] --> D[\"an AdbDaemonConnection instance"\]
+    D & E[/an AdbDaemonAuthenticator instance/] --> F["AdbDaemonTransport.authenticate()"] --> G[\an AdbDaemonTransport instance\] --> H["new Adb()"] --> I[\an Adb instance\]
+
+    J[/Custom connection/] --> K["new AdbDaemonTransport()"] --> G
+
+    classDef link text-decoration: underline;
+    class B,C,E,F,J,I link;
+
+    click B "#usb-connection"
+    click C "#tcp-connection"
+    click E "./credential-store/"
+    click F "./connect-device"
+    click J "#custom-connection"
+    click I "./api/"
 ```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
 
 ### USB Connection
 
@@ -135,17 +146,39 @@ Because USB connections are exclusive, Daemon Transport can't access a USB devic
 
 ```mermaid
 flowchart TD
-    subgraph C ["Runtime"]
-        WebUSB["WebUSB API"]
+    N["AdbDaemonWebUsbDeviceManager.BROWSER<br/>(Shortcut for Web environment)"] --> M
+    A[/"a USB instance<br/>(Runtime WebUSB API)"/] --> B["new AdbDaemonWebUsbDeviceManager()"]
+
+    subgraph M ["an AdbDaemonWebUsbDeviceManager instance"]
+        C["requestDevice()<br/>(Add a new device)"]
+        D["getDevices()<br/>(Get existing devices)"]
+        O["trackDevices()<br/>(Watch device changes)"]
     end
-    subgraph A ["@yume-chan/adb"]
-        AdbDaemonConnection
+
+    subgraph E ["an AdbDaemonWebUsbDevice instance"]
+        F["connect()"]
     end
-    subgraph B ["@yume-chan/adb-daemon-webusb"]
-        AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
-        AdbDaemonWebUsbConnection -. requires .-> WebUSB
-    end
+
+    B --> M
+    C & D & O --> E
+    F --> G[\an AdbDaemonConnection instance\]
+
+    classDef link text-decoration: underline;
+    class B,N,C,D,O,F link;
+
+    click B "./usb/device-manager"
+    click N "./usb/device-manager"
+    click C "./usb/request-device"
+    click D "./usb/get-devices"
+    click O "./usb/watch-devices"
+    click F "./usb/create-connection"
 ```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
 
 :::note[Next Step]
 

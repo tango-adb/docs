@@ -37,11 +37,11 @@ ADB doesn't use standard RSA signature scheme, thus signing the challenge is imp
 
 Both Web browsers and Node.js support Web Crypto API, so we provide the `AdbWebCryptoCredentialManager` class that uses Web Crypto API to generate ADB private keys.
 
-However, Web browsers and Node.js don't share a common API to store data. Thus, the `AdbWebCryptoCredentialManager` class requires a `TangoKeyStore` instance to store the generated keys.
+However, Web browsers and Node.js don't share a common API to store data. Thus, the `AdbWebCryptoCredentialManager` class requires a `TangoKeyStorage` instance to store the generated keys.
 
 ```mermaid
 flowchart TD
-    A[/A TangoKeyStore instance/] --> B["new AdbWebCryptoCredentialManager()"]
+    A[/A TangoKeyStorage instance/] --> B["new AdbWebCryptoCredentialManager()"]
     B --> C[\An AdbWebCryptoCredentialManager instance\]
     C --> D["AdbDaemonTransport.authenticate()"]
 ```
@@ -70,7 +70,7 @@ export declare class AdbWebCryptoCredentialManager
 
 #### `storage`
 
-A `TangoKeyStore` instance to store the generated keys.
+A `TangoKeyStorage` instance to store the generated keys.
 
 #### `name`
 
@@ -78,9 +78,57 @@ An optional name for the keys. On Android 11 and above, it will appear in "Setti
 
 If not provided, Android will display it as `nouser@nohostname`.
 
+### `TangoKeyStorage`
+
+`TangoKeyStorage` is a simple interface for storing data with a name. For unencrypted storages the `privateKey` is the raw private key in [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8) format, for encrypted storages it's the encrypted data.
+
+```ts
+import type { MaybeError } from "@yume-chan/adb";
+import type { MaybePromiseLike } from "@yume-chan/async";
+
+export interface TangoKey {
+  privateKey: Uint8Array;
+  name: string | undefined;
+}
+
+export interface TangoKeyStorage {
+  save(
+    privateKey: Uint8Array,
+    name: string | undefined
+  ): MaybePromiseLike<undefined>;
+
+  load(): Iterable<MaybeError<TangoKey>> | AsyncIterable<MaybeError<TangoKey>>;
+}
+```
+
+#### `save`
+
+Save a private key to storage.
+
+Parameters:
+
+- `privateKey`: The data to be saved
+- `name`: The name of the key
+
+Returns:
+
+Either `undefined` or a `Promise` that resolves to `undefined`.
+
+#### `load`
+
+Load all private keys from storage.
+
+Returns:
+
+An sync or async iterable. Each item is either a `TangoKey` or an `Error`.
+
+### Error tolerance
+
+If `TangoKeyStorage.prototype.load()` or `AdbWebCryptoCredentialManager.prototype.iterateKeys()` can't load a key, it yields an `Error` through the iterator, instead of throwing it. This allows Tango to report the error to users, then continue to try other keys.
+
 ## Web
 
-`@yume-chan/adb-credential-web` package provides the `AdbWebCryptoCredentialManager` class, along with various `TangoKeyStore` implementations for Web browsers.
+`@yume-chan/adb-credential-web` package provides the `AdbWebCryptoCredentialManager` class, along with various `TangoKeyStorage` implementations for Web browsers.
 
 ```sh npm2yarn
 npm i @yume-chan/adb-credential-web
@@ -132,13 +180,13 @@ const manager = new AdbWebCryptoCredentialManager(storage);
 
 ### `TangoPasswordProtectedStorage`
 
-Encrypts the ADB key using a password. It requires another `TangoKeyStore` instance to store the encrypted data.
+Encrypts the ADB key using a password. It requires another `TangoKeyStorage` instance to store the encrypted data.
 
-| Characteristic | Description                                                |
-| -------------- | ---------------------------------------------------------- |
-| Number of keys | Depends on the inner `TangoKeyStore`                       |
-| Encrypted      | Yes                                                        |
-| Web Worker     | Depends on the inner `TangoKeyStore` and password callback |
+| Characteristic | Description                                                  |
+| -------------- | ------------------------------------------------------------ |
+| Number of keys | Depends on the inner `TangoKeyStorage`                       |
+| Encrypted      | Yes                                                          |
+| Web Worker     | Depends on the inner `TangoKeyStorage` and password callback |
 
 ```ts
 export namespace TangoPasswordProtectedStorage {
@@ -165,7 +213,7 @@ export declare class TangoPasswordProtectedStorage implements TangoKeyStorage {
 
 ##### `storage`
 
-The inner `TangoKeyStore` instance to store the encrypted data.
+The inner `TangoKeyStorage` instance to store the encrypted data.
 
 ##### `requestPassword`
 
@@ -174,7 +222,7 @@ A callback function to get the password.
 Parameters:
 
 - `reason`: `"save"` when saving (encrypting) the key, `"load"` when loading (decrypting) the key.
-- `name`: The name of the key. When saving, it's the `AdbWebCryptoCredentialManager`'s `name` parameter. When loading, it's the name of the loaded key from its inner `TangoKeyStore`.
+- `name`: The name of the key. When saving, it's the `AdbWebCryptoCredentialManager`'s `name` parameter. When loading, it's the name of the loaded key from its inner `TangoKeyStorage`.
 
 #### Example
 
@@ -204,13 +252,13 @@ The `keyName` property contains the name of the key that failed to decrypt.
 
 ### `TangoPrfStorage`
 
-Encrypts the ADB key using a PRF (pseudo-random function) derived key. It requires another `TangoKeyStore` instance to store the encrypted data.
+Encrypts the ADB key using a PRF (pseudo-random function) derived key. It requires another `TangoKeyStorage` instance to store the encrypted data.
 
-| Characteristic | Description                          |
-| -------------- | ------------------------------------ |
-| Number of keys | Depends on the inner `TangoKeyStore` |
-| Encrypted      | Yes                                  |
-| Web Worker     | No                                   |
+| Characteristic | Description                            |
+| -------------- | -------------------------------------- |
+| Number of keys | Depends on the inner `TangoKeyStorage` |
+| Encrypted      | Yes                                    |
+| Web Worker     | No                                     |
 
 See [its dedicated page](./prf.mdx) for more details.
 
@@ -230,7 +278,7 @@ const manager = new AdbWebCryptoCredentialManager(storage);
 
 ## Node.js
 
-The `@yume-chan/adb-credential-nodejs` package re-exports `AdbWebCryptoCredentialManager` from `@yume-chan/adb-credential-web`, and provides a `TangoKeyStore` for Node.js:
+The `@yume-chan/adb-credential-nodejs` package re-exports `AdbWebCryptoCredentialManager` from `@yume-chan/adb-credential-web`, and provides a `TangoKeyStorage` for Node.js:
 
 ```sh npm2yarn
 npm i @yume-chan/adb-credential-nodejs
@@ -260,7 +308,7 @@ const storage = new TangoNodeStorage();
 const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
-## Custom Credential Store
+## Custom credential manager
 
 :::danger
 

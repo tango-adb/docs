@@ -37,6 +37,14 @@ Some lazy manufacturers use the same `serialNumber` for all devices. So even if 
 
 :::
 
+:::info
+
+On Android platform, reading device's serial number requires the permission to access the device in the first place, so `serialNumber` filter will not work for unauthorized devices.
+
+Also, USB permission on Android platform doesn't persist after the device is unplugged and replugged.
+
+:::
+
 ## `filters` option
 
 If the `options` parameter is specified, the `filters` field is required. It is an array of `USBDeviceFilter` objects, devices must match at least one filter to be included in the picker.

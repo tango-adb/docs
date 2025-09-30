@@ -69,6 +69,12 @@ document.getElementById("button").addEventListener("click", () => {
 
 The permission will be persisted by the browser, so from next time, the website can access that device without calling `requestDevice` again. The user can revoke the permission in "Settings -> Site Permissions -> USB devices" at any time.
 
+:::info
+
+On Android platform, USB permission doesn't persist after the device is unplugged and replugged.
+
+:::
+
 ### USB mode affects permissions
 
 When Android devices works in USB peripheral mode, they can have multiple USB interfaces, like MTP (file transfer), ADB, RNDIS (reverse tethering), MIDI, etc.
@@ -138,3 +144,9 @@ device.raw.forget();
 ```
 
 Because there is no way to retrieve permission-granted but disconnected devices (unless you got the `device` before it was disconnected), it's also not possible to drop permissions for them. (See https://github.com/WICG/webusb/issues/166)
+
+:::info
+
+Due to a [Chrome bug](https://issues.chromium.org/issues/443361683), calling `.forget()` then `.requestDevice()` the device will return a non-functional device.
+
+:::

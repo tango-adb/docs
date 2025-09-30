@@ -7,17 +7,39 @@
 
 ```mermaid
 flowchart TD
-    subgraph C ["Runtime"]
-        WebUSB["WebUSB API"]
+    N["AdbDaemonWebUsbDeviceManager.BROWSER<br/>(Shortcut for Web environment)"] --> M
+    A[/"a USB instance<br/>(Runtime WebUSB API)"/] --> B["new AdbDaemonWebUsbDeviceManager()"]
+
+    subgraph M ["an AdbDaemonWebUsbDeviceManager instance"]
+        C["requestDevice()<br/>(Add a new device)"]
+        D["getDevices()<br/>(Get existing devices)"]
+        O["trackDevices()<br/>(Watch device changes)"]
     end
-    subgraph A ["@yume-chan/adb"]
-        AdbDaemonConnection
+
+    subgraph E ["an AdbDaemonWebUsbDevice instance"]
+        F["connect()"]
     end
-    subgraph B ["@yume-chan/adb-daemon-webusb"]
-        AdbDaemonWebUsbConnection -- implements --> AdbDaemonConnection
-        AdbDaemonWebUsbConnection -. requires .-> WebUSB
-    end
+
+    B --> M
+    C & D & O --> E
+    F --> G[\an AdbDaemonConnection instance\]
+
+    classDef link text-decoration: underline;
+    class B,N,C,D,O,F link;
+
+    click N "./device-manager#web"
+    click B "./device-manager#nodejs"
+    click C "./request-device"
+    click D "./get-devices"
+    click O "./watch-devices"
+    click F "./create-connection"
 ```
+
+:::note
+
+Click underlined nodes to open their relevant documentations.
+
+:::
 
 ## Installation
 
@@ -125,41 +147,3 @@ Windows doesn't allow opening multiple handles to the same interface at all, thi
 - If one WebUSB [`USBDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USBDevice) instance has already claimed an interface, other `USBDevice` instances can't claim it again.
 
 Google ADB solves this problem by using a server program (also called "host") that forwards ADB commands to devices for multiple clients. Tango supports the [Server Transport](../../server/index.mdx) to connect to the server and to have shared access to the device.
-
-## Overview
-
-```mermaid
-flowchart TD
-    N["AdbDaemonWebUsbDeviceManager.BROWSER<br/>(Shortcut for browser environments)"] --> M
-    A[/"a USB instance<br/>(Runtime WebUSB API)"/] --> B["new AdbDaemonWebUsbDeviceManager()"]
-
-    subgraph M ["a AdbDaemonWebUsbDeviceManager instance"]
-        C["requestDevice()<br/>(Add a new device)"]
-        D["getDevices()<br/>(Get existing devices)"]
-        O["trackDevices()<br/>(Watch device changes)"]
-    end
-
-    subgraph E ["a AdbDaemonWebUsbDevice instance"]
-        F["connect()"]
-    end
-
-    B --> M
-    C & D & O --> E
-    F --> G[\an AdbDaemonConnection instance\]
-
-    classDef link text-decoration: underline;
-    class B,N,C,D,O,F link;
-
-    click B "./device-manager"
-    click N "./device-manager"
-    click C "./request-device"
-    click D "./get-devices"
-    click O "./watch-devices"
-    click F "./create-connection"
-```
-
-:::note
-
-Click underlined nodes to open their relevant documentations.
-
-:::
