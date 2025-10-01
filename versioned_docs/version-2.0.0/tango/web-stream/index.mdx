@@ -18,7 +18,7 @@ Node.js also supports Web Streams API since [v18.0.0](https://nodejs.org/api/web
 
 ## `@yume-chan/stream-extra` package
 
-`@yume-chan/stream-extra` package re-exports the native `ReadableStream`, `WriteableStream`, and `TransformStream` classes from `globalThis`, with bundled type definitions for them.
+`@yume-chan/stream-extra` package re-exports the native `ReadableStream`, `WritableStream`, and `TransformStream` classes from `globalThis`, with bundled type definitions for them.
 
 This is mainly for TypeScript users, as Web Streams API, being a Web standard, is only available in `lib.dom.d.ts`. When using Tango in Node.js, we don't want to include the entire `lib.dom.d.ts` which pollutes the global scope with Web APIs.
 
@@ -121,12 +121,12 @@ In this example, the high water mark is 10, so the `pull` method will immediatel
 
 In practice, usually you are converting some other data source to streams. How can you limit the data produce speed depends on the data source.
 
-## `WriteableStream`
+## `WritableStream`
 
-`WriteableStream` is the opposite of `ReadableStream`, it represents a stream of data that can be written to. To create a `WriteableStream`, you only need to provide a data sink:
+`WritableStream` is the opposite of `ReadableStream`, it represents a stream of data that can be written to. To create a `WritableStream`, you only need to provide a data sink:
 
 ```ts transpile
-const stream: WriteableStream<number> = new WriteableStream<number>({
+const stream: WritableStream<number> = new WritableStream<number>({
   write(chunk) {
     console.log(chunk);
   },
@@ -136,7 +136,7 @@ const stream: WriteableStream<number> = new WriteableStream<number>({
 });
 ```
 
-In TypeScript, the generic parameter of `WriteableStream` is the type of the data it consumes.
+In TypeScript, the generic parameter of `WritableStream` is the type of the data it consumes.
 
 The `write` callback can be asynchronous, and return when the data is consumed.
 
@@ -144,7 +144,7 @@ The `close` callback is called when the stream is closed.
 
 ## Pipe
 
-`ReadableStream`s can be piped to `WriteableStream`s:
+`ReadableStream`s can be piped to `WritableStream`s:
 
 ```ts transpile
 const readable = new ReadableStream<number>({
@@ -156,7 +156,7 @@ const readable = new ReadableStream<number>({
   },
 });
 
-const writeable = new WriteableStream<number>({
+const writeable = new WritableStream<number>({
   write(chunk) {
     console.log(chunk);
   },
@@ -181,7 +181,7 @@ This is usually how you consume a `ReadableStream`.
 
 :::note
 
-Browser's native `ReadableStream`s can only `pipeTo` native `WriteableStream`s, this allows the runtime to optimize the performance, but also means you can't mix streams from different packages (like polyfills).
+Browser's native `ReadableStream`s can only `pipeTo` native `WritableStream`s, this allows the runtime to optimize the performance, but also means you can't mix streams from different packages (like polyfills).
 
 :::
 
@@ -205,7 +205,7 @@ const readable = new ReadableStream<number>({
   },
 });
 
-const writeable = new WriteableStream<string>({
+const writeable = new WritableStream<string>({
   write(chunk) {
     console.log(chunk);
   },

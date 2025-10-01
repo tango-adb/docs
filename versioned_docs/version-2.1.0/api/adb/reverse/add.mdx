@@ -90,7 +90,7 @@ const address = await adb.reverse.add("tcp:1234", (socket) => {
   // Don't await the promise, otherwise the transport will block
   socket.readable
     .pipeTo(
-      new WriteableStream({
+      new WritableStream({
         async write(chunk) {
           await writer.write(chunk);
         },
