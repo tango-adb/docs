@@ -148,7 +148,7 @@ const readable = new ReadableStream<number>({
   },
 });
 
-const writeable = new WritableStream<number>({
+const writable = new WritableStream<number>({
   write(chunk) {
     console.log(chunk);
   },
@@ -157,7 +157,7 @@ const writeable = new WritableStream<number>({
   },
 });
 
-await readable.pipeTo(writeable);
+await readable.pipeTo(writable);
 ```
 
 The output is:
@@ -197,7 +197,7 @@ const readable = new ReadableStream<number>({
   },
 });
 
-const writeable = new WritableStream<string>({
+const writable = new WritableStream<string>({
   write(chunk) {
     console.log(chunk);
   },
@@ -208,7 +208,7 @@ const writeable = new WritableStream<string>({
 
 await Promise.all([
   readable.pipeTo(transform.writable),
-  transform.readable.pipeTo(writeable),
+  transform.readable.pipeTo(writable),
 ]);
 ```
 
@@ -226,7 +226,7 @@ The `transform` callback can be asynchronous, and enqueue zero, one or more data
 To simplify the two `pipeTo` calls, `ReadableStream` also has a `pipeThrough` method:
 
 ```ts transpile
-await readable.pipeThrough(transform).pipeTo(writeable);
+await readable.pipeThrough(transform).pipeTo(writable);
 ```
 
 In fact, `pipeThrough` method works for any object that has a `WritableStream` `writable` and a `ReadableStream` `readable` field, it returns the `readable` field.

@@ -121,7 +121,7 @@ import { MaybeConsumable } from "@yume-chan/stream-extra";
 
 declare function writeToSink(packet: AdbPacketInit | undefined): void;
 
-const writeable = new MaybeConsumable.WritableStream<AdbPacketInit>({
+const writable = new MaybeConsumable.WritableStream<AdbPacketInit>({
   write(chunk) {
     // `writeToSink` must not use `chunk` after it returns
     writeToSink(chunk);

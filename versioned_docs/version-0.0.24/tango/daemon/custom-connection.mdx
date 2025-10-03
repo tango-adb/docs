@@ -119,7 +119,7 @@ import { WritableStream, Consumable } from "@yume-chan/stream-extra";
 
 declare function writeToSink(packet: AdbPacketInit | undefined): void;
 
-const writeable = new WritableStream<Consumable<AdbPacketInit>>({
+const writable = new WritableStream<Consumable<AdbPacketInit>>({
   write(chunk) {
     writeToSink(chunk.value);
     chunk.consume();

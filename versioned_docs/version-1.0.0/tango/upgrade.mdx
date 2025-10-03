@@ -94,7 +94,7 @@ observer.stop();
 
 ### Fix pushing files with custom server connector
 
-The `connect` method of `AdbServerClient.ServerConnector` instances now needs to return a `WritableStream<MaybeConsumable<Uint8Array>>` instead of a [`WritableStream<Uint8Array>`](./web-stream/index.mdx#writeablestream). It's unsafe to automatically unwrap [`MaybeConsumable`](./consumable.mdx#writablestream)s, the old version was causing corruptions when [pushing files](../api/adb/sync/write.mdx).
+The `connect` method of `AdbServerClient.ServerConnector` instances now needs to return a `WritableStream<MaybeConsumable<Uint8Array>>` instead of a [`WritableStream<Uint8Array>`](./web-stream/index.mdx#writablestream). It's unsafe to automatically unwrap [`MaybeConsumable`](./consumable.mdx#writablestream)s, the old version was causing corruptions when [pushing files](../api/adb/sync/write.mdx).
 
 ## `@yume-chan/adb-daemon-webusb`
 
