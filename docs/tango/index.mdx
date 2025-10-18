@@ -90,7 +90,7 @@ The end goal is to create an `Adb` instance, but first, an `AdbTransport` object
 
 ```mermaid
 flowchart TD
-    A[/an AdbTransport instance/] --> B["new Adb()"] --> C[\an Adb instance\]
+    A[/an AdbTransport object/] --> B["new Adb()"] --> C[\an Adb instance\]
 
     classDef link text-decoration: underline;
     class A,C link;
@@ -113,16 +113,13 @@ Tango provides two built-in transports: [**Daemon Transport**](./daemon/index.md
 
 ```mermaid
 flowchart TD
-    A["AdbDaemonTransport.authenticate()"] --> B[/an AdbTransport instance/]
+    A["AdbDaemonAuthenticator<br/>.authenticate()"] & H["new AdbDaemonTransport"] --> B[/an AdbTransport object/]
 
     subgraph C ["an AdbServerClient instance"]
         D["createTransport()"]
     end
 
-    D --> B
-    E[Custom Transport] --> B
-
-    B --> F["new Adb()"] --> G[\an Adb instance\]
+    D & E[Custom Transport] --> B --> F["new Adb()"] --> G[\an Adb instance\]
 
     classDef link text-decoration: underline;
     class A,D,E,G link;

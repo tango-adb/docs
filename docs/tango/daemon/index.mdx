@@ -34,11 +34,13 @@ npm i @yume-chan/adb
 
 To support different runtime and connection method, `AdbDaemonTransport` class itself only defines how to serialize and deserialize Daemon Protocol packets.
 
-The most common usage is to use `AdbDaemonTransport.authenticate()` static method to create an authenticated transport instance. It uses an `AdbDaemonConnection` object to send and receive packets and an `AdbDaemonAuthenticator` implementation to handle handshake and authentication.
+### Default authentication process
+
+The most common usage is to use `AdbDaemonAuthenticator.authenticate()` static method to create an authenticated transport instance. It requires an [`AdbDaemonConnection`](#connections) object to send and receive packets and an [`AdbCredentialManager`](./credential-store/index.mdx) object to provide authentication keys.
 
 ```mermaid
 flowchart TD
-    A[/an AdbDaemonConnection instance/] & B[/an AdbDaemonAuthenticator instance/] --> C["AdbDaemonTransport.authenticate()"] --> D[\an AdbDaemonTransport instance\] --> E["new Adb()"] --> F[\an Adb instance\]
+    A[/an AdbDaemonConnection<br>object/] & B[/an AdbCredentialManager<br/>object/] --> C["AdbDaemonAuthenticator<br/>.authenticate()"] --> D[\an AdbDaemonTransport<br/>instance\] --> E["new Adb()"] --> F[\an Adb instance\]
 
     classDef link text-decoration: underline;
     class A,B,C,F link;
@@ -55,12 +57,14 @@ Click underlined nodes to open their relevant documentations.
 
 :::
 
-Alternatively, if your connection doesn't require authentication or you handle it yourself, you can directly create an `AdbDaemonTransport` instance using its constructor.
+### Custom authentication
+
+Alternatively, if your connection doesn't require authentication or you handle it yourself, you can directly create an `AdbDaemonTransport` instance using its constructor and an [`AdbDaemonConnection`](#connections) object.
 
 ```mermaid
 flowchart TD
-    A[/an AdbDaemonConnection instance/] --> B["new AdbDaemonTransport()"]
-    B --> C[\an AdbDaemonTransport instance\]
+    A[/an AdbDaemonConnection<br/>object/] --> B["new AdbDaemonTransport()"]
+    B --> C[\an AdbDaemonTransport<br/>instance\]
     C --> D["new Adb()"]
     D --> E[\an Adb instance\]
 
@@ -111,8 +115,8 @@ flowchart TD
         B["connect()"]
     end
 
-    B & C[/ADB over Wi-Fi connection/] --> D[\"an AdbDaemonConnection instance"\]
-    D & E[/an AdbDaemonAuthenticator instance/] --> F["AdbDaemonTransport.authenticate()"] --> G[\an AdbDaemonTransport instance\] --> H["new Adb()"] --> I[\an Adb instance\]
+    B & C[/ADB over Wi-Fi connection/] --> D[\"an AdbDaemonConnection<br/>object"\]
+    D & E[/an AdbCredentialManager<br/>object/] --> F["AdbDaemonAuthenticator<br/>.authenticate()"] --> G[\an AdbDaemonTransport<br/>instance\] --> H["new Adb()"] --> I[\an Adb instance\]
 
     J[/Custom connection/] --> K["new AdbDaemonTransport()"] --> G
 
@@ -146,8 +150,8 @@ Because USB connections are exclusive, Daemon Transport can't access a USB devic
 
 ```mermaid
 flowchart TD
-    N["AdbDaemonWebUsbDeviceManager.BROWSER<br/>(Shortcut for Web environment)"] --> M
-    A[/"a USB instance<br/>(Runtime WebUSB API)"/] --> B["new AdbDaemonWebUsbDeviceManager()"]
+    N["AdbDaemonWebUsbDeviceManager<br/>.BROWSER<br/>(Shortcut for Web environment)"] --> M
+    A[/"a USB object<br/>(Runtime WebUSB API)"/] --> B["new AdbDaemonWebUsbDeviceManager()"]
 
     subgraph M ["an AdbDaemonWebUsbDeviceManager instance"]
         C["requestDevice()<br/>(Add a new device)"]

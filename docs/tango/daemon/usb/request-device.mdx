@@ -15,7 +15,7 @@ This page only applies to browsers. For Node.js, you can skip to the [next step]
 
 :::
 
-## With WebUSB
+## With bare WebUSB API
 
 In Web browsers, each website needs to request the permission to access each device separately using WebUSB's [`USB#requestDevice`](https://developer.mozilla.org/en-US/docs/Web/API/USB/requestDevice) method.
 
@@ -147,6 +147,8 @@ Because there is no way to retrieve permission-granted but disconnected devices 
 
 :::info
 
-Due to a [Chrome bug](https://issues.chromium.org/issues/443361683), calling `.forget()` then `.requestDevice()` the device will return a non-functional device.
+Due to a [Chromium bug](https://issues.chromium.org/issues/443361683), calling `.forget()` on a device, then `.requestDevice()` the same device immediately will return a non-functional device.
+
+It's recommended to create your own ignore list of forgotten devices, instead of using `.forget()`.
 
 :::

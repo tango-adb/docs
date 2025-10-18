@@ -110,6 +110,8 @@ Passing [`allowAllDevices: true` option](https://github.com/node-usb/node-usb?ta
 
 ## Electron
 
+`AdbDaemonWebUsbDeviceManager` can be used in either Electron renderer processes or Electron main processes. However, because of the exclusivity of USB API, you can't access a device from both renderer and main processors, or from multiple renderer processes, at the same time.
+
 ### Renderer Process
 
 To use Tango in Electron renderer processes:
@@ -117,6 +119,10 @@ To use Tango in Electron renderer processes:
 1. Enable WebUSB API in Electron following https://www.electronjs.org/docs/latest/tutorial/devices#webusb-api
 2. Follow the instructions for [Web](#web).
 
+This allows a USB-enabled Web app to run in Electron with minimal changes.
+
 ### Main Process
 
 To use Tango in Electron main processes, follow the instructions for [Node.js](#nodejs).
+
+It's recommended to use Tango in main process, then expose your own API to renderer processes using Electron IPC. For example, you can modify the [server-client custom transport example](../../custom-transport/server-client/index.mdx) to share an `AdbTransport` with multiple renderer processes.

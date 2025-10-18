@@ -180,6 +180,9 @@ const config: Config = {
             headingIds: false,
         },
         mermaid: true,
+        hooks: {
+            onBrokenMarkdownLinks: 'throw'
+        }
     },
 
     title: "Tango ADB Development Guide",
@@ -194,7 +197,6 @@ const config: Config = {
     projectName: "docs",
 
     onBrokenLinks: "throw",
-    onBrokenMarkdownLinks: "warn",
 
     i18n: {
         defaultLocale: "en",
@@ -248,11 +250,12 @@ const config: Config = {
         mermaid: {
             options: {
                 flowchart: {
-                    defaultRenderer: "elk",
+                    // defaultRenderer: "elk",
                     subGraphTitleMargin: {
                         top: 8,
                         bottom: 8,
                     },
+                    wrappingWidth: 1000
                 },
             },
         },

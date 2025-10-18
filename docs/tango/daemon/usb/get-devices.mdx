@@ -24,6 +24,8 @@ WebUSB `USB#getDevices` method can be used to get all connected devices (that th
 
 `USB#getDevices` method doesn't accept filters like `USB#requestDevice`, so it might return non-ADB devices. Tango's `AdbDaemonWebUsbDeviceManager#getDevices` accepts the same options as `AdbDaemonWebUsbDeviceManager#requestDevice` and does the filtering on its own to better support usage with ADB devices.
 
+## Definition
+
 ```ts
 declare class AdbDaemonWebUsbDeviceManager {
   getDevices(
@@ -32,7 +34,7 @@ declare class AdbDaemonWebUsbDeviceManager {
 }
 ```
 
-Basic usage:
+## Example
 
 ```ts transpile
 import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
@@ -48,7 +50,7 @@ if (!devices.length) {
 const device: AdbDaemonWebUsbDevice = devices[0];
 ```
 
-### Options
+## Filters
 
 The `options` parameter works the same as in [`requestDevice`](./device-filter.mdx#filters-in-tango). By default, it only returns devices that match the default ADB interface.
 
