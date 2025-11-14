@@ -30,7 +30,7 @@ This table show how versions and options affect the video stream format.
 - ⛔ means the field is not present
 - An option name means the field is present if the option is `true`
 
-| Value                                                 | v1.15 ~ v1.21   | 1.22             | v1.23 ~ v1.25    | v2.0 ~ v3.1                         |
+| Value                                                 | v1.15 ~ v1.21   | 1.22             | v1.23 ~ v1.25    | v2.0 and later                      |
 | ----------------------------------------------------- | --------------- | ---------------- | ---------------- | ----------------------------------- |
 | Metadata                                              | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta` or `sendCodecMeta` |
 | <span style={{marginRight:'2em'}}/>Device name        | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta`                    |
@@ -74,7 +74,7 @@ interface ScrcpyVideoStreamMetadata {
 
 The metadata will only be sent once. When device screen size changes (for example, when device orientation changes, or a foldable device unfolds), the server will restart the video encoder, but it won't send a new metadata with the new size.
 
-To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-in-browsers) have a [`sizeChanged`](./tiny-h264.mdx#handle-size-changes) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) has `videoWidth` and `videoHeight` properties.
+To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-in-browsers) have a [`sizeChanged`](./tiny-h264.mdx#handle-size-changes) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) also contains [size information](#video-size).
 
 ### With `@yume-chan/scrcpy`
 
@@ -96,7 +96,7 @@ const { metadata: videoMetadata, stream: videoStream } =
 
 #### `codec`
 
-If metadata is not present, or doesn't contain codec information, the `codec` field will <Version until="v2.0">always be `ScrcpyVideoCodecId.H264` because it's the only supported codec</Version><Version since="v2.0">be the same as the `videoCodec` option</Version>.
+If metadata is not present, or doesn't contain codec information, the `codec` field will <Version until="v1.25">always be `ScrcpyVideoCodecId.H264` because it's the only supported codec</Version><Version since="v2.0">be the same as the `videoCodec` option</Version>.
 
 #### Raw mode
 
@@ -216,9 +216,14 @@ The `data` field contains the data in one `read` call, because there is no packe
 When `video` option is not `false`, `AdbScrcpyClient.videoStream` is a `Promise` that resolves to an `AdbScrcpyVideoStream`.
 
 ```ts
+import type { Event } from "@yume-chan/event";
+
 interface AdbScrcpyVideoStream {
-  stream: ReadableStream<ScrcpyMediaStreamPacket>;
   metadata: ScrcpyVideoStreamMetadata;
+  stream: ReadableStream<ScrcpyMediaStreamPacket>;
+  width: number;
+  height: number;
+  sizeChanged: Event<{ width: number; height: number }>;
 }
 ```
 
@@ -254,6 +259,30 @@ if (client.videoStream) {
     .catch((e) => {
       console.error(e);
     });
+}
+```
+
+#### Video size
+
+`AdbScrcpyVideoStream` also parses the video stream to get the up-to-date video size.
+
+```ts
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+
+declare const client: AdbScrcpyClient;
+
+if (client.videoStream) {
+  // Get video size at calling time
+  // If video stream has not started yet, the size will be `0`
+  console.log(client.videoStream.width, client.videoStream.height);
+
+  const dispose = client.videoStream.sizeChanged(({ width, height }) => {
+    // Get notified when the video size changes
+    console.log(width, height);
+  });
+
+  // Remove event listener
+  setTimeout(dispose, 1000);
 }
 ```
 
