@@ -43,7 +43,7 @@ However, Web browsers and Node.js don't share a common API to store data. Thus, 
 flowchart TD
     A[/A TangoKeyStorage instance/] --> B["new AdbWebCryptoCredentialManager()"]
     B --> C[\An AdbWebCryptoCredentialManager instance\]
-    C --> D["AdbDaemonTransport.authenticate()"]
+    C --> D["AdbDaemonAuthenticator.authenticate()"]
 ```
 
 ### Definition

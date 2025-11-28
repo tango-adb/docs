@@ -255,7 +255,6 @@ const config: Config = {
                         top: 8,
                         bottom: 8,
                     },
-                    wrappingWidth: 1000
                 },
             },
         },
