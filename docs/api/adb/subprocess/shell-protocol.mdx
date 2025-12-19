@@ -169,13 +169,15 @@ await Promise.all([
 ]);
 ```
 
-:::danger[READ ALL STREAMS!]
+:::danger[Both `stdout` and `stderr` must be used!]
 
-ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+Despite through multiple layers of redirection, `stdout` and `stderr` are precise emulations of the process's `stdout` and `stderr` streams. If data in the streams is not consumed, after the internal buffer is full, the process will (very likely) hang when trying to write more data to `stdout` or `stderr`.
 
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+Shell protocol transmits `stdout` and `stderr` in one ADB socket, so not reading from either stream will block the whole socket and cause the above issue.
 
-If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+You must continuously read both streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+
+If the remaining data of a stream is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
 
 :::
 

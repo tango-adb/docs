@@ -62,16 +62,6 @@ The Transport will wait for the handler to return, before sending a socket open 
 
 If the handler throws an error, the Transport will suppress the error, and send a socket open failed response to the device. ADB Daemon will then close the connection.
 
-:::danger[READ ALL STREAMS!]
-
-ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
-
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
-
-If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
-
-:::
-
 ## `localAddress`
 
 The socket address to forward the connection to on the host. The format is same as `deviceAddress`, but the meaning and supported types of addresses vary between Operating Systems, runtime environments, and the ADB Transport used.

@@ -210,11 +210,11 @@ However, you can save the `Promise` to a variable and later use `Promise.all` to
 
 :::
 
-:::danger[READ ALL STREAMS!]
+:::danger[`stdout` must be used!]
 
-ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+Despite through multiple layers of redirection, `output` is a precise emulation of the process's `stdout` and `stderr` streams. If data in `output` is not consumed, after the internal buffer is full, the process will (very likely) hang when trying to write more data to `stdout` or `stderr`.
 
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
+You must continuously read from it (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
 
 If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
 

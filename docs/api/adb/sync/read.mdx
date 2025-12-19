@@ -12,15 +12,12 @@ declare class AdbSync {
 }
 ```
 
-:::danger[READ ALL STREAMS!]
+:::danger[output must be used!]
 
-ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
-
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
-
-If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
+`read` uses streaming output. If you don't read the output, the command will never finish, and blocking future commands from running.
 
 :::
+
 
 ## Example
 

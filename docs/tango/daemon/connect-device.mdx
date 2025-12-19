@@ -88,17 +88,7 @@ If the authentication process fails, the connection will always be kept open, re
 
 When set, the transport will throw an error when one of the socket readable stalls for this amount of milliseconds.
 
-:::danger[READ ALL STREAMS!]
-
-ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
-
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
-
-If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
-
-:::
-
-This option is helpful to detect bugs in the client code.
+This option is helpful to detect bugs in the client code that causes child processes to hang or future commands not executed.
 
 When set to `undefined`, the transport will not enforce a time limit.
 

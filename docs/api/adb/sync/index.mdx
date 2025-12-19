@@ -10,21 +10,15 @@ Sync connection has its own data protocol, so `Adb#sync` creates a connection th
 const sync: AdbSync = await adb.sync();
 ```
 
-## Concurrency
+## Reusability and concurrency
 
-1. Each sync connection can only run one command at a time.
-2. Calling another command while a command is still running will wait for the previous command to finish.
-3. Multiple sync connections to the same device can be created to run multiple commands at the same time.
+Technically, a sync connection can be reused to run another command after the previous one finished. However, Google ADB never reuses sync connections, it always creates a new connection for each command.
 
-:::danger[READ ALL STREAMS!]
+Tango allows reusing the connection if you don't need to run commands in parallel. Tango uses an internal lock to ensure that only one command is running at a time. Calling another command while a command is still running will wait for the previous command to finish.
 
-ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+Note that some commands use streaming output (e.g. `opendir` and `read`), if you don't read the output, the command will never finish.
 
-You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
-
-For example, you can't create another sync connection or call other methods on `Adb` when `opendir` is still running. Upcoming data for `opendir` will block other operations.
-
-:::
+If you need to run commands in parallel, you should create a new `AdbSync` instance for each command.
 
 ## Close sync connection
 

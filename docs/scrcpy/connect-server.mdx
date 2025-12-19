@@ -44,7 +44,7 @@ Scrcpy transmits video, audio, and control messages in individual sockets. The d
 2. <Version since="v2.0">Audio, unless disabled by [`audio: false`](./options/audio.mdx) option</Version>
 3. Control<Version since="v1.22">, unless disabled by [`control: false`](./options/control.mdx) option</Version>
 
-If a socket is disabled by its corresponding option, the socket will be skipped, but the order of other sockets will be kept.
+If a socket is disabled by its corresponding option, the socket will be skipped (while keeping the order of other sockets). If you don't need some of them, you can disable them by setting the corresponding option to `false` to save bandwidth.
 
 :::info
 
@@ -54,17 +54,11 @@ If a socket is disabled by its corresponding option, the socket will be skipped,
 
 :::danger[READ ALL STREAMS!]
 
-ADB is a multiplexing protocol (multiple logic streams are transmitted over one connection), so blocking one stream will block all other streams.
+Despite through multiple layers of redirection, these sockets are precise emulations of the Unix domain sockets on the Android device. If data in the streams is not consumed, after the internal buffer is full, the process will (very likely) hang when trying to write more data to them.
 
 You must continuously read from all incoming streams (either by piping them to `WritableStream`s, using `for await` loop, or calling `reader.read()` in a loop) to prevent this from happening.
 
 If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if using a reader) can be called to discard them.
-
-:::
-
-:::danger[READ ALL STREAMS!]
-
-If you need video only or audio only, you can also use the options listed above to disable the other sockets.
 
 :::
 
