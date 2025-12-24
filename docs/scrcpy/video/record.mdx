@@ -50,17 +50,23 @@ H.265 has a similar story, its Annex B format is identical to H.264, its ISO for
 
 Scrcpy server uses Android MediaCodec API, which produces Annex B formatted H.264/H.265 streams. Then Scrcpy server transmits them to clients as-is. But to save them into files, they might need to be converted to AVCC/HEVC format.
 
-### Use mediabunny
+### Use Mediabunny
 
-One muxer library we recommend is [mediabunny](https://mediabunny.dev/guide/introduction). It supports multiple sources (including our encoded video frames) and multiple container formats (mp4, mov, webm and mkv). It's also the successor of [mp4-muxer](https://www.npmjs.com/package/mp4-muxer) and [webm-muxer](https://www.npmjs.com/package/webm-muxer).
+One muxer library we recommend is [Mediabunny](https://mediabunny.dev/guide/introduction). It supports multiple sources (including our encoded video frames) and multiple container formats (mp4, mov, webm and mkv). It's also the successor of [mp4-muxer](https://www.npmjs.com/package/mp4-muxer) and [webm-muxer](https://www.npmjs.com/package/webm-muxer).
 
-To connect Scrcpy video stream to mediabunny, we need to create an `Output` instance and pipe Scrcpy's `videoPacketStream` (from [`createMediaStreamTransformer`](./index.mdx#with-yume-chanscrcpy-1) or [`AdbScrcpyClient.videoStream`](./index.mdx#with-yume-chanadb-scrcpy-1)) to it.
+First, install the required packages:
+
+```sh npm2yarn
+npm install @yume-chan/media-codec @yume-chan/scrcpy @yume-chan/stream-extra mediabunny
+```
+
+To connect Scrcpy video stream to Mediabunny, we need to create an `Output` instance and pipe Scrcpy's `videoPacketStream` (from [`createMediaStreamTransformer`](./index.mdx#with-yume-chanscrcpy-1) or [`AdbScrcpyClient.videoStream`](./index.mdx#with-yume-chanadb-scrcpy-1)) to it.
 
 This example uses `MkvOutputFormat` which produces a `.mkv` file. Technically, MKV files only support AVCC/HEVC format for H.264/H.265 codec, but most video players (VLC, Windows Media Player, etc.) and tools (FFmpeg) can also handle Annex B formatted streams.
 
-To output a `.mp4` file, replace `MkvOutputFormat` with `Mp4OutputFormat`. MP4 only supports AVCC/HEVC format for H.264/H.265 codec, fortunately, mediabunny will do the conversion for us.
+To output a `.mp4` file, replace `MkvOutputFormat` with `Mp4OutputFormat`. MP4 only supports AVCC/HEVC format for H.264/H.265 codec, fortunately, Mediabunny will do the conversion for us.
 
-This example uses `BufferTarget` which buffers video file in memory. Check [mediabunny documentation](https://mediabunny.dev/guide/writing-media-files#output-targets) for other output targets.
+This example uses `BufferTarget` which buffers video file in memory. Check [Mediabunny documentation](https://mediabunny.dev/guide/writing-media-files#output-targets) for other output targets.
 
 ```ts transpile
 import type { VideoCodec } from "mediabunny";
@@ -72,12 +78,12 @@ import {
   Output,
 } from "mediabunny";
 
-import { H264, H265 } from "@yume-chan/media-codec";
+import { Av1, H264, H265 } from "@yume-chan/media-codec";
 import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
 import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
 import { WritableStream } from "@yume-chan/stream-extra";
 
-// Map Scrcpy codecs to mediabunny codecs
+// Map Scrcpy codecs to Mediabunny codecs
 const VideoCodecMap: Record<ScrcpyVideoCodecId, VideoCodec> = {
   [ScrcpyVideoCodecId.H264]: "avc",
   [ScrcpyVideoCodecId.H265]: "hevc",
@@ -116,12 +122,42 @@ export async function createRecordStream(videoCodec: ScrcpyVideoCodecId) {
       }
 
       // chunk.pts is in microseconds (us),
-      // mediabunny requires timestamps in seconds
+      // Mediabunny requires timestamps in seconds
       const timestamp =
         Number((chunk.pts! - firstVideoTimestamp) / 1000n) / 1000;
 
       // AV1 doesn't need the configuration packet
       if (videoCodec === ScrcpyVideoCodecId.AV1) {
+        const parser = new Av1(chunk.data);
+        const sequenceHeader = parser.searchSequenceHeaderObu();
+
+        if (sequenceHeader) {
+          const { max_frame_width_minus_1, max_frame_height_minus_1 } =
+            sequenceHeader;
+
+          const codedWidth = max_frame_width_minus_1 + 1;
+          const codedHeight = max_frame_height_minus_1 + 1;
+          const codecString = Av1.toCodecString(sequenceHeader);
+
+          await videoTrack.add(
+            new EncodedPacket(
+              chunk.data,
+              chunk.keyframe ? "key" : "delta",
+              timestamp,
+              0
+            ),
+            {
+              decoderConfig: {
+                codec: codecString,
+                codedWidth,
+                codedHeight,
+              },
+            }
+          );
+
+          return;
+        }
+
         await videoTrack.add(
           new EncodedPacket(
             chunk.data,
@@ -547,7 +583,7 @@ Again, how to save the `AVCSample` into the video stream depends on the containe
 
 ### Start recording anytime
 
-The above examples assume you are saving the video stream from the beginning. If you want to start recording after user clicks a button, a `WritableStream` is not enough. For example, you might need to return an object with a `start` and `stop` method and a `writable` stream field, and only write to mediabunny's `Output` after `start` is called.
+The above examples assume you are saving the video stream from the beginning. If you want to start recording after user clicks a button, a `WritableStream` is not enough. For example, you might need to return an object with a `start` and `stop` method and a `writable` stream field, and only write to Mediabunny's `Output` after `start` is called.
 
 However, that's still not enough. Because a video file must have a configuration, and start with a keyframe, you must have both before recording starts.
 
