@@ -181,8 +181,8 @@ const config: Config = {
         },
         mermaid: true,
         hooks: {
-            onBrokenMarkdownLinks: 'throw'
-        }
+            onBrokenMarkdownLinks: "throw",
+        },
     },
 
     title: "Tango ADB Development Guide",
@@ -215,6 +215,9 @@ const config: Config = {
                     showLastUpdateTime: true,
                     lastVersion: "2.1.0",
                     versions: {
+                        "2.1.0": {
+                            label:"2.1.0 ~ 2.5.0"
+                        },
                         current: {
                             label: "next",
                             path: "/next",

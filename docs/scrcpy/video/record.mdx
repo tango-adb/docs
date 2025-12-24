@@ -4,35 +4,236 @@ sidebar_position: 3
 
 # Save to file
 
-While it's always possible to decode and re-encode the video stream into any format and configuration you want, it's more simple and efficient to use the video stream directly. Just note that there are upside and downside of each method:
+{/* cspell: ignore nalu */}
+{/* cspell: ignore Nalus */}
+{/* cspell: ignore luma */}
+{/* cspell: ignore rbsp */}
+{/* cspell: ignore mediabunny */}
+
+Scrcpy's video stream contains raw encoded video frames in varies codecs (H.264/AVC, H.265/HEVC, and AV1). A few video players (e.g. VLC) can play these raw streams directly, but most others require a container format (e.g. MP4): the video stream plus some metadata.
+
+## Introduction
+
+There are two ways to convert the raw encoded video frames into a video file: re-encode the video or mux the video stream directly. Re-encode the file can convert the video frames into another codec, or provide better compression. Muxing the video stream is a very simple process that re-use the original video stream directly which saves CPU power and memory. Here is a more detailed comparison:
 
 - Codec and configuration: Re-encode the video allows you to use any codec and configuration. Because PC is often more powerful than mobile devices, it might be able to achieve the same quality with less bitrate (thus smaller files). When muxing the video stream, the codec and configuration is always same as captured.
-- Quality: Most video encoding processes are lossy. The quality of re-encoded video is lower than the original video. When muxing the video stream, the quality is unchanged.
+- Quality: Most video encoding processes are lossy. The quality of re-encoded video will be slightly lower than the original video. When muxing the video stream, the quality is unchanged.
 - Processing power and memory: Re-encode the video requires more CPU/GPU power and memory. Muxing a video requires almost no CPU power and memory.
 - Code complexity: Because the video resolution can change with device orientation, it's more complex to re-encode the video. Muxing the video stream doesn't require any additional code to handle that.
 
-The video stream contains only encoded video frames in varies codecs (H.264/AVC, H.265/HEVC, and AV1). A few video players (e.g. VLC) can play those raw streams directly, but most others require a container format (e.g. MP4): the video stream plus some metadata.
+## Re-encode the video
 
-To convert the video stream into a video file (muxing), you need a muxer library, like [mp4-muxer](https://www.npmjs.com/package/mp4-muxer) and [webm-muxer](https://www.npmjs.com/package/webm-muxer).
+The [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) API can record the rendering canvas (from [TinyH264 decoder](./tiny-h264.mdx) or [WebCodecs decoder](./web-codecs.mdx#create-a-renderer)) into a MP4 or WEBM file.
 
-:::note
+Note that for [`WebGLVideoFrameRenderer`](./web-codecs.mdx#create-a-renderer), the `enableCapture` parameter must be set to `true`.
 
-The APIs of `mp4-muxer` and `webm-muxer` are designed around WebCodecs API. However, WebCodecs API is not required when you already have encoded video stream, like we do.
+MDN has an [example](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#example) of using `MediaRecorder`. There is nothing special for using `MediaRecorder` with our decoder canvases.
 
-:::
+## Muxing the video stream
 
-No matter which container and muxer library you use, there are some codec-specific conversions that are required.
+A muxer library is required to mux the video stream into a container format.
 
-## H.264
+But before that, for H.264 and H.265, we need to know the difference between their two stream formats.
 
-H.264/AVC is a [joint effect between ITU-T and ISO](https://en.wikipedia.org/wiki/Advanced_Video_Coding#Naming), thus it has two names. The words "H.264" and "AVC" are usually used interchangeably. However, they are actually two different specifications. The packet format and algorithm to decode them are identical, but how to store those packets in files is different:
+### AVCC/HEVC vs Annex B for H.264/H.265 codecs
 
-- ITU-T H.264 standard (https://www.itu.int/rec/T-REC-H.264) defines a bit stream for storing H.264 packets. This format doesn't have an official name, but since it's in the Annex B section of the specification, it's commonly referred to as "Annex B format", and used to store raw H.264 streams.
-- ISO/IEC MPEG-4 AVC standard (https://www.iso.org/obp/ui/en/#iso:std:iso-iec:14496:-10:ed-10:v1:en) uses varies C structure-like format to store those packets. This format is commonly referred to as "AVC" or "AVCC", and used by various containers.
+H.264 and H.265 have two different stream formats.
 
-Android MediaCodec API (which Scrcpy uses) produces video streams in Annex B format. To save the stream into a container format, it needs to be converted to AVC format.
+Use H.264 as an example:
 
-### Configuration
+H.264/AVC is a [joint effect between ITU-T and ISO](https://en.wikipedia.org/wiki/Advanced_Video_Coding#Naming), thus it has two names. The words "H.264" and "AVC" are usually used interchangeably. However, they actually refer to two different specifications. Most parts of them (like how to encode and decode) are identical, but how to store those packets in files is different:
+
+- ITU-T H.264 standard (https://www.itu.int/rec/T-REC-H.264) defines a bit stream for storing H.264 packets. This format doesn't have an official name, but since it's in the Annex B section of the specification, it's commonly referred to as "Annex B format", and generally used in transmitting raw H.264 streams, and in `.ts` and `.h264` files
+- ISO/IEC MPEG-4 AVC standard (https://www.iso.org/obp/ui/en/#iso:std:iso-iec:14496:-10:ed-10:v1:en) uses varies C structure-like format to store those packets. This format also does't have an official name, but is commonly referred to as "AVC" or "AVCC", and used by various containers like MP4 and MKV.
+
+H.265 has a similar story, its Annex B format is identical to H.264, its ISO format uses different structures and is called "HEVC".
+
+Scrcpy server uses Android MediaCodec API, which produces Annex B formatted H.264/H.265 streams. Then Scrcpy server transmits them to clients as-is. But to save them into files, they might need to be converted to AVCC/HEVC format.
+
+### Use mediabunny
+
+One muxer library we recommend is [mediabunny](https://mediabunny.dev/guide/introduction). It supports multiple sources (including our encoded video frames) and multiple container formats (mp4, mov, webm and mkv). It's also the successor of [mp4-muxer](https://www.npmjs.com/package/mp4-muxer) and [webm-muxer](https://www.npmjs.com/package/webm-muxer).
+
+To connect Scrcpy video stream to mediabunny, we need to create an `Output` instance and pipe Scrcpy's `videoPacketStream` (from [`createMediaStreamTransformer`](./index.mdx#with-yume-chanscrcpy-1) or [`AdbScrcpyClient.videoStream`](./index.mdx#with-yume-chanadb-scrcpy-1)) to it.
+
+This example uses `MkvOutputFormat` which produces a `.mkv` file. Technically, MKV files only support AVCC/HEVC format for H.264/H.265 codec, but most video players (VLC, Windows Media Player, etc.) and tools (FFmpeg) can also handle Annex B formatted streams.
+
+To output a `.mp4` file, replace `MkvOutputFormat` with `Mp4OutputFormat`. MP4 only supports AVCC/HEVC format for H.264/H.265 codec, fortunately, mediabunny will do the conversion for us.
+
+This example uses `BufferTarget` which buffers video file in memory. Check [mediabunny documentation](https://mediabunny.dev/guide/writing-media-files#output-targets) for other output targets.
+
+```ts transpile
+import type { VideoCodec } from "mediabunny";
+import {
+  BufferTarget,
+  EncodedPacket,
+  EncodedVideoPacketSource,
+  MkvOutputFormat,
+  Output,
+} from "mediabunny";
+
+import { H264, H265 } from "@yume-chan/media-codec";
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+// Map Scrcpy codecs to mediabunny codecs
+const VideoCodecMap: Record<ScrcpyVideoCodecId, VideoCodec> = {
+  [ScrcpyVideoCodecId.H264]: "avc",
+  [ScrcpyVideoCodecId.H265]: "hevc",
+  [ScrcpyVideoCodecId.AV1]: "av1",
+};
+
+export async function createRecordStream(videoCodec: ScrcpyVideoCodecId) {
+  const muxer = new Output({
+    format: new MkvOutputFormat(),
+    target: new BufferTarget(),
+  });
+
+  const videoTrack = new EncodedVideoPacketSource(VideoCodecMap[videoCodec]);
+
+  muxer.addVideoTrack(videoTrack);
+
+  await muxer.start();
+
+  let videoCodecConfiguration: Uint8Array | undefined;
+  let firstVideoTimestamp: bigint | undefined;
+
+  return new WritableStream<ScrcpyMediaStreamPacket>({
+    async write(chunk) {
+      if (chunk.type === "configuration") {
+        videoCodecConfiguration = chunk.data;
+        return;
+      }
+
+      if (firstVideoTimestamp === undefined) {
+        if (chunk.keyframe) {
+          firstVideoTimestamp = chunk.pts!;
+        } else {
+          // warn: first frame should be keyframe
+          return;
+        }
+      }
+
+      // chunk.pts is in microseconds (us),
+      // mediabunny requires timestamps in seconds
+      const timestamp =
+        Number((chunk.pts! - firstVideoTimestamp) / 1000n) / 1000;
+
+      // AV1 doesn't need the configuration packet
+      if (videoCodec === ScrcpyVideoCodecId.AV1) {
+        await videoTrack.add(
+          new EncodedPacket(
+            chunk.data,
+            chunk.keyframe ? "key" : "delta",
+            timestamp,
+            0
+          )
+        );
+        return;
+      }
+
+      // For H.264/H.265, concat the configuration packet with the next frame packet
+      if (videoCodecConfiguration) {
+        const buffer = new Uint8Array(
+          videoCodecConfiguration.length + chunk.data.length
+        );
+        buffer.set(videoCodecConfiguration);
+        buffer.set(chunk.data, videoCodecConfiguration.length);
+
+        let codedWidth: number;
+        let codedHeight: number;
+        let codecString: string;
+        if (videoCodec === ScrcpyVideoCodecId.H264) {
+          const configuration = H264.parseConfiguration(
+            videoCodecConfiguration
+          );
+          codedWidth = configuration.encodedWidth;
+          codedHeight = configuration.encodedHeight;
+          codecString = H264.toCodecString(configuration);
+        } else {
+          const configuration = H265.parseConfiguration(
+            videoCodecConfiguration
+          );
+          codedWidth = configuration.encodedWidth;
+          codedHeight = configuration.encodedHeight;
+          codecString = H265.toCodecString(configuration);
+        }
+
+        await videoTrack.add(
+          new EncodedPacket(
+            buffer,
+            chunk.keyframe ? "key" : "delta",
+            timestamp,
+            0
+          ),
+          {
+            decoderConfig: {
+              codec: codecString,
+              codedWidth,
+              codedHeight,
+            },
+          }
+        );
+
+        videoCodecConfiguration = undefined;
+        return;
+      }
+
+      await videoTrack.add(
+        new EncodedPacket(
+          chunk.data,
+          chunk.keyframe ? "key" : "delta",
+          timestamp,
+          0
+        )
+      );
+    },
+    async close() {
+      await muxer.finalize();
+      const buffer = muxer.target.buffer!;
+
+      // Save `buffer` to a file
+    },
+  });
+}
+```
+
+Then we can `tee` the `videoPacketStream` to pipe the video stream to both the decoder and recorder.
+
+```ts transpile
+import type {
+  ScrcpyMediaStreamPacket,
+  ScrcpyVideoCodecId,
+} from "@yume-chan/scrcpy";
+import {
+  WebCodecsVideoDecoder,
+  WebGLVideoFrameRenderer,
+} from "@yume-chan/scrcpy-decoder-webcodecs";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const videoCodec: ScrcpyVideoCodecId;
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+
+const [decoderStream, recorderStream] = videoPacketStream.tee();
+
+const decoder = new WebCodecsVideoDecoder({
+  codec: videoCodec,
+  renderer: new WebGLVideoFrameRenderer(),
+});
+const recorder = await createRecordStream(videoCodec);
+
+await Promise.all([
+  decoderStream.pipeTo(decoder.writable),
+  recorderStream.pipeTo(recorder),
+]);
+```
+
+### Convert Annex B to AVCC/HEVC manually
+
+If you want to use other muxer libraries or formats which don't support Annex B, you can convert the video stream from Annex B to AVCC/HEVC manually.
+
+#### H.264 Configuration
 
 As mentioned in [configuration packet](./index.mdx#configuration-packet), H.264 configuration packet contains the Sequence Parameter Set (SPS) and Picture Parameter Set (PPS), which contains information like codec profile, resolution, cropping, framerate, etc.
 
@@ -69,10 +270,10 @@ Then you can use this function to convert them into `AvcDecoderConfigurationReco
 // https://ffmpeg.org/doxygen/0.11/avc_8c-source.html#l00106
 function h264ConfigurationToAvcDecoderConfigurationRecord(
   sequenceParameterSet: Uint8Array,
-  pictureParameterSet: Uint8Array,
+  pictureParameterSet: Uint8Array
 ) {
   const buffer = new Uint8Array(
-    11 + sequenceParameterSet.byteLength + pictureParameterSet.byteLength,
+    11 + sequenceParameterSet.byteLength + pictureParameterSet.byteLength
   );
   buffer[0] = 1;
   buffer[1] = sequenceParameterSet[1]!;
@@ -95,82 +296,7 @@ function h264ConfigurationToAvcDecoderConfigurationRecord(
 
 How to use the above `AvcDecoderConfigurationRecord` data depend on the container format and muxer library. Usually there will be a `metadata`, `configuration`, or `description` field for the video stream.
 
-### Frames
-
-When frame metadata is enabled, each data packet contains exactly one encoded frame.
-
-For the first data packet after a configuration packet, the configuration data need to be prepended to the frame data.
-
-:::info
-
-It needs the original Annex B format data, not the `AvcDecoderConfigurationRecord`.
-
-:::
-
-```ts transpile
-let configuration: Uint8Array | undefined;
-
-for await (const packet of videoPacketStream) {
-  if (packet.type === "configuration") {
-    configuration = packet.data;
-    // Also convert it to `AVCDecoderConfigurationRecord` and store in metadata
-    continue;
-  }
-
-  if (packet.type === "data") {
-    let buffer: Uint8Array;
-
-    if (configuration) {
-      const buffer = new Uint8Array(
-        configuration.byteLength + packet.data.byteLength,
-      );
-      buffer.set(configuration);
-      buffer.set(packet.data, configuration.byteLength);
-      configuration = undefined;
-    } else {
-      buffer = packet.data;
-    }
-
-    console.log(buffer);
-  }
-}
-```
-
-Then the data (maybe with configuration prepended) needs to be converted to a `AVCSample` structure.
-
-```ts transpile
-import { annexBSplitNalu } from "@yume-chan/scrcpy";
-
-function nalStreamToAvcSample(buffer: Uint8Array) {
-  const nalUnits: Uint8Array[] = [];
-  let totalLength = 0;
-
-  for (const unit of annexBSplitNalu(buffer)) {
-    nalUnits.push(unit);
-    totalLength += unit.byteLength + 4;
-  }
-
-  const sample = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const nalu of nalUnits) {
-    sample[offset] = nalu.byteLength >> 24;
-    sample[offset + 1] = nalu.byteLength >> 16;
-    sample[offset + 2] = nalu.byteLength >> 8;
-    sample[offset + 3] = nalu.byteLength & 0xff;
-    sample.set(nalu, offset + 4);
-    offset += 4 + nalu.byteLength;
-  }
-  return sample;
-}
-```
-
-Again, how to save the `AVCSample` into the video stream depends on the container format and muxer library.
-
-## H.265
-
-H.265/HEVC is very similar to H.264. It's also a joint effect between ITU-T and ISO, and it also has two formats, Annex B (identical to H.264) and HEVC (similar to AVC format but with different fields).
-
-### Configuration
+#### H.265 Configuration
 
 The H.265 configuration packet contains the Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS).
 
@@ -202,7 +328,7 @@ import {
 function h265ConfigurationToHevcDecoderConfigurationRecord(
   videoParameterSet: H265NaluRaw,
   sequenceParameterSet: H265NaluRaw,
-  pictureParameterSet: H265NaluRaw,
+  pictureParameterSet: H265NaluRaw
 ) {
   const {
     profileTierLevel: {
@@ -231,7 +357,7 @@ function h265ConfigurationToHevcDecoderConfigurationRecord(
       5 * 3 +
       videoParameterSet.data.length +
       sequenceParameterSet.data.length +
-      pictureParameterSet.data.length,
+      pictureParameterSet.data.length
   );
 
   /* unsigned int(8) configurationVersion = 1; */
@@ -348,25 +474,86 @@ function h265ConfigurationToHevcDecoderConfigurationRecord(
 }
 ```
 
-### Frames
+#### Frames
 
-Handling H.265 frame data is same as [H.264](#frames).
+AVCC/HEVC uses the same length-prefixed format for frame data.
 
-## AV1
+The configuration packet also needs to appear in the frame stream, but not as a separate packet. It must be prepended with the first frame packet.
 
-AV1 is much simpler to handle.
+:::info
 
-Its configuration is in the first data packet, and usually it doesn't need to be stored in the metadata. So the configuration packets can be ignored.
+It needs the original Annex B format configuration packet, not the `AvcDecoderConfigurationRecord`.
 
-The data packets only need to be saved as-is into the video stream.
+:::
 
-## Start recording anytime
+```ts transpile
+let configuration: Uint8Array | undefined;
 
-The above examples assume you are saving the video stream from the beginning. Because a video file must start with a configuration and a keyframe, it's a little different if you want to start and stop recording in the middle.
+for await (const packet of videoPacketStream) {
+  if (packet.type === "configuration") {
+    configuration = packet.data;
+    // Also convert it to `AVCDecoderConfigurationRecord` and store in metadata
+    continue;
+  }
 
-### Before v3.0
+  if (packet.type === "data") {
+    let buffer: Uint8Array;
 
-Before v3.0, it's not possible to manually request configuration and keyframe packets.
+    if (configuration) {
+      const buffer = new Uint8Array(
+        configuration.byteLength + packet.data.byteLength
+      );
+      buffer.set(configuration);
+      buffer.set(packet.data, configuration.byteLength);
+      configuration = undefined;
+    } else {
+      buffer = packet.data;
+    }
+
+    console.log(buffer);
+  }
+}
+```
+
+Then the data (maybe with configuration prepended) needs to be converted to a `AVCSample` structure.
+
+```ts transpile
+import { annexBSplitNalu } from "@yume-chan/scrcpy";
+
+function nalStreamToAvcSample(buffer: Uint8Array) {
+  const nalUnits: Uint8Array[] = [];
+  let totalLength = 0;
+
+  for (const unit of annexBSplitNalu(buffer)) {
+    nalUnits.push(unit);
+    totalLength += unit.byteLength + 4;
+  }
+
+  const sample = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const nalu of nalUnits) {
+    sample[offset] = nalu.byteLength >> 24;
+    sample[offset + 1] = nalu.byteLength >> 16;
+    sample[offset + 2] = nalu.byteLength >> 8;
+    sample[offset + 3] = nalu.byteLength & 0xff;
+    sample.set(nalu, offset + 4);
+    offset += 4 + nalu.byteLength;
+  }
+  return sample;
+}
+```
+
+Again, how to save the `AVCSample` into the video stream depends on the container format and muxer library.
+
+### Start recording anytime
+
+The above examples assume you are saving the video stream from the beginning. If you want to start recording after user clicks a button, a `WritableStream` is not enough. For example, you might need to return an object with a `start` and `stop` method and a `writable` stream field, and only write to mediabunny's `Output` after `start` is called.
+
+However, that's still not enough. Because a video file must have a configuration, and start with a keyframe, you must have both before recording starts.
+
+#### Before v3.0
+
+Before v3.0, configuration packets are generated only at the beginning and after device orientation changes. Keyframes are generated only at a fixed interval. It's not possible to manually request them as you want.
 
 The best possible approach is caching the latest configuration, and frames starting from the latest keyframe, and use them when starting recoding.
 
@@ -376,6 +563,7 @@ import type {
   ScrcpyMediaStreamConfigurationPacket,
   ScrcpyMediaStreamDataPacket,
 } from "@yume-chan/scrcpy";
+import { WritableStream } from "@yume-chan/stream-extra";
 
 declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
 
@@ -383,47 +571,119 @@ let configuration: ScrcpyMediaStreamConfigurationPacket | undefined;
 const frames: ScrcpyMediaStreamDataPacket[] = [];
 
 let recording = false;
+let configurationChanged = false;
 
-for await (const packet of videoPacketStream) {
-  switch (packet.type) {
-    case "configuration":
-      configuration = packet;
-      frames.length = 0; // Clear the array
+const recorder = {
+  writable: new WritableStream<ScrcpyMediaStreamPacket>({
+    write(chunk) {
+      switch (chunk.type) {
+        case "configuration":
+          configuration = chunk;
+          frames.length = 0; // Clear the array
 
-      if (recording) {
-        // Convert and save the configuration
+          if (recording) {
+            configurationChanged = true;
+          }
+          break;
+        case "data":
+          if (chunk.keyframe) {
+            frames.length = 0;
+          }
+          frames.push(chunk);
+
+          if (recording) {
+            if (configurationChanged) {
+              // Concat `configuration` and `chunk.data` and write to muxer
+              configurationChanged = false;
+            } else {
+              // Write `chunk.data` to muxer
+            }
+          }
+          break;
       }
-      break;
-    case "data":
-      frames.length = 0;
-      frames.push(packet);
+    },
+  }),
+  start() {
+    recording = true;
 
-      if (recording) {
-        // Convert and save the frame
+    if (configuration) {
+      // Already have configuration
+
+      if (frame.length) {
+        // Concat it with first frame and write to muxer
+
+        for (const frame of frames.slice(1)) {
+          // Write frame to muxer
+        }
+      } else {
+        configurationChanged = true;
       }
-      break;
-  }
-}
-
-function startRecord() {
-  if (recording) {
-    return;
-  }
-
-  recording = true;
-
-  if (configuration) {
-    // Convert and save the configuration
-
-    for (const frame of frames) {
-      // Convert and save the frame
     }
-  }
-}
+  },
+  stop() {
+    // ...
+  },
+};
 ```
 
-Obviously, this will record several extra frames before requested. To make it worse, because Android produces keyframes bases on fixed frame intervals, but new frames are only generated when the screen content changes, those extra frames may last several seconds, or even surpass the max keyframe time interval of some container formats.
+Obviously, this will record several extra frames before requested.
 
-### v3.0 and later
+To make it worse, because Android MediaCodec API produces keyframes every N frames (instead of every N milliseconds), and no frames will be generated when screen content is static, those extra frames may last several seconds.
 
-v3.0 added the [reset video](../control/reset-video.mdx) control message. It requests the server to restart capturing and encoding immediately, which produces new configuration and keyframe packets, so the stream can be recorded from any point. See that page for examples.
+#### v3.0 and later
+
+Added in v3.0, the [reset video](../control/reset-video.mdx) control message requests the server to restart capturing and encoding immediately, which produces new configuration and keyframe packets, so the stream can be recorded from any point.
+
+After sending the reset video control message, some frames might already in-flight before the new configuration packet arrives. Those frame packets need to be dropped.
+
+```ts transpile
+import type {
+  ScrcpyControlMessageWriter,
+  ScrcpyMediaStreamConfigurationPacket,
+  ScrcpyMediaStreamPacket,
+} from "@yume-chan/scrcpy";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const controller: ScrcpyControlMessageWriter;
+
+let configuration: ScrcpyMediaStreamConfigurationPacket | undefined;
+
+let starting = false;
+let recording = true;
+
+const recorder = {
+  writable: new WritableStream<ScrcpyMediaStreamPacket>({
+    write(chunk) {
+      switch (chunk.type) {
+        case "configuration":
+          configuration = chunk;
+
+          // Wait until next configuration to really start recording
+          if (starting) {
+            recording = true;
+          }
+          break;
+        case "data":
+          if (recording) {
+            if (configuration) {
+              // Concat `configuration` and `chunk.data` and write to muxer
+              configuration = undefined;
+            } else {
+              // Write `chunk.data` to muxer
+            }
+          }
+          break;
+      }
+    },
+  }),
+  async start() {
+    starting = true;
+
+    // Request Scrcpy server to produce a new configuration and keyframe
+    await controller.resetVideo();
+  },
+  stop() {
+    // ...
+  },
+};
+```
