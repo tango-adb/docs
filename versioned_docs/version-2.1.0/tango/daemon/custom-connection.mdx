@@ -70,7 +70,7 @@ import { AdbPacketData } from "@yume-chan/adb";
 import { PushReadableStream } from "@yume-chan/stream-extra";
 
 declare function onPacket(
-  handler: (packet: AdbPacketData | undefined) => Promise<void>
+  handler: (packet: AdbPacketData | undefined) => Promise<void>,
 ): void;
 
 const readable = new PushReadableStream((controller) => {
@@ -151,19 +151,35 @@ const connection: ReadableWritablePair<
 
 ## Convert between raw bytes
 
-The core package also has helper methods to convert streams between `Uint8Array` and `AdbPacket`:
+The core package exports helper methods to convert streams between `Uint8Array` and `AdbPacket`:
 
 ```ts transpile
-import { AdbPacket, AdbPacketData } from "@yume-chan/adb";
 import {
+  AdbPacket,
+  AdbPacketData,
+  AdbPacketSerializeStream,
+} from "@yume-chan/adb";
+import {
+  Consumable,
   ReadableStream,
+  pipeFrom,
   StructDeserializeStream,
 } from "@yume-chan/stream-extra";
 
 declare const rawReadable: ReadableStream<Uint8Array>;
 
 const readable: ReadableStream<AdbPacketData> = rawReadable.pipeThrough(
-  new StructDeserializeStream(AdbPacket)
+  new StructDeserializeStream(AdbPacket),
+);
+
+const writable = pipeFrom(
+  new Consumable.WritableStream({
+    async write(chunk) {
+      // Write `chunk` to sink before returning
+      // Content of `chunk` will change after `write` returns
+    },
+  }),
+  new AdbPacketSerializeStream(),
 );
 ```
 
