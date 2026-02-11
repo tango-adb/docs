@@ -12,7 +12,84 @@ Only `WebGLVideoFrameRenderer` and `BitmapVideoFrameRenderer` are supported in W
 
 When their constructors are called without arguments, they will create an [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) object internally.
 
-This `OffscreenCanvas` is not bound to a `<canvas>` element. See [Synchronous display of frames produced by an OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas#synchronous_display_of_frames_produced_by_an_offscreencanvas) on MDN for how send the image data to a normal `<canvas>` element.
+This `OffscreenCanvas` is not bound to a `<canvas>` element. To display the frames on the main thread, you need to use `transferToImageBitmap` to transfer the bitmap data from the worker and draw it onto a regular canvas:
+
+```ts transpile
+// worker.js - Renderer worker
+import {
+    WebGLVideoFrameRenderer,
+    WebCodecsVideoDecoder,
+} from "@yume-chan/scrcpy-decoder-webcodecs";
+
+// Create renderer with automatic OffscreenCanvas
+const renderer = new WebGLVideoFrameRenderer();
+
+self.addEventListener("message", async (e) => {
+    const { codec, videoStream } = e.data;
+
+    // Set up decoder with the renderer
+    const decoder = new WebCodecsVideoDecoder({ 
+        codec, 
+        renderer 
+    });
+
+    // Handle size changes
+    decoder.sizeChanged(({ width, height }) => {
+        postMessage({ type: 'size', width, height });
+    });
+
+    // Process video stream
+    await videoStream.pipeTo(decoder.writable).catch((error) => {
+        console.error('Decode error:', error);
+    });
+});
+
+// Periodically transfer frames to main thread
+function transferFrames() {
+    // Get the current frame as ImageBitmap
+    const imageBitmap = renderer.canvas.transferToImageBitmap();
+    
+    // Send to main thread
+    postMessage({ type: 'frame', imageBitmap }, [imageBitmap]);
+    
+    // Continue transferring frames
+    requestAnimationFrame(transferFrames);
+}
+
+// Start frame transfer
+transferFrames();
+```
+
+```ts transpile
+// main-thread.js - Main thread to display frames
+const canvas = document.getElementById('displayCanvas');
+const ctx = canvas.getContext('2d');
+
+// Set up worker
+const worker = new Worker('worker.js');
+
+// Handle size updates
+worker.addEventListener('message', (e) => {
+    if (e.data.type === 'size') {
+        canvas.width = e.data.width;
+        canvas.height = e.data.height;
+    } else if (e.data.type === 'frame') {
+        // Draw the received ImageBitmap onto the canvas
+        ctx.drawImage(e.data.imageBitmap, 0, 0);
+        
+        // Clean up the ImageBitmap after drawing
+        e.data.imageBitmap.close();
+    }
+});
+
+// Send video stream to worker when ready
+worker.postMessage({ 
+    codec: ScrcpyVideoCodecId.H264, 
+    videoStream: videoPacketStream 
+});
+```
+
+This approach allows you to render video frames in a worker and efficiently display them on the main thread by transferring image bitmaps between threads.
 
 ## Method B: Create `OffscreenCanvas` from a `<canvas>` element
 

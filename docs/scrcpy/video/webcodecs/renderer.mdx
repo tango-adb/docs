@@ -4,7 +4,15 @@ sidebar_position: 2
 
 # Renderers
 
-WebCodecs API decodes video frames into `VideoFrame` objects. There are multiple methods to render those `VideoFrame` objects onto the page. This package provides three renderers:
+WebCodecs API decodes video frames into `VideoFrame` objects. There are multiple methods to render those `VideoFrame` objects onto the page. This package provides four concrete `VideoFrameRenderer` implementations plus one abstract base class:
+
+# TL;DR
+
+`WebCodecsVideoDecoder` will automatically create an `AutoCanvasRenderer` if the `renderer` option is not specified. This automatically selects the best available renderer: hardware-accelerated `WebGLVideoFrameRenderer` when available, falling back to software-based `BitmapVideoFrameRenderer` otherwise.
+
+This page covers advanced usage scenarios. Most users don't need to manually configure renderers as the default behavior provides optimal performance in most cases.
+
+## Overview
 
 :::info
 
@@ -12,9 +20,11 @@ These renderers are not tied to our `WebCodecsVideoDecoder`, they can also be us
 
 :::
 
-- `InsertableStreamVideoFrameRenderer`: Renders to a `<video>` element using [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). See [quirks](#quirks-of-insertable-stream-renderer) below.
-- `WebGLVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using WebGL. It only works with hardware accelerated WebGL, because without hardware acceleration, the performance is even worse than the bitmap renderer below.
-- `BitmapVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using bitmap renderer.
+- `InsertableStreamVideoFrameRenderer`: Renders to a `<video>` element using [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). (Concrete implementation)
+- `WebGLVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using WebGL. It only works with hardware accelerated WebGL, because without hardware acceleration, the performance is even worse than the bitmap renderer below. (Concrete implementation)
+- `BitmapVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using bitmap renderer. (Concrete implementation)
+- `AutoCanvasRenderer`: Convenience class that automatically selects the best available canvas-based renderer based on hardware support (WebGL if available, otherwise Bitmap). (Concrete implementation)
+- `CanvasVideoFrameRenderer`: Abstract base class for canvas-based renderers that handles common functionality like canvas resizing, display size updates using ResizeObserver, frame redrawing, and snapshots. It supports three canvas sizing modes: `"video"` (matches video resolution), `"display"` (matches display size), and `"external"` (uses existing canvas size). (Abstract base class)
 
 :::info
 
@@ -22,7 +32,342 @@ These renderers are not tied to our `WebCodecsVideoDecoder`, they can also be us
 
 :::
 
-## Quirks of Insertable Stream renderer
+## VideoFrameRenderer
+
+`VideoFrameRenderer` is the base interface that all video frame renderers implement. It defines the contract for receiving and rendering `VideoFrame` objects, along with optional methods for capturing snapshots and disposing of resources.
+
+### Definition
+
+```ts
+export interface VideoFrameRenderer {
+    readonly type: "software" | "hardware";
+
+    readonly writable: WritableStream<VideoFrame>;
+
+    snapshot?(options?: ImageEncodeOptions): Promise<Blob | undefined>;
+
+    dispose?(): MaybePromiseLike<undefined>;
+}
+```
+
+### Characteristics
+
+- `type`: Indicates the rendering method - `"software"` for software-based rendering (CPU intensive) or `"hardware"` for hardware-accelerated rendering (GPU assisted)
+- `writable`: A `WritableStream<VideoFrame>` that accepts video frames for rendering
+- `snapshot?`: Optional method to capture a snapshot of the current frame as a Blob (supported by canvas-based renderers)
+- `dispose?`: Optional method to clean up resources when the renderer is no longer needed
+
+## CanvasVideoFrameRenderer
+
+The `CanvasVideoFrameRenderer` is an abstract base class that provides common functionality for canvas-based video frame renderers.
+
+#### Definition
+
+```ts
+export abstract class CanvasVideoFrameRenderer<
+    TOptions extends CanvasVideoFrameRenderer.Options = CanvasVideoFrameRenderer.Options,
+> implements VideoFrameRenderer {
+    abstract get type(): "software" | "hardware";
+
+    /**
+     * The canvas element used for rendering.
+     *
+     * When running in the main thread, this will be a HTMLCanvasElement.
+     * When running in a Worker context (like Web Workers), this will be an OffscreenCanvas.
+     */
+    get canvas(): HTMLCanvasElement | OffscreenCanvas;
+    get options(): Readonly<TOptions> | undefined;
+    get lastFrame(): VideoFrame | undefined;
+    get writable(): WritableStream<VideoFrame>;
+
+    constructor(
+        draw: (frame: VideoFrame) => MaybePromiseLike<undefined>,
+        options?: TOptions,
+    );
+
+    redraw(): Promise<void>;
+    snapshot(options?: ImageEncodeOptions): Promise<Blob | undefined>;
+    dispose(): undefined;
+}
+
+ export namespace CanvasVideoFrameRenderer {
+     export interface Options {
+         canvas?: HTMLCanvasElement | OffscreenCanvas;
+
+         /**
+          * Whether to update the canvas size (rendering resolution) automatically.
+          *
+          * * `"video"` (default): update the canvas size to match the video resolution
+          * * `"display"` (only for `HTMLCanvasElement`):
+          *    update the canvas size to match the display size.
+          *    The display size can be set using `canvas.style.width/height`,
+          *    and must be in correct aspect ratio.
+          * * `"external"`: use the canvas size as it is.
+          *    The size must be manually set using `canvas.width/height`,
+          *    and must be in correct aspect ratio.
+          */
+         canvasSize?: "video" | "display" | "external";
+     }
+ }
+ ```
+
+ ### Understanding the canvasSize option
+
+The `canvasSize` option in `CanvasVideoFrameRenderer` controls how the canvas dimensions are managed and significantly affects performance and visual quality:
+
+#### `"video"` (Default)
+
+This is the naive approach where the canvas intrinsic size always equals the video resolution. This means the renderer always draws every pixel of the video frame, even if the canvas's CSS size is smaller than the video resolution. The browser then scales the entire canvas down, which is inefficient and can lead to visual artifacts.
+
+#### `"display"`
+
+Uses a `ResizeObserver` to react to the canvas CSS size and only draws the same amount of physical pixels that the canvas occupies on the display. This approach saves drawing time by avoiding rendering of pixels that would be scaled down anyway, and avoids browser scaling artifacts by matching the canvas intrinsic size to its display size. **Note:** This option only works in the main thread with `HTMLCanvasElement`, not with `OffscreenCanvas` in Web Workers.
+
+#### `"external"`
+
+Gives the user full control of the canvas size. This allows for custom scaling behaviors or fixed resolutions independent of video or display dimensions.
+
+#### Recommendation
+
+The `"display"` option is generally the best choice when running in the main thread with an HTML canvas, because it optimizes performance by rendering only the pixels needed for the current display size, while avoiding browser scaling artifacts. However, since it doesn't work with `OffscreenCanvas` in Web Workers, `"video"` remains the default for broader compatibility.
+
+ ### BitmapVideoFrameRenderer
+
+`BitmapVideoFrameRenderer` is a concrete implementation of `CanvasVideoFrameRenderer` that uses the ImageBitmap rendering context for software-based rendering. It creates an `ImageBitmap` from each incoming `VideoFrame` and transfers it to the canvas using `transferFromImageBitmap`.
+
+#### Definition
+
+```ts
+export class BitmapVideoFrameRenderer extends CanvasVideoFrameRenderer {
+    override get type(): "software";
+    constructor(options?: CanvasVideoFrameRenderer.Options);
+}
+```
+
+#### Characteristics
+
+- Type: `"software"` (indicates software-based rendering)
+- Uses `ImageBitmapRenderingContext` for rendering
+- More CPU-intensive but widely supported across browsers
+- Better performance than 2D canvas rendering
+
+#### Example
+
+```ts
+// 1. Create canvas automatically
+const bitmapRenderer1 = new BitmapVideoFrameRenderer();
+// Access the automatically created canvas
+// In main thread: canvas is HTMLCanvasElement, can be added to DOM
+// In worker: canvas is OffscreenCanvas, use transferToImageBitmap to send frames to main thread
+if (bitmapRenderer1.canvas instanceof HTMLCanvasElement) {
+    // Main thread context
+    document.body.appendChild(bitmapRenderer1.canvas);
+} else {
+    // Worker context - use transferToImageBitmap to send frames to main thread
+    // See "Web Workers" for detailed example
+}
+
+// 2. Use an external HTML canvas element
+const canvasElement = document.getElementById('myCanvas');
+const bitmapRenderer2 = new BitmapVideoFrameRenderer({ canvas: canvasElement });
+
+// 3. Use an external OffscreenCanvas
+const offscreenCanvas = new OffscreenCanvas(1920, 1080);
+const bitmapRenderer3 = new BitmapVideoFrameRenderer({ canvas: offscreenCanvas });
+```
+
+### WebGLVideoFrameRenderer
+
+`WebGLVideoFrameRenderer` is a hardware-accelerated implementation that uses WebGL shaders for rendering video frames. It provides superior performance on supported devices but requires hardware acceleration.
+
+#### Definition
+
+```ts
+export class WebGLVideoFrameRenderer extends CanvasVideoFrameRenderer<WebGLVideoFrameRenderer.Options> {
+    static get isSupported(): boolean;
+    override get type(): "hardware";
+    constructor(options?: WebGLVideoFrameRenderer.Options);
+    snapshot(options?: ImageEncodeOptions): Promise<Blob | undefined>;
+    dispose(): undefined;
+}
+
+export namespace WebGLVideoFrameRenderer {
+    export interface Options extends CanvasVideoFrameRenderer.Options {
+        /**
+         * Whether to allow capturing the canvas content using APIs like `readPixels` and `toDataURL`.
+         *
+         * Enabling this option may reduce performance.
+         */
+        enableCapture?: boolean;
+    }
+}
+```
+
+#### Characteristics
+
+- Type: `"hardware"` (indicates hardware-accelerated rendering)
+- Requires hardware support for WebGL (returns `false` for `isSupported` if not available)
+- Uses custom vertex and fragment shaders for rendering
+- Implements bicubic filtering for better image quality when scaling
+- Supports optional canvas capture with the `enableCapture` option (may reduce performance)
+- Handles WebGL context loss and restoration automatically
+
+#### Example
+
+```ts
+// 1. Check compatibility before creating renderer
+if (WebGLVideoFrameRenderer.isSupported) {
+    const webglRenderer1 = new WebGLVideoFrameRenderer();
+    // Access the automatically created canvas
+    // In main thread: canvas is HTMLCanvasElement, can be added to DOM
+    // In worker: canvas is OffscreenCanvas, use transferToImageBitmap to send frames to main thread
+    if (webglRenderer1.canvas instanceof HTMLCanvasElement) {
+        // Main thread context
+        document.body.appendChild(webglRenderer1.canvas);
+    } else {
+        // Worker context - use transferToImageBitmap to send frames to main thread
+        // See "Web Workers" for detailed example
+    }
+} else {
+    console.warn("WebGL is not supported, consider using BitmapVideoFrameRenderer instead");
+}
+
+// 2. Use an external HTML canvas element with capture enabled
+const canvasElement = document.getElementById('myCanvas');
+if (WebGLVideoFrameRenderer.isSupported) {
+    const webglRenderer2 = new WebGLVideoFrameRenderer({
+        canvas: canvasElement,
+        enableCapture: true
+    });
+} else {
+    console.warn("WebGL is not supported, consider using BitmapVideoFrameRenderer instead");
+}
+
+// 3. Use an external OffscreenCanvas
+const offscreenCanvas = new OffscreenCanvas(1920, 1080);
+if (WebGLVideoFrameRenderer.isSupported) {
+    const webglRenderer3 = new WebGLVideoFrameRenderer({ canvas: offscreenCanvas });
+} else {
+    console.warn("WebGL is not supported, consider using BitmapVideoFrameRenderer instead");
+}
+```
+
+### AutoCanvasRenderer
+
+`AutoCanvasRenderer` is a convenience class that automatically selects the best available canvas-based renderer based on hardware support. It will use `WebGLVideoFrameRenderer` if WebGL hardware acceleration is available, otherwise it falls back to `BitmapVideoFrameRenderer`.
+
+#### Definition
+
+```ts
+export class AutoCanvasRenderer implements VideoFrameRenderer {
+    get type(): "software" | "hardware";
+    get canvas(): HTMLCanvasElement | OffscreenCanvas;
+    get writable(): WritableStream<VideoFrame>;
+
+    constructor(options?: WebGLVideoFrameRenderer.Options);
+
+    snapshot(options?: ImageEncodeOptions): Promise<Blob | undefined>;
+    dispose(): undefined;
+}
+```
+
+#### Characteristics
+
+- Automatically detects hardware support and chooses the optimal renderer
+- Uses hardware-accelerated `WebGLVideoFrameRenderer` when available
+- Falls back to software-based `BitmapVideoFrameRenderer` when WebGL is not supported
+- Provides a unified interface regardless of the underlying renderer
+- Inherits all options from `WebGLVideoFrameRenderer` (since it may use it internally)
+
+#### Example
+
+```ts
+// Creates the best available renderer automatically
+const autoRenderer = new AutoCanvasRenderer();
+
+// Check which renderer is being used
+console.log(`Renderer type: ${autoRenderer.type}`); // "hardware" or "software"
+
+// Append the canvas to the DOM
+document.body.appendChild(autoRenderer.canvas);
+
+// The renderer will be either WebGL (hardware) or Bitmap (software) based on system capabilities
+```
+
+
+## InsertableStreamVideoFrameRenderer
+
+`InsertableStreamVideoFrameRenderer` renders video frames to a `<video>` element using the [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). It uses a `MediaStreamTrackGenerator` to create a media stream that feeds video frames to the video element.
+
+### Definition
+
+```ts
+export class InsertableStreamVideoFrameRenderer implements VideoFrameRenderer {
+    static get isSupported(): boolean;
+    get type(): "hardware";
+    get element(): HTMLVideoElement;
+    get options(): InsertableStreamVideoFrameRenderer.Options | undefined;
+    get writable(): WritableStream<VideoFrame>;
+    get stream(): MediaStream;
+
+    constructor(
+        element?: HTMLVideoElement,
+        options?: InsertableStreamVideoFrameRenderer.Options
+    );
+
+    dispose(): undefined;
+}
+
+export namespace InsertableStreamVideoFrameRenderer {
+    export interface Options {
+        /**
+         * Whether to update the size of the video element when the size of the video frame changes.
+         */
+        updateSize?: boolean;
+    }
+}
+```
+
+### Characteristics
+
+- Type: `"hardware"` (indicates hardware-accelerated rendering)
+- Renders to an HTML `<video>` element using native browser media pipeline
+- Uses `MediaStreamTrackGenerator` to feed video frames to the video element
+- Sets various attributes on the video element for optimal performance:
+  - `muted: true` - Required for autoplay
+  - `autoplay: true` - Starts playback automatically
+  - `playsInline: true` - Prevents fullscreen playback on mobile
+  - `disablePictureInPicture: true` - Disables picture-in-picture mode
+  - `disableRemotePlayback: true` - Disables remote playback
+- Automatically handles video element creation if none is provided
+- Supports dynamic resizing of the video element based on frame dimensions
+
+### Example
+
+```ts
+// 1. Create video element automatically
+const streamRenderer1 = new InsertableStreamVideoFrameRenderer();
+document.body.appendChild(streamRenderer1.element);
+
+// 2. Use an existing video element
+const videoElement = document.getElementById('myVideo');
+const streamRenderer2 = new InsertableStreamVideoFrameRenderer(videoElement);
+
+// 3. Enable automatic size updates
+const streamRenderer3 = new InsertableStreamVideoFrameRenderer(videoElement, {
+    updateSize: true
+});
+
+// 4. Check compatibility before using
+if (InsertableStreamVideoFrameRenderer.isSupported) {
+    const compatibleRenderer = new InsertableStreamVideoFrameRenderer();
+    document.body.appendChild(compatibleRenderer.element);
+} else {
+    console.warn("Insertable streams not supported, consider using WebGL or Bitmap renderers");
+}
+```
+
+### Quirks
 
 The Insertable Streams renderer should be considered as experimental, because there are several issues around it:
 
@@ -41,52 +386,3 @@ As a result, we implemented the Insertable Stream renderer using the old `MediaS
 Because it renders to a `<video>` element, if the video element is removed from the DOM tree (e.g. to move it into another element, or another page), it will be automatically paused. You need to call `renderer.element.play()` to resume playback after adding it back to the DOM tree.
 
 It sets the `autoplay` attribute on the `<video>` element, so it will start playing automatically for the first time.
-
-## Create a renderer
-
-Generally, the performance ranking is `InsertableStream` ≈ `WebGL` >> `Bitmap`. However, because Insertable Stream renderer and WebGL renderer are not available on all devices, we recommend the following method to choose the best renderer on all devices:
-
-`InsertableStreamVideoFrameRenderer` and `WebGLVideoFrameRenderer` both have an `isSupported` static property, to check whether they are supported by the current browser and hardware:
-
-```ts transpile
-import type { VideoFrameRenderer } from "@yume-chan/scrcpy-decoder-webcodecs";
-import {
-  InsertableStreamVideoFrameRenderer,
-  WebGLVideoFrameRenderer,
-  BitmapVideoFrameRenderer,
-} from "@yume-chan/scrcpy-decoder-webcodecs";
-
-function createVideoFrameRenderer(): {
-  renderer: VideoFrameRenderer;
-  element: HTMLVideoElement | HTMLCanvasElement;
-} {
-  // Uncomment following lines to enable InsertableStreamVideoFrameRenderer, see quirks above
-  // if (InsertableStreamVideoFrameRenderer.isSupported) {
-  //   const renderer = new InsertableStreamVideoFrameRenderer();
-  //   return { renderer, element: renderer.element };
-  // }
-
-  if (WebGLVideoFrameRenderer.isSupported) {
-    const renderer = new WebGLVideoFrameRenderer();
-    return { renderer, element: renderer.canvas as HTMLCanvasElement };
-  }
-
-  const renderer = new BitmapVideoFrameRenderer();
-  return { renderer, element: renderer.canvas as HTMLCanvasElement };
-}
-```
-
-When the constructors are called without arguments, they will create a rendering target automatically (`<video>` element for `InsertableStreamVideoFrameRenderer`, `<canvas>` for `WebGLVideoFrameRenderer` and `BitmapVideoFrameRenderer`). You will need to insert the created `element` into the page to display the video:
-
-```ts transpile
-const { renderer, element } = createVideoFrameRenderer();
-document.body.appendChild(element);
-```
-
-Or, all renderers accept existing rendering targets:
-
-```ts transpile
-new InsertableStreamVideoFrameRenderer(videoElement);
-new WebGLVideoFrameRenderer(canvasElementOrOffscreenCanvas);
-new BitmapVideoFrameRenderer(canvasElementOrOffscreenCanvas);
-```

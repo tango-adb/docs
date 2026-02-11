@@ -1,0 +1,322 @@
+---
+sidebar_position: 4
+---
+
+# Operating the Decoder
+
+## Definition
+
+
+
+```ts
+export class WebCodecsVideoDecoder implements ScrcpyVideoDecoder {
+    static get isSupported(): boolean;
+    static readonly capabilities: Record<string, ScrcpyVideoDecoderCapability>;
+
+    constructor(options: WebCodecsVideoDecoder.Options);
+
+    // Properties
+    get type(): "software" | "hardware";
+    get codec(): ScrcpyVideoCodecId;
+    get renderer(): VideoFrameRenderer;
+    get rendererType(): string;
+    get paused(): boolean;
+    get writable(): WritableStream<Uint8Array>;
+    get width(): number;
+    get height(): number;
+    get decodeQueueSize(): number;
+    get onDequeue(): Event<void>;
+    get framesDecoded(): number;
+    get framesSkippedDecoding(): number;
+    get framesRendered(): number;
+    get framesDisplayed(): number;
+    get framesSkippedRendering(): number;
+    get totalDecodeTime(): number;
+    sizeChanged: Event<ScrcpyVideoSize>;
+
+    // Methods
+    pause(): void;
+    resume(): void;
+    trackDocumentVisibility(document: Document): () => void;
+    snapshot(options?: ImageEncodeOptions): Promise<Blob | undefined>;
+    dispose(): void;
+}
+
+export namespace WebCodecsVideoDecoder {
+    export interface Options extends Pick<
+        VideoDecoderConfig,
+        "hardwareAcceleration" | "optimizeForLatency"
+    > {
+        /**
+         * The video codec to decode
+         */
+        codec: ScrcpyVideoCodecId;
+
+        renderer?: VideoFrameRenderer | undefined;
+    }
+}
+```
+
+## Static Properties
+
+
+### isSupported
+
+Check if the browser supports WebCodecs:
+
+```ts
+const isSupported = WebCodecsVideoDecoder.isSupported;
+```
+
+### capabilities
+
+Get the supported video codecs:
+
+```ts
+const capabilities = WebCodecsVideoDecoder.capabilities;
+```
+
+The capabilities property returns a record where the keys represent the supported video codecs (currently `h264`, `h265`, and `av1`). The empty object values indicate that the decoder supports all profiles and levels of each respective codec.
+
+## Create a decoder
+
+
+
+```ts
+import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
+import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import type { VideoFrameRenderer } from "@yume-chan/scrcpy-decoder-webcodecs";
+
+export class WebCodecsVideoDecoder implements ScrcpyVideoDecoder {
+  constructor(options: WebCodecsVideoDecoder.Options);
+}
+
+export namespace WebCodecsVideoDecoder {
+  export interface Options extends Pick<
+    VideoDecoderConfig,
+    "hardwareAcceleration" | "optimizeForLatency"
+  > {
+    /**
+     * The video codec to decode
+     */
+    codec: ScrcpyVideoCodecId;
+
+    renderer?: VideoFrameRenderer | undefined;
+  }
+}
+```
+
+
+The constructor requires an options object with the following properties:
+
+- `codec`: the video codec to be decoded. It can be retrieved from the [video stream metadata](../index.mdx#video-stream-metadata), or hard-coded if you only use a specific video codec.
+- `renderer`: a renderer created in the [Renderers](./renderer.mdx) section (optional, defaults to `AutoCanvasRenderer`).
+- `hardwareAcceleration`: controls hardware acceleration preference (`"no-preference"`, `"require-hardware"`, `"prefer-hardware"`, or `"prefer-software"`). Default is `"no-preference"`.
+- `optimizeForLatency`: optimizes for latency when set to `true`. Default is `true`.
+
+```ts transpile
+import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
+
+const decoder = new WebCodecsVideoDecoder({
+  codec: videoMetadata.codec,
+  renderer: renderer,
+  hardwareAcceleration: "no-preference",
+  optimizeForLatency: true,
+});
+```
+
+### Pipe video stream
+
+
+After creating a decoder instance, you need to pipe the [video stream](./index.mdx#video-packets) into the `writable` property:
+
+```ts transpile
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+
+void videoPacketStream.pipeTo(decoder.writable).catch((e) => {
+  console.error(e);
+});
+```
+
+The decoder handles pausing and resuming based on document visibility automatically when you use `trackDocumentVisibility()`.
+
+## Properties
+
+
+### type
+Gets the decoder type (`"software"` or `"hardware"`), determined by the `hardwareAcceleration` option passed to the constructor:
+
+```ts
+const type = decoder.type;
+```
+
+### codec
+Gets the video codec being decoded, as specified in the constructor options:
+
+```ts
+const codec = decoder.codec;
+```
+
+### renderer
+Gets the active renderer instance that was passed to the constructor or created by default:
+
+```ts
+const renderer = decoder.renderer;
+```
+
+### rendererType
+Gets the type of the active renderer, derived from the renderer's type property:
+
+```ts
+const rendererType = decoder.rendererType;
+```
+
+### paused
+Gets whether the decoder is currently paused. When paused, incoming video packets will be queued until resumed:
+
+```ts
+const isPaused = decoder.paused;
+```
+
+### writable
+A WritableStream that accepts video packet data. This is where you pipe the video stream from the device:
+
+```ts
+videoPacketStream.pipeTo(decoder.writable);
+```
+
+### width and height
+
+Gets the current video dimensions in pixels. These values update automatically when the device orientation changes:
+
+```ts
+const width = decoder.width;
+const height = decoder.height;
+```
+
+### decodeQueueSize
+
+Gets the number of frames waiting to be decoded by the underlying VideoDecoder. A high queue size may indicate performance issues:
+
+```ts
+const queueSize = decoder.decodeQueueSize;
+```
+
+### onDequeue
+
+An event that fires when a frame is dequeued (either decoded or discarded) by the underlying VideoDecoder:
+
+```ts
+decoder.onDequeue(() => {
+    console.log('A frame was dequeued');
+});
+```
+
+### framesDecoded
+
+Gets the number of frames successfully decoded by the underlying VideoDecoder:
+
+```ts
+const framesDecoded = decoder.framesDecoded;
+```
+
+### framesSkippedDecoding
+
+Gets the number of frames skipped by the decoder, usually due to performance constraints or when frames are deemed unnecessary:
+
+```ts
+const framesSkipped = decoder.framesSkippedDecoding;
+```
+
+### framesRendered
+
+Gets the number of frames that have been drawn on the renderer:
+
+```ts
+const framesRendered = decoder.framesRendered;
+```
+
+### framesDisplayed
+
+Gets the number of frames that's visible to the user. Multiple frames might be rendered during one vertical sync interval, but only the last of them is represented to the user. This costs some performance but reduces latency by 1 frame. May be `0` if the renderer is in a nested Web Worker on Chrome due to a Chrome bug:
+
+```ts
+const framesDisplayed = decoder.framesDisplayed;
+```
+
+### framesSkippedRendering
+
+Gets the number of frames that wasn't drawn on the renderer because the renderer can't keep up with the frame rate:
+
+```ts
+const framesSkipped = decoder.framesSkippedRendering;
+```
+
+### totalDecodeTime
+
+Gets the total time spent processing and decoding frames in milliseconds, providing insight into decoder performance:
+
+```ts
+const totalDecodeTime = decoder.totalDecodeTime;
+```
+
+### sizeChanged
+
+An event that fires when the video size changes, typically when the device orientation changes:
+
+When the device orientation changes, Scrcpy server will recreate a new video encoder with the new size. The decoder will parse the new video configuration, and update the canvas size automatically.
+
+However, the video size is also useful for other purposes, like [injecting touch events](../../control/touch.mdx). The `sizeChanged` event will be emitted when the video size changes.
+
+```ts
+decoder.sizeChanged(({ width, height }) => {
+    console.log(`Video size changed to ${width}x${height}`);
+});
+```
+
+## Methods
+
+### pause()
+
+Pause the decoder:
+
+```ts transpile
+decoder.pause();
+```
+
+### resume()
+
+Resume the decoder:
+
+```ts transpile
+decoder.resume();
+```
+
+### trackDocumentVisibility()
+
+Track document visibility to automatically pause/resume the decoder:
+
+```ts transpile
+const unsubscribe = decoder.trackDocumentVisibility(document);
+// Call unsubscribe() to stop tracking
+```
+
+### snapshot()
+
+Take a screenshot of the current frame:
+
+```ts transpile
+const blob: Blob | undefined = await decoder.snapshot();
+```
+
+If no frames have been rendered, the return value will be `undefined`. Otherwise it will be a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob) object with the PNG image data.
+
+### dispose()
+
+Clean up the decoder resources:
+
+```ts transpile
+decoder.dispose();
+```

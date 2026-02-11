@@ -12,6 +12,7 @@ This document outlines the formatting rules and guidelines for maintaining consi
  - Use blank lines around info boxes for visual separation (Example: `@tango-adb/docs/docs/scrcpy/options/log-level.mdx`)
  - Maintain consistent spacing throughout documents (Example: `@tango-adb/docs/docs/scrcpy/options/audio.mdx`)
  - Add one empty line before and after lists (either ordered and unordered), but not any empty lines between list items (Example: `@tango-adb/docs/docs/scrcpy/options/crop.mdx`)
+  - Add ONE AND ONLY ONE empty line before and after headers and code blocks (Example: `@tango-adb/docs/docs/scrcpy/video/webcodecs/decoder.mdx`). ONE empty line means TWO line break characters (\n\n). However, when a header is immediately followed by a code block, only ONE empty line between is sufficient. Inside code blocks, NO EMPTY LINE should appear at the beginning or end of the code content.
  - Prefer short paragraphs unless the content is highly connected (Example: `@tango-adb/docs/docs/scrcpy/options/bit-rate.mdx`)
  - Use `---` frontmatter for metadata (Example: `@tango-adb/docs/docs/scrcpy/options/angle.mdx`)
  - Include import statements at the top of pages when referencing custom components (e.g., `import Version from "../version-span";`). Only include the import if you actually use the component in the file. (Example: `@tango-adb/docs/docs/scrcpy/options/audio-codec.mdx` has the import and uses it, while `@tango-adb/docs/docs/scrcpy/options/vd-destroy-content.mdx` does not have the import since it's not used)
@@ -25,6 +26,7 @@ This document outlines the formatting rules and guidelines for maintaining consi
  - Use `_category_.yml` files to configure sidebar navigation (Example: `@tango-adb/docs/docs/scrcpy/_category_.yml`)
  - Include `position` property to control ordering in sidebar (Example: `@tango-adb/docs/docs/scrcpy/_category_.yml`)
  - Use `label` property for the display name in sidebar (Example: `@tango-adb/docs/docs/scrcpy/_category_.yml`)
+ - All `_category_.yml` files must include the `label` property to define the display name in the sidebar (Example: `@tango-adb/docs/docs/scrcpy/options/_category_.yml`)
  - Set `collapsed: false` to show sub-items expanded by default (Example: `@tango-adb/docs/docs/scrcpy/_category_.yml`)
  - For scrcpy options, order by: foundational concepts first (like `ScrcpyOptionValue`), then options by version added and by order in source code, with advanced topics (like `Inheritance`) at the bottom (Example: `@tango-adb/docs/docs/scrcpy/options/index.mdx`)
  - When adding new options, assign a `sidebar_position` that reflects the chronological order of when the feature was added in Scrcpy versions (e.g., options added in v1.17-v1.25 should have positions between early 1.x options and 2.x options) (Example: `@tango-adb/docs/docs/scrcpy/options/vd-destroy-content.mdx` has `sidebar_position: 125` for v3.1 feature)
@@ -99,6 +101,7 @@ This document outlines the formatting rules and guidelines for maintaining consi
 ## Information Boxes
 
  - Use `:::info[Title]` syntax for information boxes containing equivalent commands (Example: `@tango-adb/docs/docs/api/adb/pm.mdx`)
+ - For info boxes without titles, you can use `:::info` syntax as well (Example: `@tango-adb/docs/docs/scrcpy/options/vd-system-decorations.mdx` uses `:::info` for version information)
  - Place info boxes directly after the relevant content (Example: `@tango-adb/docs/docs/scrcpy/options/vd-system-decorations.mdx`)
  - Include shell script examples in info boxes when showing environment variable usage (Example: `@tango-adb/docs/docs/environment-variables.mdx`)
  - Use `:::info` and `:::danger` to show extra information about the library itself (Example: `@tango-adb/docs/docs/scrcpy/options/vd-system-decorations.mdx` uses `:::info` for version information)
