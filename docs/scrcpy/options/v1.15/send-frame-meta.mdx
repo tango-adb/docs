@@ -11,6 +11,10 @@ Send presentation timestamps (PTS) so that the client may record properly.
 
 When enabled, the video stream will include frame timing metadata required for proper recording. When set to `false`, the video stream will not contain `configuration` typed packets, which means it can't be decoded by the companion decoders. However, it's still possible to record the stream into a file or decode it with a more tolerant decoder like FFMpeg.
 
+## Related options
+
+- [`sendDeviceMeta`](../v1.22/send-device-meta.mdx): Controls whether the server should send device name and size at the start of the video stream
+
 ## Example
 
 ```ts transpile

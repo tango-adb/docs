@@ -218,7 +218,7 @@ You can either create your own API to expose individual features (so Tango is on
 
 ```mermaid
 flowchart LR
-    T["Custom Transport"] -- WebSocket --> S["Transport on Backend Server"] -.-> Device
+    T["Custom Transport"] -- WebSocket --> S["Transport on Backend Server"] -.-> D["Device"]
 ```
 
 Select "Node.js" in Question 1 to find out which transport you need on the backend server.
@@ -233,7 +233,7 @@ You can either create your own API to expose individual features (so Tango is on
 
 ```mermaid
 flowchart LR
-    T["Custom Transport"] -- WebSocket --> S["Backend Server"] -- WebSocket --> R["Transport on Remote PC"] -.-> Device
+    T["Custom Transport"] -- WebSocket --> S["Backend Server"] -- WebSocket --> R["Transport on Remote PC"] -.-> D["Device"]
 ```
 
 Select your runtime on remote PC in Question 1 and "Connected to the same PC where your application runs" in Question 2 to find out which transport you need on the remote side.
@@ -304,7 +304,7 @@ You can either create your own API to expose individual features (so Tango is on
 
 ```mermaid
 flowchart LR
-    T["Custom Transport"] -- WebSocket --> S["Transport on Backend Server"] -.-> Device
+    T["Custom Transport"] -- WebSocket --> S["Transport on Backend Server"] -.-> D["Device"]
 ```
 
 Select "Connected to the same PC where your application runs" in Question 2 to find out which transport you need on the server side
@@ -319,7 +319,7 @@ You can either create your own API to expose individual features (so Tango is on
 
 ```mermaid
 flowchart LR
-    T["Custom Transport"] -- WebSocket --> S["Backend Server"] -- WebSocket --> R["Transport on Remote PC"] -.-> Device
+    T["Custom Transport"] -- WebSocket --> S["Backend Server"] -- WebSocket --> R["Transport on Remote PC"] -.-> D["Device"]
 ```
 
 Select your runtime on remote PC in Question 1 and "Connected to the same PC where your application runs" in Question 2 to find out which transport you need on the remote side.

@@ -19,6 +19,11 @@ Controls how long the device screen should remain on after the scrcpy connection
 
 When not specified, the device will use its default timeout settings. This option allows specifying a custom timeout in milliseconds for how long the screen should stay on after connection. This option modifies the system's screen timeout setting temporarily during the scrcpy session.
 
+## Related options
+
+- [`stayAwake`](../v1.15/stay-awake.mdx): Prevents the device from sleeping while screen casting is active
+- [`powerOffOnClose`](../v1.18/power-off-on-close.mdx): Automatically powers off the Android device when the scrcpy connection is closed
+
 ## Example
 
 ```ts transpile

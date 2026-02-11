@@ -17,6 +17,10 @@ Controls whether the server should send device name and size at the start of the
 
 By default, sending device metadata is enabled in Scrcpy, meaning the server sends the device name and size information at the start of the video stream. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable sending device name and size information at the start of the video stream.
 
+## Related options
+
+- [`sendFrameMeta`](../v1.15/send-frame-meta.mdx): Send presentation timestamps so that the client may record properly
+
 ## Example
 
 ```ts transpile

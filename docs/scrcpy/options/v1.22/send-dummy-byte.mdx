@@ -15,7 +15,17 @@ Added in Scrcpy 1.22
 
 Controls whether the server should send a `0` byte at the start of the video stream to detect connection issues.
 
-By default, sending a dummy byte is enabled in Scrcpy, meaning the server sends a `0` byte at the start of the video stream to detect connection issues. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable sending the dummy byte at the start of the video stream.
+By default, sending a dummy byte is enabled in Scrcpy when using forward tunnel mode (controlled by the [`tunnelForward`](../v1.15/tunnel-forward.mdx) option), meaning the server sends a `0` byte at the start of the video stream to detect connection issues.
+
+This mechanism is crucial for confirming that the connection between the client and the server is established in forward tunnel mode. 
+
+Adding this option with a value of `true` has no effect since this is the default behavior in forward tunnel mode. 
+
+Only setting this option to `false` will disable sending the dummy byte at the start of the video stream.
+
+## Related options
+
+- [`tunnelForward`](../v1.15/tunnel-forward.mdx): Use ADB forward tunnel instead of reverse tunnel
 
 ## Example
 

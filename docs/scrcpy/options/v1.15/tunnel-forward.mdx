@@ -9,7 +9,13 @@ sidebar_position: 7
 
 Use ADB forward tunnel instead of reverse tunnel.
 
-This option determines how the Scrcpy client and server communicate through ADB. By default, Scrcpy uses reverse tunnels where the client listens on the PC and the server connects to it. When `tunnelForward` is set to `true`, the server listens on the device and the client connects to it from the PC.
+This option determines how the Scrcpy client and server communicate through ADB. 
+
+By default, Scrcpy uses reverse tunnels where the client listens on the PC and the server connects to it. 
+
+When `tunnelForward` is set to `true`, the server listens on the device and the client connects to it from the PC. 
+
+In forward tunnel mode, the [`sendDummyByte`](../v1.22/send-dummy-byte.mdx) option is enabled by default to help detect successful connection establishment.
 
 ## When to Use Forward Tunnels
 
@@ -24,6 +30,11 @@ For detailed information about both tunneling mechanisms, see the [Connect to se
 ## Automatic Detection
 
 When using `AdbScrcpyClient`, the client can automatically detect when reverse tunnels are not supported and will enable forward tunnels automatically. This happens when the underlying transport throws an `AdbReverseNotSupportedError`.
+
+## Related options
+
+- [`sendDummyByte`](../v1.22/send-dummy-byte.mdx): Controls whether the server should send a `0` byte at the start of the video stream to detect connection issues
+- [`scid`](../v2.0/scid.mdx): Specifies a session identifier for the Scrcpy server instance
 
 ## Example
 

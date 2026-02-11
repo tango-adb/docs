@@ -36,6 +36,10 @@ export function getSocketName(scid: number | undefined): string {
 }
 ```
 
+The `scid` (session identifier) option allows multiple Scrcpy sessions to run simultaneously by providing each session with a unique socket name. 
+
+This is particularly useful when using forward tunnels, as each session needs to bind to a different address to avoid conflicts.
+
 ## Sockets
 
 Scrcpy transmits video, audio, and control messages in individual sockets. The default order is:
@@ -80,7 +84,7 @@ sequenceDiagram
 
   A->>A: Create TCP listener on tcp:1234
   A->>B: reverse tcp:2345 tcp:1234
-  B->>C: reverse:forward:tcp:2345#59;tcp:1234
+  B->>C: reverse:forward:tcp:2345#59:tcp:1234
   C->>C: Create TCP listener on tcp:2345
   E->>C: Connect to tcp:2345
   C->>B: Forward connection to tcp:1234
@@ -126,9 +130,18 @@ This mode can be used as a fallback when reverse tunnel is not supported. In for
 
 ### Dummy byte
 
-When using ADB forward tunnels, ADB server listens on the PC, so when client connects to the local socket address, it will always succeed.
+When using ADB forward tunnels (controlled by the [`tunnelForward`](./options/v1.15/tunnel-forward.mdx) option), ADB server listens on the PC. 
+When client connects to the local socket address, it will always succeed.
 
-To signal a successful connection, the server sends an extra `0x00` byte at the beginning of the first established [socket](#sockets) (usually, the video socket). You need to ignore this byte, before sending the stream to other APIs to process.
+However, this connection success doesn't guarantee that the Scrcpy server on the Android device has successfully established its end of the connection.
+
+To signal that the server-to-client connection is truly established, the server sends an extra `0x00` byte at the beginning of the first established [socket](#sockets) (usually, the video socket). 
+
+This mechanism is controlled by the [`sendDummyByte`](./options/v1.22/send-dummy-byte.mdx) option, which is enabled by default in forward tunnel mode.
+
+You need to ignore this dummy byte before sending the stream to other APIs to process. 
+
+The dummy byte is only sent on the first socket (video, audio, or control, depending on which is enabled first). Subsequent sockets in the same session will not contain a dummy byte.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -186,7 +199,7 @@ if (options.control !== false) {
 }
 ```
 
-This behavior can be turned off using `sendDummyByte: false` option. For example, in [daemon transport](../tango/daemon/index.mdx) mode, it connects to ADB daemon directly, so no dummy byte is needed to detect connection success.
+This behavior can be turned off using the [`sendDummyByte: false`](./options/v1.22/send-dummy-byte.mdx) option. For example, in [daemon transport](../tango/daemon/index.mdx) mode, it connects to ADB daemon directly, so no dummy byte is needed to detect connection success. Additionally, when using reverse tunnels (the default mode), the connection establishment is handled by ADB's reverse tunnel mechanism, so dummy bytes are not needed.
 
 ### Pros
 
@@ -265,7 +278,7 @@ if (options.control !== false) {
 
 If no `tunnelForward` option is specified, `AdbScrcpyClient.start` method will try to use reverse tunnels by default. It sets up the reverse tunnel and waits for the correct amount of connections automatically.
 
-However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an [`AdbReverseNotSupportedError`](../api/adb/reverse/index.mdx#errors), `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead.
+However, if [`reverse.add`](../api/adb/reverse/add.mdx) throws an [`AdbReverseNotSupportedError`](../api/adb/reverse/index.mdx#errors), `AdbScrcpyClient` will automatically modify the options to use forward tunnel instead, which also enables the `sendDummyByte` option by default to handle connection detection.
 
 If your custom transport doesn't support reverse tunnels, it's recommended to throw an `AdbReverseNotSupportedError` to trigger this automatic fallback behavior:
 

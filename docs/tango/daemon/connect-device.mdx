@@ -76,7 +76,7 @@ An optional list of `AdbFeature` to send to the device in handshake. ADB Feature
 
 ### `initialDelayedAckBytes`
 
-On Android 14 and newer, the Delayed Acknowledgement feature is added to improve performance, especially for high-latency connections like ADB over Wi-Fi.
+On Android 14 and newer, the Delayed Acknowledgement feature is added to improve performance, especially for high-latency connections like ADB over Wi-Fi. For more details on how this feature works internally, see [Delayed Acknowledgment in ADB](../../internal/delayed-ack.mdx).
 
 This optional field specifies The number of bytes the device can send before receiving an ack packet.
 

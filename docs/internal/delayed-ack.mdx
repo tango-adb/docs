@@ -1,0 +1,130 @@
+# Delayed Acknowledgment in ADB
+
+Tango ADB supports a delayed acknowledgment (Delayed ACK) feature to improve throughput, especially over high-latency connections like Wi-Fi.
+
+## Overview
+
+In traditional synchronous acknowledgment systems, each data packet sent requires an immediate acknowledgment (ACK) from the receiver before the next packet can be transmitted. This creates a stop-and-wait pattern that can severely limit throughput on high-latency connections.
+
+Delayed ACK allows the receiver to acknowledge multiple data packets with a single ACK message, reducing the round-trip time overhead and improving overall performance.
+
+## How Delayed ACK Works in ADB
+
+### Connection Negotiation
+
+1. The client and device agree to enable delayed ACK
+2. They negotiate the initial byte count threshold (e.g., 16KB)
+3. Both sides store this threshold value for flow control
+
+In Tango ADB, delayed ack can be configured by the [`initialDelayedAckBytes`](../tango/daemon/connect-device.mdx#initialdelayedackbytes) option during the ADB connection setup.
+
+
+### Socket Structure
+
+Each ADB socket maintains its flow control state:
+
+```rust
+struct Socket {
+    local_id: u32,
+    remote_id: u32,
+    available_write_bytes: usize,
+}
+```
+
+### OPEN Phase
+
+When a new socket is initialized, the `available_write_bytes` is set to the negotiated threshold:
+
+```rust
+impl Socket {
+    fn new_with_delayed_ack(initial_threshold: usize) -> Self {
+        Socket {
+            local_id: 0, // Will be assigned
+            remote_id: 0, // Will be assigned
+            available_write_bytes: initial_threshold,
+        }
+    }
+}
+```
+
+And the `OPEN` packet includes the initial byte threshold in its format:
+
+| Field     | Value                   | Description                          |
+| --------- | ----------------------- | ------------------------------------ |
+| `command` | `0x4e45504f`           | `OPEN` in UTF-8 encoding            |
+| `arg0`    | New local socket ID     | Unique identifier for new socket     |
+| `arg1`    | Initial byte threshold  | Threshold for delayed ACK (when enabled) |
+| `payload` | Service name            | Name of the service to connect to    |
+
+### WRTE Packet Processing and Byte Count Tracking
+
+Instead of acknowledging each packet individually, ADB uses a byte-counting mechanism:
+
+- The receiving side tracks how many bytes it has received from each socket
+- When the accumulated byte count reaches the negotiated threshold, it sends an ACK
+- The ACK packet contains the number of bytes received
+
+The client manages flow control while sending data:
+
+```rust
+impl Socket {
+    async fn send_data(&mut self, data: &[u8]) {
+        // Wait until enough bytes are available for writing
+        while self.available_write_bytes < data.len() {
+            // Wait for OKAY packet to increase available_write_bytes
+            self.wait_for_available_bytes(data.len()).await;
+        }
+
+        // Deduct the sent bytes from available count
+        self.available_write_bytes -= data.len();
+
+        // Send the WRTE packet
+        self.send_wrte_packet(data);
+    }
+}
+```
+
+### `OKAY` Packet Processing
+
+When delayed ACK is enabled, `OKAY` packets have a specific format to indicate how many bytes were received:
+
+| Field     | Value                   | Description                          |
+| --------- | ----------------------- | ------------------------------------ |
+| `command` | `0x59414b4f`           | `OKAY` in UTF-8 encoding            |
+| `arg0`    | Remote socket ID        | Identifier of the remote socket      |
+| `arg1`    | Local socket ID         | Identifier of the local socket       |
+| `payload` | 4-byte little-endian integer | Number of bytes acknowledged since last `OKAY` |
+
+And when the client receives an `OKAY` packet, it updates the available bytes:
+
+```rust
+impl Socket {
+    fn handle_okay_packet(&mut self, byte_count: usize) {
+        // Increase available bytes by the acknowledged amount
+        self.available_write_bytes += byte_count;
+        // Notify any waiting send operations that more bytes are available
+        self.notify_send_waiters();
+    }
+}
+```
+
+## Benefits
+
+- **Improved Throughput**: Especially noticeable over high-latency connections like Wi-Fi
+- **Reduced Protocol Overhead**: Fewer ACK packets needed compared to one-per-packet
+- **Better Resource Utilization**: Allows continuous data flow without waiting for individual acknowledgments
+
+## Configuration
+
+The delayed ACK feature is configured with a byte threshold value:
+
+- A positive value (e.g., 16384) enables delayed ACK with that byte threshold
+- The value must be agreed upon by both client and device during connection setup
+
+## Error Handling
+
+Both sides must agree on whether to use delayed ACK:
+
+- If the device expects delayed ACK but client doesn't implement it properly, the device will throw an error
+- If the client expects delayed ACK but device behaves differently, it will cause protocol errors
+- The negotiation must be consistent to ensure reliable communication

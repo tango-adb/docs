@@ -16,7 +16,7 @@ Added in Scrcpy v2.4
 
 :::
 
-Create a new HID device on the device.
+Create a new virtual HID device on the device. The device is identified by a unique ID and configured with a HID descriptor that defines its capabilities.
 
 ### Options
 
@@ -27,8 +27,8 @@ interface ScrcpyUHidCreateControlMessage {
 }
 ```
 
-- `id`: Unique identifier for the HID device.
-- `data`: The HID descriptor as a byte array defining the device capabilities.
+- `id`: Unique identifier for the HID device (must be unique across the system).
+- `data`: The HID report descriptor as a byte array defining the device capabilities. The descriptor follows the USB HID specification and defines input/output/feature reports that the device supports.
 
 ### Usage
 
@@ -36,7 +36,41 @@ interface ScrcpyUHidCreateControlMessage {
 // Using `ScrcpyControlMessageSerializer`
 const message: Uint8Array = serializer.uHidCreate({
     id: 1,
-    data: new Uint8Array([ /* HID descriptor bytes */ ]),
+    data: new Uint8Array([
+        // Sample keyboard HID descriptor (usage page 0x01, usage 0x06 - keyboard)
+        0x05, 0x01,         // Usage Page (Generic Desktop)
+        0x09, 0x06,         // Usage (Keyboard)
+        0xA1, 0x01,         // Collection (Application)
+        0x05, 0x07,         // Usage Page (Key Codes)
+        0x19, 0xE0,         // Usage Minimum (224)
+        0x29, 0xE7,         // Usage Maximum (231)
+        0x15, 0x00,         // Logical Minimum (0)
+        0x25, 0x01,         // Logical Maximum (1)
+        0x75, 0x01,         // Report Size (1)
+        0x95, 0x08,         // Report Count (8)
+        0x81, 0x02,         // Input (Data, Variable, Absolute) ; Modifier byte
+        0x95, 0x01,         // Report Count (1)
+        0x75, 0x08,         // Report Size (8)
+        0x81, 0x01,         // Input (Constant) ; Reserved byte
+        0x95, 0x05,         // Report Count (5)
+        0x75, 0x01,         // Report Size (1)
+        0x05, 0x08,         // Usage Page (LEDs)
+        0x19, 0x01,         // Usage Minimum (1)
+        0x29, 0x05,         // Usage Maximum (5)
+        0x91, 0x02,         // Output (Data, Variable, Absolute) ; LED report
+        0x95, 0x01,         // Report Count (1)
+        0x75, 0x03,         // Report Size (3)
+        0x91, 0x01,         // Output (Constant) ; LED report padding
+        0x95, 0x06,         // Report Count (6)
+        0x75, 0x08,         // Report Size (8)
+        0x15, 0x00,         // Logical Minimum (0)
+        0x25, 0x65,         // Logical Maximum (101)
+        0x05, 0x07,         // Usage Page (Key Codes)
+        0x19, 0x00,         // Usage Minimum (0)
+        0x29, 0x65,         // Usage Maximum (101)
+        0x81, 0x00,         // Input (Data, Array, Absolute)
+        0xC0                // End Collection
+    ]),
 });
 
 // Using `ScrcpyControlMessageWriter`
@@ -60,7 +94,7 @@ Added in Scrcpy v2.4
 
 :::
 
-Send input events to a previously created HID device.
+Send input events to a previously created HID device. This allows simulating physical input from the emulated device.
 
 ### Options
 
@@ -72,7 +106,7 @@ interface ScrcpyUHidInputControlMessage {
 ```
 
 - `id`: The identifier of the UHID device to send input to.
-- `data`: The HID report containing the input data.
+- `data`: The HID input report containing the input data, formatted according to the device's HID descriptor.
 
 ### Usage
 
@@ -80,7 +114,10 @@ interface ScrcpyUHidInputControlMessage {
 // Using `ScrcpyControlMessageSerializer`
 const message: Uint8Array = serializer.uHidInput({
     id: 1,
-    data: new Uint8Array([ /* HID report bytes */ ]),
+    // Send a key press event (e.g., press 'A' key)
+    data: new Uint8Array([
+        0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00  // Report with modifier + key code
+    ]),
 });
 
 // Using `ScrcpyControlMessageWriter`
@@ -104,7 +141,7 @@ Added in Scrcpy v2.7
 
 :::
 
-Remove a previously created HID device.
+Remove a previously created HID device. Closing the file descriptor automatically unregisters and destroys the device internally.
 
 ### Options
 
@@ -131,7 +168,7 @@ await client.controller!.uHidDestroy(1);
 
 ## UHID Output
 
-The UHID output stream receives input events from the emulated HID device. This allows for bidirectional communication with the HID device, enabling features like keyboard LEDs and other device feedback.
+The UHID output stream receives output events from the emulated HID device. This enables bidirectional communication, allowing the device to send data back to the host, such as LED status updates for keyboards or other device feedback.
 
 ```ts transpile
 // Access the UHID output stream through the client
@@ -140,6 +177,8 @@ const uhidOutput = client.uhidOutput;
 if (uhidOutput) {
     for await (const message of uhidOutput) {
         console.log(`Received HID output for device ${message.id}:`, message.data);
+        // Process HID output data (e.g., LED status changes)
+        // message.data contains the HID output report
     }
 }
 ```

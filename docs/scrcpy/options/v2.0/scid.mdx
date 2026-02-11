@@ -15,7 +15,11 @@ Added in Scrcpy 2.0
 
 Specifies a session identifier for the Scrcpy server instance.
 
-This option allows specifying a custom session identifier that can be used to distinguish between multiple Scrcpy sessions running simultaneously. The session ID is typically represented as a hexadecimal string.
+This option allows specifying a custom session identifier that can be used to distinguish between multiple Scrcpy sessions running simultaneously. 
+
+The session ID is typically represented as a hexadecimal string. 
+
+This is particularly useful when using forward tunnels (controlled by the [`tunnelForward`](../v1.15/tunnel-forward.mdx) option) to ensure each session binds to a unique socket address and avoids conflicts.
 
 Can be passed as either a string in the required format or as an `InstanceId` class instance which implements `ScrcpyOptionValue` interface (see [ScrcpyOptionValue](../option-value.mdx)) and serializes to the required string format via its `toOptionValue()` method.
 
@@ -58,6 +62,10 @@ Creates a new InstanceId with the given numeric value.
 `toOptionValue(): string | undefined`
 
 Serializes the instance ID to a hexadecimal string format for scrcpy.
+
+## Related options
+
+- [`tunnelForward`](../v1.15/tunnel-forward.mdx): Use ADB forward tunnel instead of reverse tunnel
 
 ## Example
 

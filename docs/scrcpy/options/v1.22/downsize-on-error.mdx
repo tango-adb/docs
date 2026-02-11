@@ -17,9 +17,15 @@ Controls whether the server should downsize the video resolution when encounteri
 
 By default, downsizing on error is enabled in Scrcpy, meaning the server will attempt to retry with a lower resolution when it encounters encoding errors during the initial setup of the video stream.
 
+Encoder errors are commonly caused by unsupported resolutions that are too large for the device's encoder capabilities, especially when Scrcpy defaults to the device's native screen resolution. If you know the device only supports certain resolutions, using the [`maxSize`](../v1.15/max-size.mdx) option can limit the encoding resolution upfront without needing `downsizeOnError` to retry after failure, which takes additional time.
+
 This only applies to errors encountered during the first attempt to start the video encoding, not to errors that occur later during the streaming session.
 
-If disabled (`false`), any encoding error during the initial setup will immediately cause the server to quit without attempting to use a lower resolution.
+If disabled (`false`), any encoding error during the initial setup will immediately cause the server to quit without attempting to use a lower resolution. Using the [`maxSize`](../v1.15/max-size.mdx) option proactively limits resolution and can prevent these errors entirely.
+
+## Related options
+
+- [`maxSize`](../v1.15/max-size.mdx): Sets the maximum width and height of the video stream to prevent encoding errors from unsupported resolutions
 
 ## Example
 
