@@ -7,17 +7,17 @@ Scrcpy supports various input events, including mouse, touch, keyboard, and phys
 There are three ways to create or send control messages, they provide the same set of methods:
 
 - [Keyboard event](./keyboard.mdx): Simulate key presses.
-- [Text input](./text.mdx): Inject text by simulating key presses.
+- [Text input](./keyboard-text.mdx): Inject text directly into the device.
 - [Touch event](./touch.mdx): Simulate mouse or finger touches.
 - [Mouse scroll event](./scroll.mdx): Simulate mouse wheel scrolling.
 - [Back or screen on](./back-or-screen-on.mdx): Simulate back button or turn on the screen.
 - [Screen power mode](./screen-power.mdx): Turn off the screen without locking the device.
-- Expand notification panel: Expand the notification panel.
-- Expand settings panel: Expand the quick settings panel.
-- Collapse panels: Collapse the notification and quick settings panels.
+- [Panel controls](./panel.mdx): Expand or collapse notification and settings panels.
 - [Rotate device](./rotate.mdx): Change the device orientation.
-- Set clipboard: Set the device clipboard (only supports plain text).
+- [Set clipboard](./clipboard.mdx): Set the device clipboard content.
+- [USB HID devices](./uhid.mdx): Control USB Human Interface Devices (HID) on the device.
 - <Version since="v3.0">[Reset video](./reset-video.mdx): Restart video capture and encoding.</Version>
+- [Start app](./start-app.mdx): Start applications on the device by package name.
 
 ## Using `@yume-chan/scrcpy`
 

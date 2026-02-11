@@ -1,0 +1,67 @@
+---
+sidebar_position: 9
+---
+
+import Version from '../version-span';
+
+# Set Clipboard
+
+## Options
+
+```ts
+interface ScrcpySetClipboardControlMessage {
+    sequence?: bigint;
+    paste: boolean;
+    content: string;
+}
+```
+
+- `sequence`: <Version until="v1.20">Ignored.</Version> <Version since="v1.21">A sequence number for acknowledgment. When set to a non-zero value, the function returns a Promise that resolves when the device acknowledges the clipboard change. Set to `0n` to disable acknowledgment.</Version>
+- `paste`: <Version until="v1.20">Ignored.</Version> <Version since="v1.21">Whether to trigger a paste action after setting the clipboard content.</Version>
+- `content`: The text content to set in the clipboard.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.setClipboard({
+    content: "Hello, world!",
+    paste: false,
+    sequence: 1n,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.setClipboard({
+    content: "Hello, world!",
+    paste: false,
+    sequence: 1n,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.setClipboard({
+    content: "Hello, world!",
+    paste: false,
+    sequence: 1n,
+});
+```
+
+When using a non-zero sequence number, the returned Promise resolves when the device acknowledges the clipboard change, which may take slightly longer than when using a zero sequence number. With `sequence: 0n`, the Promise resolves immediately after sending the message, without waiting for device acknowledgment.
+
+```ts transpile
+// Immediate return without waiting for device acknowledgment
+await client.controller!.setClipboard({
+    content: "Quick paste",
+    paste: true,
+    sequence: 0n,
+});
+
+// Wait for device acknowledgment before resolving
+const resultPromise = client.controller!.setClipboard({
+    content: "Confirmed paste",
+    paste: true,
+    sequence: 1n,
+});
+
+// resultPromise will resolve when device acknowledges the operation
+await resultPromise;
+```

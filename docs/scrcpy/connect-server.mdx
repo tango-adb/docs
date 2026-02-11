@@ -40,9 +40,9 @@ export function getSocketName(scid: number | undefined): string {
 
 Scrcpy transmits video, audio, and control messages in individual sockets. The default order is:
 
-1. Video<Version since="2.1">, unless disabled by [`video: false`](./options/video.mdx) option</Version>
-2. <Version since="v2.0">Audio, unless disabled by [`audio: false`](./options/audio.mdx) option</Version>
-3. Control<Version since="v1.22">, unless disabled by [`control: false`](./options/control.mdx) option</Version>
+ 1. Video<Version since="2.1">, unless disabled by [`video: false`](./options/v2.1/video.mdx) option</Version>
+ 2. <Version since="v2.0">Audio, unless disabled by [`audio: false`](./options/v2.0/audio.mdx) option</Version>
+ 3. Control<Version since="v1.22">, unless disabled by [`control: false`](./options/v1.15/control.mdx) option</Version>
 
 If a socket is disabled by its corresponding option, the socket will be skipped (while keeping the order of other sockets). If you don't need some of them, you can disable them by setting the corresponding option to `false` to save bandwidth.
 
@@ -289,7 +289,7 @@ export class YourTransport implements AdbTransport {
 }
 ```
 
-In all situations, the `tunnelForward` option can be specified to always use forward tunnels. For more details about this option, see the [tunnelForward option](./options/tunnel-forward.mdx) page:
+In all situations, the `tunnelForward` option can be specified to always use forward tunnels. For more details about this option, see the [tunnelForward option](./options/v1.15/tunnel-forward.mdx) page:
 
 ```ts transpile
 import { AdbScrcpyOptions3_0 } from "@yume-chan/adb-scrcpy";

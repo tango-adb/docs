@@ -1,0 +1,66 @@
+---
+sidebar_position: 7
+---
+
+import Version from '../version-span';
+
+# Panel Controls
+
+Control Android notification and settings panels.
+
+## Expand Notification Panel
+
+Expand the notification panel on the device.
+
+### Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.expandNotificationPanel();
+
+// Using `ScrcpyControlMessageWriter`
+await writer.expandNotificationPanel();
+
+// Using `AdbScrcpyClient`
+await client.controller!.expandNotificationPanel();
+```
+
+## Expand Settings Panel
+
+:::info
+
+Added in Scrcpy v1.18
+
+:::
+
+Expand the settings panel on the device.
+
+### Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.expandSettingPanel();
+
+// Using `ScrcpyControlMessageWriter`
+await writer.expandSettingPanel();
+
+// Using `AdbScrcpyClient`
+await client.controller!.expandSettingPanel();
+```
+
+## Collapse Notification Panel
+
+Collapse the expanded notification panel or the settings panel if it is currently open.
+
+### Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.collapseNotificationPanel();
+
+// Using `ScrcpyControlMessageWriter`
+await writer.collapseNotificationPanel();
+
+// Using `AdbScrcpyClient`
+await client.controller!.collapseNotificationPanel();
+```

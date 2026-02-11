@@ -1,0 +1,145 @@
+---
+sidebar_position: 10
+---
+
+import Version from '../version-span';
+
+# User-space HID Device (UHID) Control
+
+Control Human Interface Devices (HID) on the device. UHID stands for "User-space I/O driver support for HID subsystem", which enables software-emulation of HID devices.
+
+## UHID Create
+
+:::info
+
+Added in Scrcpy v2.4
+
+:::
+
+Create a new HID device on the device.
+
+### Options
+
+```ts
+interface ScrcpyUHidCreateControlMessage {
+    id: number;
+    data: Uint8Array;
+}
+```
+
+- `id`: Unique identifier for the HID device.
+- `data`: The HID descriptor as a byte array defining the device capabilities.
+
+### Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.uHidCreate({
+    id: 1,
+    data: new Uint8Array([ /* HID descriptor bytes */ ]),
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.uHidCreate({
+    id: 1,
+    data: new Uint8Array([ /* HID descriptor bytes */ ]),
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.uHidCreate({
+    id: 1,
+    data: new Uint8Array([ /* HID descriptor bytes */ ]),
+});
+```
+
+## UHID Input
+
+:::info
+
+Added in Scrcpy v2.4
+
+:::
+
+Send input events to a previously created HID device.
+
+### Options
+
+```ts
+interface ScrcpyUHidInputControlMessage {
+    id: number;
+    data: Uint8Array;
+}
+```
+
+- `id`: The identifier of the UHID device to send input to.
+- `data`: The HID report containing the input data.
+
+### Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.uHidInput({
+    id: 1,
+    data: new Uint8Array([ /* HID report bytes */ ]),
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.uHidInput({
+    id: 1,
+    data: new Uint8Array([ /* HID report bytes */ ]),
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.uHidInput({
+    id: 1,
+    data: new Uint8Array([ /* HID report bytes */ ]),
+});
+```
+
+## UHID Destroy
+
+:::info
+
+Added in Scrcpy v2.7
+
+:::
+
+Remove a previously created HID device.
+
+### Options
+
+```ts
+interface ScrcpyUHidDestroyControlMessage {
+    id: number;
+}
+```
+
+- `id`: The identifier of the UHID device to destroy.
+
+### Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.uHidDestroy(1);
+
+// Using `ScrcpyControlMessageWriter`
+await writer.uHidDestroy(1);
+
+// Using `AdbScrcpyClient`
+await client.controller!.uHidDestroy(1);
+```
+
+## UHID Output
+
+The UHID output stream receives input events from the emulated HID device. This allows for bidirectional communication with the HID device, enabling features like keyboard LEDs and other device feedback.
+
+```ts transpile
+// Access the UHID output stream through the client
+const uhidOutput = client.uhidOutput;
+
+if (uhidOutput) {
+    for await (const message of uhidOutput) {
+        console.log(`Received HID output for device ${message.id}:`, message.data);
+    }
+}
+```

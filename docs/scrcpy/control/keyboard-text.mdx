@@ -2,11 +2,23 @@
 sidebar_position: 2
 ---
 
-# Text input
+import Version from '../version-span';
+
+# Text Input
 
 `injectText` is a shorthand for injecting multiple keyboard events. The server converts the text to a sequence of key events and injects them into the device.
 
 Because it's essentially a sequence of key events, only printable characters are supported. To inject Unicode text, the only method is using the device clipboard.
+
+## Options
+
+```ts
+interface ScrcpyInjectTextControlMessage {
+    text: string;
+}
+```
+
+- `text`: The text content to inject into the device.
 
 ## Usage
 

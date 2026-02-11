@@ -1,0 +1,84 @@
+---
+sidebar_position: 11
+---
+
+import Version from '../version-span';
+
+# Start Application
+
+:::info
+
+Added in Scrcpy v3.0
+
+:::
+
+Start an Android application using its package name or activity name.
+
+The `forceStop` and `searchByName` parameters are processed by the library by modifying the application name before sending to the server:
+- When `searchByName` is `true`, a `?` prefix is added to the name
+- When `forceStop` is `true`, a `+` prefix is added to the name
+
+These parameters are not sent to the Scrcpy server directly, but instead modify the query string format as understood by the server.
+
+## Options
+
+```ts
+interface ScrcpyStartAppControlMessage {
+    name: string;
+    options?: {
+        forceStop?: boolean;
+        searchByName?: boolean;
+    };
+}
+```
+
+- `name`: The package name or activity name of the application to start.
+- `options`: Additional options for starting the application.
+  - `forceStop`: If `true`, stops the application before starting it again. Default is `false`.
+  - `searchByName`: If `true`, searches for the application by name instead of package name. Default is `false`.
+
+## Usage
+
+Starting an app by package name:
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.startApp("com.android.chrome", {
+    forceStop: true,
+    searchByName: false,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.startApp("com.android.chrome", {
+    forceStop: true,
+    searchByName: false,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.startApp("com.android.chrome", {
+    forceStop: true,
+    searchByName: false,
+});
+```
+
+Starting an app by name (search by app label like "Chrome"):
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.startApp("Chrome", {
+    forceStop: false,
+    searchByName: true,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.startApp("Chrome", {
+    forceStop: false,
+    searchByName: true,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.startApp("Chrome", {
+    forceStop: false,
+    searchByName: true,
+});
+```

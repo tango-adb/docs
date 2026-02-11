@@ -1,14 +1,16 @@
 ---
-sidebar_position: 10
+sidebar_position: 6
 ---
 
-# Screen power mode
+import Version from '../version-span';
+
+# Screen Power Mode
 
 Turn on or off the device screen.
 
 Different from injecting a power key event, this command only affects the physical screen, it doesn't lock the device.
 
-If [`cleanup: true`](../options/cleanup.mdx) (the default value) is set in the `ScrcpyOptions`, Scrcpy server will restore the screen state to `Normal` on exit. Pressing the physical power button twice usually turns the screen back on.
+If [`cleanup: true`](../options/v1.23/cleanup.mdx) (the default value) is set in the `ScrcpyOptions`, Scrcpy server will restore the screen state to `Normal` on exit. Pressing the physical power button twice usually turns the screen back on.
 
 ## Caveats
 
@@ -21,14 +23,14 @@ If [`cleanup: true`](../options/cleanup.mdx) (the default value) is set in the `
 ## Options
 
 ```ts
-export enum AndroidScreenPowerMode {
-  Off = 0,
-  Normal = 2,
+interface ScrcpySetScreenPowerModeControlMessage {
+    mode: AndroidScreenPowerMode;
 }
 ```
 
-- `Off`: Turn off the display.
-- `Normal`: Turn on the display.
+- `mode`: The screen power mode to set. Possible values are from the `AndroidScreenPowerMode` enum:
+  - `AndroidScreenPowerMode.Off` (value: 0) - Turns off the screen
+  - `AndroidScreenPowerMode.Normal` (value: 2) - Sets screen to normal power mode
 
 ## Usage
 
@@ -36,13 +38,11 @@ export enum AndroidScreenPowerMode {
 import { AndroidScreenPowerMode } from "@yume-chan/scrcpy";
 
 // Using `ScrcpyControlMessageSerializer`
-const message: Uint8Array = serializer.setScreenPowerMode(
-  AndroidScreenPowerMode.Off
-);
+const message: Uint8Array = serializer.setDisplayPower(AndroidScreenPowerMode.Normal);
 
 // Using `ScrcpyControlMessageWriter`
-await writer.setScreenPowerMode(AndroidScreenPowerMode.Off);
+await writer.setDisplayPower(AndroidScreenPowerMode.Normal);
 
 // Using `AdbScrcpyClient`
-await client.controller!.setScreenPowerMode(AndroidScreenPowerMode.Off);
+await client.controller!.setDisplayPower(AndroidScreenPowerMode.Normal);
 ```

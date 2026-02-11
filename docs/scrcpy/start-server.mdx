@@ -222,7 +222,7 @@ If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if 
 
 ### Video stream
 
-`videoStream` field contains the `AdbScrcpyVideoStream` object<Version since="v2.1">, or `undefined` if [`video: false`](./options/video.mdx) option is specified.</Version>
+`videoStream` field contains the `AdbScrcpyVideoStream` object<Version since="v2.1">, or `undefined` if [`video: false`](./options/v2.1/video.mdx) option is specified.</Version>
 
 ```ts transpile
 import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
@@ -298,7 +298,7 @@ if (client.audioStream) {
 
 ### Controller
 
-Controller is used to send [control messages](./control/index.mdx) to server<Version since="v2.1">, or `undefined` if [`control: false`](./options/control.mdx) option is specified.</Version>
+Controller is used to send [control messages](./control/index.mdx) to server<Version since="v2.1">, or `undefined` if [`control: false`](./options/v1.15/control.mdx) option is specified.</Version>
 
 ```ts transpile
 import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
@@ -315,7 +315,7 @@ if (controller) {
 
 ### Clipboard stream
 
-If [`control: false`](./options/control.mdx) option is not specified<Version since="v2.1"> and [`clipboardAutosync: false`](./options/clipboard-autosync.mdx) option is also not specified</Version>, Scrcpy server will monitor device clipboard and send the change to client.
+If [`control: false`](./options/v1.15/control.mdx) option is not specified<Version since="v2.1"> and [`clipboardAutosync: false`](./options/v1.21/clipboard-autosync.mdx) option is also not specified</Version>, Scrcpy server will monitor device clipboard and send the change to client.
 
 When clipboard syncing is enabled, the `clipboard` field will be a `ReadableStream<string>` that contains the clipboard content.
 

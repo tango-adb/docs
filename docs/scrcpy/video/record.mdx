@@ -23,9 +23,9 @@ There are two ways to convert the raw encoded video frames into a video file: re
 
 ## Re-encode the video
 
-The [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) API can record the rendering canvas (from [TinyH264 decoder](./tiny-h264.mdx) or [WebCodecs decoder](./web-codecs.mdx#create-a-renderer)) into a MP4 or WEBM file.
+The [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) API can record the rendering canvas (from [TinyH264 decoder](./tiny-h264.mdx) or [WebCodecs decoder](./webcodecs/index.mdx#create-a-renderer)) into a MP4 or WEBM file.
 
-Note that for [`WebGLVideoFrameRenderer`](./web-codecs.mdx#create-a-renderer), the `enableCapture` parameter must be set to `true`.
+Note that for [`WebGLVideoFrameRenderer`](./webcodecs/index.mdx#create-a-renderer), the `enableCapture` parameter must be set to `true`.
 
 MDN has an [example](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#example) of using `MediaRecorder`. There is nothing special for using `MediaRecorder` with our decoder canvases.
 
