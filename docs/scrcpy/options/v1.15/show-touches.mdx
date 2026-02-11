@@ -1,0 +1,28 @@
+---
+sidebar_position: 12
+---
+
+# showTouches
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Shows visual feedback for touches on the device screen.
+
+When enabled, the device will display visual indicators (usually circles) at the location of each touch, making it easier to see where touch inputs are being registered. Useful for presentations or demonstrations.
+
+:::info
+
+The visual feedback only shows real fingers touching the physical screen, not simulated touches sent through the [touch control messages](../../control/touch.mdx) (inject touch functionality). Touches simulated via scrcpy control messages will not appear as visual indicators on the device screen, even when `showTouches` is enabled.
+
+:::
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    showTouches: true, // Show visual touch feedback
+});
+```

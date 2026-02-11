@@ -1,0 +1,75 @@
+---
+sidebar_position: 1
+---
+
+# ScrcpyOptionValue
+
+The `ScrcpyOptionValue` interface is a type that represents values which can be converted to a string representation suitable for scrcpy command-line options.
+
+## Interface Definition
+
+```ts
+export interface ScrcpyOptionValue {
+  toOptionValue(): string | undefined;
+}
+```
+
+## Purpose
+
+The `ScrcpyOptionValue` interface enables custom objects to define their own string serialization logic for scrcpy options. This is particularly useful for complex option types that need to convert their internal representation to a specific string format expected by the scrcpy server.
+
+## Implementation
+
+Classes that implement `ScrcpyOptionValue` must provide a `toOptionValue()` method that returns either a string representation of the option or `undefined` if the option should not be included in the command line.
+
+For example, the `ScrcpyCrop` class implements this interface to convert its properties (width, height, x, y) into the required "WIDTH:HEIGHT:X:Y" string format.
+
+## Helper Functions
+
+The module also provides utility functions for working with `ScrcpyOptionValue` implementations:
+
+### isScrcpyOptionValue
+
+Type guard function to check if a value implements the `ScrcpyOptionValue` interface:
+
+```ts
+export function isScrcpyOptionValue(
+  value: unknown,
+): value is ScrcpyOptionValue {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "toOptionValue" in value &&
+    typeof value.toOptionValue === "function"
+  );
+}
+```
+
+### toScrcpyOptionValue
+
+Helper function that converts a value to its string representation:
+
+```ts
+export function toScrcpyOptionValue<T>(value: unknown, empty: T): string | T {
+  if (isScrcpyOptionValue(value)) {
+    value = value.toOptionValue();
+  }
+
+  // `value` may become `undefined` after `toOptionValue`
+  if (value === undefined) {
+    return empty;
+  }
+
+  if (
+    typeof value !== "string" &&
+    typeof value !== "number" &&
+    typeof value !== "boolean"
+  ) {
+    throw new TypeError(`Invalid option value: ${JSON.stringify(value)}`);
+  }
+
+  return value.toString();
+}
+```
+
+This function handles the conversion of `ScrcpyOptionValue` implementations to strings, with fallback handling for `undefined` values and validation for primitive types.

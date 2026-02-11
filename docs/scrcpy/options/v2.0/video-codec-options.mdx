@@ -1,0 +1,61 @@
+---
+sidebar_position: 26
+---
+
+# videoCodecOptions
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `CodecOptions | string | undefined`
+* **Default value**: `undefined`
+
+Configures video encoding parameters for the selected video codec.
+
+This option allows fine-tuning of video encoding parameters. It accepts either a structured object of codec options or a string with key-value pairs in the format "key1=value1,key2=value2".
+
+For detailed information about codec options, refer to the [Android MediaFormat documentation](https://developer.android.com/reference/android/media/MediaFormat).
+
+## Codec Options Classes
+
+For structured configuration, Scrcpy provides codec options classes that implement the `ScrcpyOptionValue` interface. These classes offer type-safe methods for setting codec parameters.
+
+- [ScrcpyCodecOptions](../v1.15/codec-options.mdx#scrcpycodecoptions): Base class for configuring codec options
+- [ScrcpyVideoCodecOptions](../v1.15/codec-options.mdx#scrcpyvideocodecoptions): Extended class with video-specific methods
+
+## Related options
+
+- [`videoCodec`](./video-codec.mdx): Specifies the video codec to use
+- [`videoBitRate`](./video-bit-rate.mdx): Controls the video bitrate
+- [`codecOptions`](../v1.15/codec-options.mdx) (deprecated): Previous option for configuring codec options (replaced by this option)
+
+## Examples
+
+Using video codec options class instance for type-safe configuration:
+
+```ts transpile
+import { ScrcpyOptions2_0, ScrcpyVideoCodecOptions } from "@yume-chan/scrcpy";
+
+// Using ScrcpyVideoCodecOptions class instance
+const videoCodecOptions = new ScrcpyVideoCodecOptions()
+    .setProfile(AndroidAvcProfile.Main) // Set encoder profile to Main
+    .setLevel(AndroidAvcLevel.Level31);  // Set encoder level to 3.1
+
+const options1 = new ScrcpyOptions2_0({
+    videoCodecOptions: videoCodecOptions,
+});
+```
+
+Using string format for simple configuration:
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+// Using string format
+const options2 = new ScrcpyOptions2_0({
+    videoCodecOptions: "profile=1,level=1024", // Simple string format (Main profile, Level 3.1)
+});
+```

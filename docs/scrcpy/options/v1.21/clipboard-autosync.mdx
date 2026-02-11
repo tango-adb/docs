@@ -1,0 +1,30 @@
+---
+sidebar_position: 17
+---
+
+# clipboardAutosync
+
+:::info
+
+Added in Scrcpy 1.21
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Controls whether automatic synchronization of clipboard content between device and client is enabled.
+
+By default, clipboard autosynchronization is enabled in Scrcpy, meaning the server monitors the device clipboard and sends changes to the client. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable the automatic synchronization of clipboard content between the device and client.
+
+Learn more about [Handling clipboard stream](../../start-server.mdx#clipboard-stream) in your application.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_21 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_21({
+    clipboardAutosync: false, // Disable clipboard autosync
+});
+```

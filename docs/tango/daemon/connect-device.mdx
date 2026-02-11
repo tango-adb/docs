@@ -6,7 +6,7 @@ sidebar_position: 5
 
 ## Authenticate with device
 
-Once a connection and a credential store is ready, use `AdbDaemonTransport.authenticate` method to initiate the handshake and authenticate with the device.
+Once a connection and a credential store is ready, use `adbDaemonAuthenticate` function to initiate the handshake and authenticate with the device.
 
 ```ts
 type AdbDaemonConnection = ReadableWritablePair<
@@ -14,22 +14,52 @@ type AdbDaemonConnection = ReadableWritablePair<
   Consumable<AdbPacketInit>
 >;
 
-interface AdbDaemonAuthenticationOptions {
+interface AdbDaemonAuthenticateOptions {
+  /**
+   * The serial number of the device to connect to.
+   */
   serial: string;
-  connection: AdbDaemonConnection;
-  credentialStore: AdbCredentialStore;
-  authenticators?: AdbAuthenticator[];
-  features?: readonly AdbFeature[];
-  initialDelayedAckBytes?: number;
-  preserveConnection?: boolean | undefined;
-  readTimeLimit?: number | undefined;
-}
 
-declare class AdbDaemonTransport implements AdbTransport {
-  static authenticate(
-    options: AdbDaemonAuthenticationOptions
-  ): Promise<AdbDaemonTransport>;
-}
+  /**
+   * The ADB daemon connection to use for communication.
+   */
+  connection: AdbDaemonConnection;
+
+  /**
+   * The list of features to send to the device during handshake.
+   * @default AdbDeviceFeatures
+   */
+  features?: readonly AdbFeature[];
+
+  /**
+   * The number of bytes the device can send before receiving an ack packet.
+   * Setting this to 0 or a negative number will disable Delayed Ack.
+   * @default ADB_DAEMON_DEFAULT_INITIAL_PAYLOAD_SIZE
+   */
+  initialDelayedAckBytes?: number;
+
+  /**
+   * Whether to preserve the connection when the transport is closed.
+   * @default false
+   */
+  preserveConnection?: boolean;
+
+  /**
+   * Time limit for reading from the connection, in milliseconds.
+   * @default undefined
+   */
+  readTimeLimit?: number;
+} & (
+  | AdbDaemonDefaultAuthProcessorInit // Shortcut to use default authentication processor with credential store
+  | { processor: AdbDaemonAuthProcessor } // Use a custom authentication processor
+);
+
+/**
+ * Authenticates an `AdbDaemonConnection` using an `AdbDaemonAuthProcessor`.
+ */
+declare function adbDaemonAuthenticate(
+  options: AdbDaemonAuthenticateOptions
+): Promise<AdbDaemonTransport>;
 ```
 
 ### `serial`
@@ -39,24 +69,6 @@ The `serial` field is not used by Tango, it helps you to identify the device ass
 ### `connection`
 
 A pair of `ReadableStream<AdbPacketData>` and `WritableStream<Consumable<AdbPacketInit>>` is used to send and receive ADB packets. You can use any stream implementation that conforms to the interface.
-
-### `credentialStore`
-
-An `AdbDaemonCredentialStore` implementation is used to store and retrieve the private key. You can use any store that conforms to the interface.
-
-### `authenticators`
-
-An optional list of `AdbDaemonAuthenticator` to handle authentication requests. The default value is `[AdbSignatureAuthenticator, AdbPublicKeyAuthenticator]`.
-
-Unless Google added another authentication method, or you have a custom authentication method, you don't need to provide this option.
-
-:::info
-
-The Wireless Debugging feature added in Android 11 uses a different handshake process, instead of a new authenticator.
-
-Wireless Debugging can't be implemented using this option.
-
-:::
 
 ### `features`
 
@@ -68,7 +80,7 @@ On Android 14 and newer, the Delayed Acknowledgement feature is added to improve
 
 This optional field specifies The number of bytes the device can send before receiving an ack packet.
 
-When `features` doesn't include `AdbFeature.DelayedAck`, it must be set to 0. Otherwise, the value must be in the range of unsigned 32-bit integer.
+Setting this parameter to 0 or a negative number will disable Delayed Ack.
 
 ### `preserveConnection`
 
@@ -94,21 +106,131 @@ When set to `undefined`, the transport will not enforce a time limit.
 
 The default value is `undefined`.
 
-### Example
+### Authentication Options
+
+The `adbDaemonAuthenticate` function requires exactly one of two authentication approaches, specified through mutually exclusive options:
+
+1. Pass `credentialManager` as part of `AdbDaemonDefaultAuthProcessorInit`, which creates a default authentication processor using the provided credential manager. This is the standard authentication flow for most use cases.
+2. Pass a custom `processor` option with your own implementation of `AdbDaemonAuthProcessor`. This allows for completely custom authentication logic.
+
+#### `AdbDaemonDefaultAuthProcessorInit`
+
+When using the default authentication flow, you can provide these options:
+
+```ts
+interface AdbDaemonDefaultAuthProcessorInit {
+    /**
+     * An AdbCredentialManager implementation to store and retrieve private keys.
+     * Used to provide authentication keys during the handshake.
+     */
+    credentialManager: AdbCredentialManager;
+
+    /**
+     * An optional callback that gets invoked when a key fails to load from the credential manager.
+     */
+    onKeyLoadError?: ((error: Error) => void) | undefined;
+
+    /**
+     * An optional callback that gets invoked when signature authentication is attempted with a key.
+     */
+    onSignatureAuthentication?: ((key: AdbKeyInfo) => void) | undefined;
+
+    /**
+     * An optional callback that gets invoked when a signature is rejected by the device.
+     */
+    onSignatureRejected?: ((key: AdbKeyInfo) => void) | undefined;
+
+    /**
+     * An optional callback that gets invoked when public key authentication is initiated.
+     */
+    onPublicKeyAuthentication?: ((key: AdbKeyInfo) => void) | undefined;
+}
+```
+
+:::info
+
+These fields are passed directly into `adbDaemonAuthenticate`, not as a separate object. For example, `{ serial, connection, credentialManager, onKeyLoadError }` instead of `{ serial, connection, authProcessor: { credentialManager, onKeyLoadError } }`.
+
+:::
+
+##### `credentialManager`
+
+An `AdbCredentialManager` implementation is used to store and retrieve the private key. You can use any store that conforms to the interface.
+
+Passing `credentialManager` is a shortcut that creates a default authentication processor internally. This is the common case for standard authentication flows.
+
+##### `onKeyLoadError`
+
+An optional callback that gets invoked when a key fails to load from the credential manager. This allows for handling errors during key iteration without stopping the entire authentication process.
+
+##### `onSignatureAuthentication`
+
+An optional callback that gets invoked when signature authentication is attempted with a key. Provides information about the key being used.
+
+##### `onSignatureRejected`
+
+An optional callback that gets invoked when a signature is rejected by the device. This indicates that the key hasn't been trusted by the user yet.
+
+##### `onPublicKeyAuthentication`
+
+An optional callback that gets invoked when public key authentication is initiated. This typically happens when the device doesn't trust any of the available keys.
+
+##### Example
+
+When using the default authentication flow with a credential manager:
 
 ```ts transpile
-import { AdbDaemonTransport } from "@yume-chan/adb";
+import type { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import { adbDaemonAuthenticate, AdbWebCryptoCredentialManager } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+import { TangoLocalStorage } from "@yume-chan/adb-credential-web";
+
+declare const device: AdbDaemonWebUsbDevice;
+declare const connection: ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>>;
+declare const CredentialManager: AdbWebCryptoCredentialManager;
 
 // highlight-start
-const transport: AdbDaemonTransport = await AdbDaemonTransport.authenticate({
+const transport: AdbDaemonTransport = await adbDaemonAuthenticate({
   serial: device.serial,
   connection,
-  credentialStore: CredentialStore,
+  credentialManager: CredentialManager,
 });
 // highlight-end
 ```
 
 If the private key is not yet trusted by the device, a dialog will be shown on device screen to let users confirm the connection.
+
+#### `processor`
+
+A custom `AdbDaemonAuthProcessor` implementation to handle the authentication process. When provided, this overrides the default authentication processor that would be created from `credentialManager`.
+
+Use this option when you need custom authentication logic that differs from the standard flow.
+
+##### Example
+
+When using a custom authentication processor:
+
+```ts transpile
+import type { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import { adbDaemonAuthenticate, AdbDaemonAuthProcessor } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+declare const device: AdbDaemonWebUsbDevice;
+declare const connection: ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>>;
+declare const customAuthProcessor: AdbDaemonAuthProcessor;
+
+// highlight-start
+const transport: AdbDaemonTransport = await adbDaemonAuthenticate({
+  serial: device.serial,
+  connection,
+  processor: customAuthProcessor,
+});
+// highlight-end
+```
+
+This approach allows for completely custom authentication logic when the default flow is insufficient.
 
 ## Create an Adb instance
 

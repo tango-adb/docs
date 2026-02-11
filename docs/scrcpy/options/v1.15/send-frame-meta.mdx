@@ -1,0 +1,22 @@
+---
+sidebar_position: 9
+---
+
+# sendFrameMeta
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Send presentation timestamps (PTS) so that the client may record properly.
+
+When enabled, the video stream will include frame timing metadata required for proper recording. When set to `false`, the video stream will not contain `configuration` typed packets, which means it can't be decoded by the companion decoders. However, it's still possible to record the stream into a file or decode it with a more tolerant decoder like FFMpeg.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    sendFrameMeta: false, // Disable sending frame metadata
+});
+```

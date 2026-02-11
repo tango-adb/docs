@@ -1,0 +1,34 @@
+---
+sidebar_position: 49
+---
+
+import Version from "../../version-span";
+
+# angle
+
+:::info
+
+Added in Scrcpy 3.0
+
+:::
+
+* **Type**: `number`
+* **Default value**: `0`
+
+Sets the rotation angle of the video stream in degrees.
+
+This option controls the rotation of the video stream. The default value is 0 degrees (no rotation). Common values include 0, 90, 180, and 270 degrees for different orientations.
+
+## Related options
+
+- [`captureOrientation`](./capture-orientation.mdx): Controls the orientation for video capture
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_0({
+    angle: 90, // Rotate video stream 90 degrees
+});
+```

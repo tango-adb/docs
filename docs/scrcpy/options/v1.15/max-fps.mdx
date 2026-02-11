@@ -1,0 +1,22 @@
+---
+sidebar_position: 5
+---
+
+# maxFps
+
+* **Type**: `number`
+* **Default value**: `0` (unlimited)
+
+Sets the maximum frame rate for the video stream in frames per second.
+
+Limits the maximum frame rate of the video capture. Setting this value to 0 disables the limit. Useful for reducing CPU usage on the device or network bandwidth when smooth motion is not required.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    maxFps: 30, // Limit to 30 frames per second
+});
+```

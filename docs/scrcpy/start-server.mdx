@@ -315,7 +315,7 @@ if (controller) {
 
 ### Clipboard stream
 
-If [`control: false`](./options/control.mdx) option is not specified<Version since="v2.1"> and `clipboardAutosync: false` option is also not specified</Version>, Scrcpy server will monitor device clipboard and send the change to client.
+If [`control: false`](./options/control.mdx) option is not specified<Version since="v2.1"> and [`clipboardAutosync: false`](./options/clipboard-autosync.mdx) option is also not specified</Version>, Scrcpy server will monitor device clipboard and send the change to client.
 
 When clipboard syncing is enabled, the `clipboard` field will be a `ReadableStream<string>` that contains the clipboard content.
 

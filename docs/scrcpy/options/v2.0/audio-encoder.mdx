@@ -1,0 +1,34 @@
+---
+sidebar_position: 32
+---
+
+# audioEncoder
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `string | undefined`
+* **Default value**: `undefined`
+
+Specifies the name of the encoder to use for audio encoding.
+
+When not specified, Scrcpy will automatically select an appropriate encoder. This option allows specifying a particular audio encoder by name if you need to override the default selection.
+
+## Related options
+
+- [`audioCodec`](./audio-codec.mdx): Specifies the audio codec to use
+- [`audioBitRate`](./audio-bit-rate.mdx): Controls the audio bitrate
+- [`videoEncoder`](./video-encoder.mdx): Specifies the video encoder to use
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    audioEncoder: "OMX.google.raw.decoder", // Specify audio encoder by name
+});
+```

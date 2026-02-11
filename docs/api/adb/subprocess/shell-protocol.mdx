@@ -363,7 +363,7 @@ const {
 Start a process in PTY mode.
 
 ```ts showLineNumbers
-export declare class AdbShellProtocolPtyProcess {
+export declare class AdbShellProtocolPty {
   get input(): WritableStream<MaybeConsumable<Uint8Array<ArrayBufferLike>>>;
   get output(): ReadableStream<Uint8Array<ArrayBufferLike>>;
   get exited(): Promise<number>;
@@ -373,11 +373,11 @@ export declare class AdbShellProtocolPtyProcess {
   kill(): MaybePromiseLike<void>;
 }
 
-export declare class AdbNoneProtocolSubprocessService {
+export declare class AdbShellProtocolSubprocessService {
   pty(options?: {
     command?: string | string[] | undefined;
     terminalType?: string;
-  }): Promise<AdbShellProtocolPtyProcess>;
+  }): Promise<AdbShellProtocolPty>;
 }
 ```
 
@@ -400,7 +400,7 @@ When using [xterm.js](https://xtermjs.org/), the `terminal.onResize` event can b
 ```ts transpile
 import type { Terminal } from "xterm.js";
 
-declare const pty: AdbShellProtocolPtyProcess;
+declare const pty: AdbShellProtocolPty;
 declare const terminal: Terminal;
 
 terminal.onResize((size) => {

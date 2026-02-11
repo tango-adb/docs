@@ -1,0 +1,33 @@
+---
+sidebar_position: 54
+---
+
+# vdDestroyContent
+
+:::info
+
+Added in Scrcpy 3.1
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Controls whether the virtual display content is destroyed when the connection is closed.
+
+By default, virtual display content is preserved when the connection is closed in Scrcpy. Adding this option with a value of `false` has no effect since this is the default behavior. Only setting this option to `true` will destroy the virtual display content when closing the connection.
+
+## Related options
+
+- [`newDisplay`](../v3.0/new-display.mdx): Creates a new virtual display for video streaming
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions3_1, ScrcpyNewDisplay } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_1({
+    newDisplay: new ScrcpyNewDisplay(1920, 1080), // Required for virtual display to be created
+    vdDestroyContent: true, // Destroy content when closing connection
+});
+```

@@ -1,0 +1,35 @@
+---
+sidebar_position: 10
+---
+
+# control
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Disables all control messages, allowing an mirroring only mode.
+
+## Changelog
+
+### v1.22
+
+Will also disable the [control socket](../../connect-server.mdx#sockets).
+
+## Messages
+
+[Control messages](../../control/index.mdx) are messages from client to server.
+
+Device messages are messages from server to client, including:
+
+* [Clipboard messages](../../start-server.mdx#clipboard-stream)
+* UHID output messages
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    control: false, // Disable control for mirroring only
+});
+```

@@ -1,0 +1,273 @@
+---
+sidebar_position: 14
+---
+
+# codecOptions
+
+:::danger
+
+Deprecated in Scrcpy 2.0
+
+Use [`videoCodecOptions`](../v2.0/video-codec-options.mdx) instead.
+
+:::
+
+* **Type**: `ScrcpyCodecOptions` or `ScrcpyVideoCodecOptions` class instance or `string`
+* **Default value**: `undefined` (use defaults)
+
+Configures video encoding parameters for the selected codec.
+
+Allows fine-tuning of the video encoder settings such as profile, level, bitrate mode, and other codec-specific parameters.
+
+Can be passed as either a string in the required format or as a `ScrcpyCodecOptions`/`ScrcpyVideoCodecOptions` class instance which implements `ScrcpyOptionValue` interface (see [ScrcpyOptionValue](../option-value.mdx)) and serializes to the required string format via its `toOptionValue()` method.
+
+For detailed information about codec options, refer to the [Android MediaFormat documentation](https://developer.android.com/reference/android/media/MediaFormat).
+
+## ScrcpyCodecOptions
+
+```ts
+export class ScrcpyCodecOptions implements ScrcpyOptionValue {
+    static Empty: ScrcpyCodecOptions;
+
+    setInt(key: string, value: number): this;
+    setFloat(key: string, value: number): this;
+    setLong(key: string, value: bigint): this;
+    setString(key: string, value: string): this;
+    delete(key: string): boolean;
+    clear(): void;
+    setPriority(priority: number): this;
+    toOptionValue(): string | undefined;
+}
+```
+
+### setInt
+
+`setInt(key: string, value: number): this`
+
+Sets an integer parameter for the codec configuration.
+
+### setFloat
+
+`setFloat(key: string, value: number): this`
+
+Sets a floating-point parameter for the codec configuration.
+
+### setLong
+
+`setLong(key: string, value: bigint): this`
+
+Sets a long integer parameter for the codec configuration.
+
+### setString
+
+`setString(key: string, value: string): this`
+
+Sets a string parameter for the codec configuration.
+
+### delete
+
+`delete(key: string): boolean`
+
+Removes a parameter from the codec configuration.
+
+### clear
+
+`clear(): void`
+
+Removes all parameters from the codec configuration.
+
+### setPriority
+
+`setPriority(priority: number): this`
+
+A key describing the desired codec priority. The associated value is an integer. Higher value means lower priority.
+
+Currently, only two levels are supported:
+
+- 0: realtime priority - meaning that the codec shall support the given performance configuration (e.g. framerate) at realtime. This should only be used by media playback, capture, and possibly by realtime communication scenarios if best effort performance is not suitable.
+- 1: non-realtime priority (best effort).
+
+This is a hint used at codec configuration and resource planning - to understand the realtime requirements of the application; however, due to the nature of media components, performance is not guaranteed.
+
+See [KEY_PRIORITY](https://developer.android.com/reference/android/media/MediaFormat#KEY_PRIORITY) in MediaFormat documentation.
+
+### toOptionValue
+
+`toOptionValue(): string | undefined`
+
+Serializes the codec options to a string format for scrcpy.
+
+## ScrcpyVideoCodecOptions
+
+```ts
+export class ScrcpyVideoCodecOptions extends ScrcpyCodecOptions {
+    setAllowFrameDrop(value: boolean): this;
+    setIntraRefreshPeriod(value: number): this;
+    setIFrameInterval(value: number, type?: "int" | "float"): this;
+    setLatency(value: number): this;
+    setLevel(value: number): this;
+    setMaxBFrames(value: number): this;
+    setMaxFpsToEncoder(value: number): this;
+    setProfile(value: number): this;
+    setRepeatPreviousFrameAfter(value: bigint): this;
+}
+```
+
+### setAllowFrameDrop
+
+`setAllowFrameDrop(value: boolean): this`
+
+A key for applications to opt out of allowing a Surface to discard undisplayed/unconsumed frames as means to catch up after falling behind. This value is an integer.
+The value 0 indicates the surface is not allowed to drop frames.
+The value 1 indicates the surface is allowed to drop frames.
+
+See [KEY_ALLOW_FRAME_DROP](https://developer.android.com/reference/android/media/MediaFormat#KEY_ALLOW_FRAME_DROP) in MediaFormat documentation.
+[MediaCodec](https://developer.android.com/reference/android/media/MediaCodec) describes the semantics.
+
+### setIntraRefreshPeriod
+
+`setIntraRefreshPeriod(value: number): this`
+
+An optional key describing the period of intra refresh in frames.
+This is an optional parameter that applies only to video encoders.
+If encoder supports it (MediaCodecInfo.CodecCapabilities.FEATURE_IntraRefresh),
+the whole frame is completely refreshed after the specified period.
+Also for each frame, a fix subset of macroblocks must be intra coded
+which leads to more constant bitrate than inserting a key frame.
+This key is recommended for video streaming applications as it provides
+low-delay and good error-resilience.
+This key is ignored if the video encoder does not support the intra refresh feature.
+The associated value is an integer.
+
+See [KEY_INTRA_REFRESH_PERIOD](https://developer.android.com/reference/android/media/MediaFormat#KEY_INTRA_REFRESH_PERIOD) in MediaFormat documentation.
+
+### setIFrameInterval
+
+`setIFrameInterval(value: number, type?: "int" | "float"): this`
+
+A key describing the frequency of key frames expressed in seconds between key frames.
+
+This key is used by video encoders.
+A negative value means no key frames are requested after the first frame.
+A zero value means a stream containing all key frames is requested.
+
+The associated value is an integer (or float since `Build.VERSION_CODES.N_MR1`).
+
+See [KEY_I_FRAME_INTERVAL](https://developer.android.com/reference/android/media/MediaFormat#KEY_I_FRAME_INTERVAL) in MediaFormat documentation.
+
+### setLatency
+
+`setLatency(value: number): this`
+
+An optional key describing the desired encoder latency in frames.
+This is an optional parameter that applies only to video encoders.
+If encoder supports it, it should output at least one output frame
+after being queued the specified number of frames.
+This key is ignored if the video encoder does not support the latency feature.
+Use the output format to verify that this feature was enabled
+and the actual value used by the encoder.
+
+If the key is not specified, the default latency will be implementation specific.
+The associated value is an integer.
+
+See [KEY_LATENCY](https://developer.android.com/reference/android/media/MediaFormat#KEY_LATENCY) in MediaFormat documentation.
+
+### setLevel
+
+`setLevel(value: number): this`
+
+A key describing the desired profile to be used by an encoder.
+
+The associated value is an integer. Constants are declared in
+[MediaCodecInfo.CodecProfileLevel](https://developer.android.com/reference/android/media/MediaCodecInfo.CodecProfileLevel).
+This key is used as a further hint when specifying a desired profile,
+and is only supported for codecs that specify a level.
+
+This key is ignored if the [setProfile](#setprofile) is not specified.
+Otherwise, the value should be a level compatible with the configured encoding parameters.
+
+See [KEY_LEVEL](https://developer.android.com/reference/android/media/MediaFormat#KEY_LEVEL) in MediaFormat documentation.
+
+### setMaxBFrames
+
+`setMaxBFrames(value: number): this`
+
+A key describing the maximum number of B frames between I or P frames,
+to be used by a video encoder.
+The associated value is an integer.
+The default value is 0, which means that no B frames are allowed.
+Note that non-zero value does not guarantee B frames; it's up to the encoder to decide.
+
+See [KEY_MAX_B_FRAMES](https://developer.android.com/reference/android/media/MediaFormat#KEY_MAX_B_FRAMES) in MediaFormat documentation.
+
+### setMaxFpsToEncoder
+
+`setMaxFpsToEncoder(value: number): this`
+
+Instruct the video encoder in "surface-input" mode to drop excessive frames from the source,
+so that the input frame rate to the encoder does not exceed the specified fps.
+The associated value is a float, representing the max frame rate to feed the encoder at.
+
+See [KEY_MAX_FPS_TO_ENCODER](https://developer.android.com/reference/android/media/MediaFormat#KEY_MAX_FPS_TO_ENCODER) in MediaFormat documentation.
+
+### setProfile
+
+`setProfile(value: number): this`
+
+A key describing the desired profile to be used by an encoder.
+
+The associated value is an integer.
+Constants are declared in
+[MediaCodecInfo.CodecProfileLevel](https://developer.android.com/reference/android/media/MediaCodecInfo.CodecProfileLevel).
+This key is used as a hint, and is only supported for codecs that specify a profile.
+When configuring profile,
+encoder configuration may fail if other parameters are not compatible with
+the desired profile or if the desired profile is not supported,
+but it may also fail silently
+(where the encoder ends up using a different, compatible profile.)
+
+It is recommended that the profile is set for all encoders.
+For more information, see the *Encoder Profiles* section of the
+[MediaCodec](https://developer.android.com/reference/android/media/MediaCodec)
+API reference.
+
+See [KEY_PROFILE](https://developer.android.com/reference/android/media/MediaFormat#KEY_PROFILE) in MediaFormat documentation.
+
+### setRepeatPreviousFrameAfter
+
+`setRepeatPreviousFrameAfter(value: bigint): this`
+
+Applies only when configuring a video encoder in "surface-input" mode.
+The associated value is a long and gives the time in microseconds
+after which the frame previously submitted to the encoder will be repeated (once)
+if no new frame became available since.
+
+See [KEY_REPEAT_PREVIOUS_FRAME_AFTER](https://developer.android.com/reference/android/media/MediaFormat#KEY_REPEAT_PREVIOUS_FRAME_AFTER) in MediaFormat documentation.
+
+## Examples
+
+Using codec options class instance for type-safe configuration:
+
+```ts transpile
+import { ScrcpyOptions1_15, ScrcpyVideoCodecOptions } from "@yume-chan/scrcpy";
+
+// Using ScrcpyVideoCodecOptions class instance
+const codecOptions = new ScrcpyVideoCodecOptions()
+    .setProfile(AndroidAvcProfile.Main) // Set encoder profile to Main
+    .setLevel(AndroidAvcLevel.Level31);  // Set encoder level to 3.1
+
+const options1 = new ScrcpyOptions1_15({
+    codecOptions: codecOptions,
+});
+```
+
+Using string format for simple configuration:
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+// Using string format
+const options2 = new ScrcpyOptions1_15({
+    codecOptions: "profile=1,level=1024", // Simple string format (Main profile, Level 3.1)
+});
+```

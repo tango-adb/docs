@@ -1,0 +1,83 @@
+---
+sidebar_position: 23
+---
+
+# scid
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `InstanceId | string | undefined`
+* **Default value**: `undefined`
+
+Specifies a session identifier for the Scrcpy server instance.
+
+This option allows specifying a custom session identifier that can be used to distinguish between multiple Scrcpy sessions running simultaneously. The session ID is typically represented as a hexadecimal string.
+
+Can be passed as either a string in the required format or as an `InstanceId` class instance which implements `ScrcpyOptionValue` interface (see [ScrcpyOptionValue](../option-value.mdx)) and serializes to the required string format via its `toOptionValue()` method.
+
+## InstanceId
+
+```ts
+export class InstanceId implements ScrcpyOptionValue {
+    static readonly NONE: InstanceId;
+    
+    static random(): InstanceId;
+
+    value: number;
+
+    constructor(value: number);
+    
+    toOptionValue(): string | undefined;
+}
+```
+
+### NONE
+
+`static readonly NONE: InstanceId`
+
+A special instance ID representing no instance ID.
+
+### random
+
+`static random(): InstanceId`
+
+Generates a random instance ID. A random 31-bit unsigned integer is used.
+
+### constructor
+
+`constructor(value: number)`
+
+Creates a new InstanceId with the given numeric value.
+
+### toOptionValue
+
+`toOptionValue(): string | undefined`
+
+Serializes the instance ID to a hexadecimal string format for scrcpy.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0, InstanceId } from "@yume-chan/scrcpy";
+
+// Using InstanceId class instance
+const instanceId = new InstanceId(12345);
+
+const options1 = new ScrcpyOptions2_0({
+    scid: instanceId,
+});
+
+// Using string format
+const options2 = new ScrcpyOptions2_0({
+    scid: "abc123", // Same as above but using string format
+});
+
+// Using random ID
+const options3 = new ScrcpyOptions2_0({
+    scid: InstanceId.random(), // Generate a random session ID
+});
+```

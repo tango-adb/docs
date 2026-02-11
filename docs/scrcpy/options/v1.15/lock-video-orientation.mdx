@@ -1,0 +1,51 @@
+---
+sidebar_position: 6
+---
+
+import Version from "../../version-span";
+
+# lockVideoOrientation
+
+:::danger
+
+Deprecated in Scrcpy 3.0
+
+Use [`captureOrientation`](../v3.0/capture-orientation.mdx) instead.
+
+:::
+
+# lockVideoOrientation
+
+* **Type**:
+  * <Version until="1.18">`-1 | 0 | 1 | 2 | 3`</Version>
+  * <Version since="1.18">`-2 | -1 | 0 | 1 | 2 | 3`</Version>
+* **Default value**: `-1` (unlocked)
+
+Locks the orientation of the video stream.
+
+Controls the orientation of the captured video stream without affecting the device's actual screen orientation:
+* <Version since="1.18">`-2`: Initial (at device startup time)</Version>
+* `-1`: Unlocked (follows device orientation)
+* `0`: Portrait
+* `1`: Landscape
+* `2`: Portrait flipped
+* `3`: Landscape flipped
+
+Note that this only affects the captured video stream, not the device screen itself.
+
+## Changelog
+
+### v1.18
+
+Extended type to include `-2` (Initial).
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+// Lock orientation to landscape
+const options = new ScrcpyOptions1_15({
+    lockVideoOrientation: 1, // Landscape
+});
+```

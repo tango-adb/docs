@@ -1,0 +1,30 @@
+---
+sidebar_position: 4
+---
+
+# bitRate
+
+:::danger
+
+Deprecated in Scrcpy 2.0
+
+Use [`videoBitRate`](../v2.0/video-bit-rate.mdx) instead.
+
+:::
+
+* **Type**: `number`
+* **Default value**: `8000000` (8 Mbps)
+
+Sets the video bitrate for the stream in bits per second.
+
+Controls the quality and bandwidth usage of the video stream. Higher values result in better quality but require more bandwidth. Lower values save bandwidth but may reduce video quality. The default value provides a good balance between quality and performance for most use cases.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    bitRate: 4000000, // Set bitrate to 4 Mbps
+});
+```

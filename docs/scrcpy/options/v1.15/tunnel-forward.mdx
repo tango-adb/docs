@@ -1,0 +1,36 @@
+---
+sidebar_position: 7
+---
+
+# tunnelForward
+
+- **Type**: `boolean`
+- **Default value**: `false`
+
+Use ADB forward tunnel instead of reverse tunnel.
+
+This option determines how the Scrcpy client and server communicate through ADB. By default, Scrcpy uses reverse tunnels where the client listens on the PC and the server connects to it. When `tunnelForward` is set to `true`, the server listens on the device and the client connects to it from the PC.
+
+## When to Use Forward Tunnels
+
+Forward tunnels are primarily used as a fallback when reverse tunnels are not supported:
+
+- On Android versions < 9 when connected wirelessly (ADB over WiFi), as the ADB daemon cannot create reverse tunnels
+- When using custom transports that don't support reverse tunneling
+- When encountering `AdbReverseNotSupportedError` exceptions
+
+For detailed information about both tunneling mechanisms, see the [Connect to server](../../connect-server.mdx) page.
+
+## Automatic Detection
+
+When using `AdbScrcpyClient`, the client can automatically detect when reverse tunnels are not supported and will enable forward tunnels automatically. This happens when the underlying transport throws an `AdbReverseNotSupportedError`.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+  tunnelForward: true, // Use forward tunnel instead of reverse
+});
+```

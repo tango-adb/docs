@@ -1,0 +1,37 @@
+---
+sidebar_position: 40
+---
+
+# cameraSize
+
+:::info
+
+Added in Scrcpy 2.2
+
+:::
+
+* **Type**: `string | undefined`
+* **Default value**: `undefined`
+
+Sets the camera capture size when `videoSource` is set to `"camera"`.
+
+When not specified, Scrcpy will use the default camera size. This option allows specifying the resolution for camera capture in the format "WIDTHxHEIGHT" (e.g., "640x480").
+
+The specified value must be one of the values listed by the [`listCameraSizes`](./list-camera-sizes.mdx) option. Use the `listCameraSizes` option to discover the available camera sizes supported by the device.
+
+## Related options
+
+- [`videoSource`](./video-source.mdx): Must be set to `"camera"` for this option to take effect
+- [`cameraId`](./camera-id.mdx): Specifies which camera to use
+- [`cameraFps`](./camera-fps.mdx): Sets the camera capture frame rate
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+    videoSource: "camera", // Enable camera source
+    cameraSize: "640x480", // Set camera capture size to 640x480
+});
+```

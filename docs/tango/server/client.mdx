@@ -28,20 +28,148 @@ The [@yume-chan/adb-server-node-tcp](https://www.npmjs.com/package/@yume-chan/ad
 npm i @yume-chan/adb-server-node-tcp
 ```
 
-Usage:
+The constructor saves the connection information, and each command will create a new connection to the server.
+
+#### Default Connection
+
+Connects to the default socket spec using environment variables if set.
+
+```ts
+declare class AdbServerNodeTcpConnector {
+  constructor();
+}
+```
+
+If environment variable `ADB_SERVER_SOCKET` is set, it will be parsed as an ADB socket spec and used. Otherwise, a TCP socket spec is used, where the host is `localhost` or the value of the environment variable `ANDROID_ADB_SERVER_ADDRESS`, and the port is `5037` or the value of the environment variable `ANDROID_ADB_SERVER_PORT`.
+
+:::info[Equivalent ADB Command]
+```sh
+# Set environment variables for server connection
+export ADB_SERVER_SOCKET=tcp:localhost:5037
+# or
+export ANDROID_ADB_SERVER_ADDRESS=localhost
+export ANDROID_ADB_SERVER_PORT=5037
+
+# Then run adb commands normally
+adb devices
+```
+:::
 
 ```ts transpile
 import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
 
-// highlight-start
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
+```
+
+#### ADB Socket Spec String
+
+Connects to the specified socket using an ADB socket spec string.
+
+```ts
+declare class AdbServerNodeTcpConnector {
+  constructor(spec: string);
+}
+```
+
+Accepts an ADB socket spec string to define the connection.
+
+TCP sockets:
+- `"tcp:<host>"`: connects to the default TCP port on the specified host
+- `"tcp:<port>"`: connects to the specified TCP port on default host
+- `"tcp:<host>:<port>"`: connects to the specified port on the specified host
+
+Unix domain sockets:
+- `"local:<path>"` or `"localfilesystem:<path>"`: connects to the specified Unix domain socket on a file path. Not supported on Windows.
+
+The default host is `localhost`, or the value of the environment variable `ANDROID_ADB_SERVER_ADDRESS`.
+The default port is `5037`, or the value of the environment variable `ANDROID_ADB_SERVER_PORT`.
+
+`vsock:` and `localabstract:` socket specs are not supported.
+
+:::info[Equivalent ADB Command]
+```sh
+# Using the -L flag to specify the socket
+adb -L tcp:localhost:5037 devices
+
+# Or set environment variable
+export ADB_SERVER_SOCKET=tcp:localhost:5037
+adb devices
+```
+:::
+
+```ts transpile
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector("tcp:localhost:5037");
+```
+
+#### TCP Socket Options
+
+Connects using specific TCP socket connection options.
+
+```ts
+declare class AdbServerNodeTcpConnector {
+  constructor(
+      spec: Omit<TcpSocketConnectOpts, "port"> & {
+          port?: number | undefined;
+      },
+  );
+}
+```
+
+Uses the specified TCP connect options.
+
+Unlike the original Node.js TCP connect options, the `port` field is also optional.
+
+If both `port` and `host` fields are `undefined`, and environment variable `ADB_SERVER_SOCKET` is set, it will be parsed as an ADB socket spec and used. Otherwise, if the `host` field is `undefined`, the default value is `localhost` or the value of the environment variable `ANDROID_ADB_SERVER_ADDRESS`. If the `port` field is `undefined`, the default value is `5037` or the value of the environment variable `ANDROID_ADB_SERVER_PORT`.
+
+:::info[Equivalent ADB Command]
+```sh
+# Using the -H and -P flags to specify host and port
+adb -H localhost -P 5037 devices
+
+# Or set environment variables
+export ANDROID_ADB_SERVER_ADDRESS=localhost
+export ANDROID_ADB_SERVER_PORT=5037
+adb devices
+```
+:::
+
+```ts transpile
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
 const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
   host: "localhost",
   port: 5037,
 });
-// highlight-end
 ```
 
-Because each command creates a new connection, this step only saves the connection information, but does not actually connect to the server.
+#### Unix Domain Socket
+
+Connects using Node.js Unix domain socket connection options.
+
+```ts
+declare class AdbServerNodeTcpConnector {
+  constructor(spec: IpcSocketConnectOpts);
+}
+```
+
+Uses the specified Node.js domain socket connect options. Not supported on Windows, because ADB server can't listen on Named Pipes on Windows.
+
+:::info[Equivalent ADB Command]
+```sh
+# Using the -L flag with local socket (Unix only)
+adb -L local:/path/to/adb_socket devices
+```
+:::
+
+```ts transpile
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+  path: "/path/to/socket"
+});
+```
 
 ## Create client
 

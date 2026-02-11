@@ -1,0 +1,79 @@
+---
+sidebar_position: 3
+---
+
+# listPackages
+
+The `listPackages` method queries the device for installed packages with various filtering options.
+
+## Signature
+
+```ts
+async *listPackages(
+    options?: Optional<PackageManagerListPackagesOptions>,
+): AsyncGenerator<PackageManagerListPackagesResult, void, void>
+```
+
+## Parameters
+
+The `options` parameter supports the following filtering and display options:
+
+```ts
+export interface PackageManagerListPackagesOptions {
+    listDisabled: boolean;
+    listEnabled: boolean;
+    showSourceDir: boolean;
+    showInstaller: boolean;
+    listSystem: boolean;
+    showUid: boolean;
+    listThirdParty: boolean;
+    showVersionCode: boolean;
+    listApexOnly: boolean;
+    user: SingleUserOrAll;
+    uid: number;
+    filter: string;
+}
+```
+
+- `listDisabled`: Include disabled packages (command-line: `-d`)
+- `listEnabled`: Include enabled packages (command-line: `-e`)
+- `showSourceDir`: Show source directory paths (command-line: `-f`)
+- `showInstaller`: Show installer package names (command-line: `-i`)
+- `listSystem`: Include system packages (command-line: `-s`)
+- `showUid`: Show user IDs (command-line: `-U`)
+- `listThirdParty`: Include third-party packages (command-line: `-3`)
+- `showVersionCode`: Show version codes (command-line: `--show-versioncode`)
+- `listApexOnly`: Show only APEX packages (command-line: `--apex-only`)
+- `user`: Filter by user ID (command-line: `--user`)
+- `uid`: Filter by UID (command-line: `--uid`)
+- `filter`: Apply a filter string (positional argument after options)
+
+## Result
+
+Returns an async generator that yields `PackageManagerListPackagesResult` objects with these properties:
+
+- `packageName`: The package name
+- `sourceDir`: Optional source directory path (populated when `showSourceDir` is `true`)
+- `versionCode`: Optional version code (populated when `showVersionCode` is `true`)
+- `installer`: Optional installer package name (populated when `showInstaller` is `true`)
+- `uid`: Optional user ID (populated when `showUid` is `true`)
+
+Note: It's not possible to get app icons using `pm`. App icons would need to be retrieved through other means such as accessing the APK files directly.
+
+## Example
+
+```ts transpile
+import { PackageManager } from "@yume-chan/android-bin";
+
+const packageManager = new PackageManager(adb);
+
+// List all packages
+for await (const pkg of packageManager.listPackages()) {
+    console.log(pkg.packageName);
+}
+
+// List only third-party packages
+for await (const pkg of packageManager.listPackages({ listThirdParty: true })) {
+    console.log(pkg.packageName);
+}
+```

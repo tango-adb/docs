@@ -1,0 +1,38 @@
+---
+sidebar_position: 16
+---
+
+import Version from "../../version-span";
+
+# powerOffOnClose
+
+:::info
+
+Added in Scrcpy 1.18
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Automatically powers off the Android device when the scrcpy connection is closed.
+
+When enabled, the device will be powered off automatically when the scrcpy client disconnects or the connection is terminated. This can be useful for automated testing scenarios or when you want to ensure the device enters power saving mode after screen mirroring ends.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_18 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_18({
+    powerOffOnClose: true, // Power off device when connection closes
+});
+```
+
+:::info[Equivalent ADB command]
+
+```sh
+scrcpy --power-off-on-close
+```
+
+:::

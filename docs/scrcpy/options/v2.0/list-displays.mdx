@@ -1,0 +1,34 @@
+---
+sidebar_position: 34
+---
+
+# listDisplays
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Lists available displays on the device and exits.
+
+When enabled, this option causes Scrcpy to enumerate and display all available displays on the device, then exit without starting a streaming session. This is useful for identifying which displays are available for mirroring with the `displayId` option.
+
+Adding this option with a value of `false` has no effect since this is the default behavior. Only setting this option to `true` will enable display listing.
+
+## Related options
+
+- [`displayId`](../v1.15/display-id.mdx): Specifies which display to mirror
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    listDisplays: true, // List available displays on device
+});
+```

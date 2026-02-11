@@ -1,0 +1,57 @@
+---
+sidebar_position: 36
+---
+
+import Version from "../../version-span";
+
+# audioSource
+
+:::info
+
+Added in Scrcpy 2.1
+
+:::
+
+* **Type**:
+  * <Version until="2.6">`"output" | "mic"`</Version>
+  * <Version until="3.2">`"output" | "mic" | "playback"`</Version>
+  * <Version since="3.2">`"output" | "mic" | "playback" | "mic-unprocessed" | "mic-camcorder" | "mic-voice-recognition" | "mic-voice-communication" | "voice-call" | "voice-call-uplink" | "voice-call-downlink" | "voice-performance"`</Version>
+* **Default value**: `"output"`
+
+Selects the audio source for capturing audio from the device.
+
+This option allows choosing between different audio sources:
+
+- `"output"`: Captures audio from the device's audio output (media playing, notifications, etc.). Forwards the whole audio output and disables playback on the device (mapped to `REMOTE_SUBMIX`).
+- `"mic"`: Captures audio from the device's microphone (mapped to `MIC`). This is useful for using the device as a dictaphone or capturing ambient sound.
+- <Version since="2.6">`"playback"`: Captures audio from the device's audio playback. Available only on Android 13 and above, and apps can opt-out from being captured. Has two benefits: supports audio duplication (keeping audio playing on the device) and allows capturing audio from specific apps.</Version>
+- <Version since="3.2">`"mic-unprocessed"`: Unprocessed microphone audio source.</Version>
+- <Version since="3.2">`"mic-camcorder"`: Camcorder microphone audio source.</Version>
+- <Version since="3.2">`"mic-voice-recognition"`: Voice recognition microphone audio source.</Version>
+- <Version since="3.2">`"mic-voice-communication"`: Voice communication microphone audio source.</Version>
+- <Version since="3.2">`"voice-call"`: Voice call uplink + downlink audio source.</Version>
+- <Version since="3.2">`"voice-call-uplink"`: Voice call uplink audio source.</Version>
+- <Version since="3.2">`"voice-call-downlink"`: Voice call downlink audio source.</Version>
+- <Version since="3.2">`"voice-performance"`: Microphone audio source tuned for speech recognition in noisy environments.</Version>
+
+For more advanced audio sources available on the device, see the Android documentation on `MediaRecorder.AudioSource`.
+
+## Changelog
+
+### v2.6
+
+Added support for `"playback"` audio source.
+
+### v3.2
+
+Added support for advanced microphone sources: `"mic-unprocessed"`, `"mic-camcorder"`, `"mic-voice-recognition"`, `"mic-voice-communication"`, `"voice-call"`, `"voice-call-uplink"`, `"voice-call-downlink"`, and `"voice-performance"`.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_1({
+    audioSource: "mic", // Capture audio from device microphone
+});
+```

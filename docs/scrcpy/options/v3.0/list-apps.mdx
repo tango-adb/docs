@@ -1,0 +1,32 @@
+---
+sidebar_position: 51
+---
+
+import Version from "../../version-span";
+
+# listApps
+
+:::info
+
+Added in Scrcpy 3.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Lists installed applications on the device and exits.
+
+When enabled, this option causes Scrcpy to enumerate and display all installed applications on the device, then exit without starting a streaming session. This is useful for discovering which apps are installed on the device for use with audio source filtering.
+
+Adding this option with a value of `false` has no effect since this is the default behavior. Only setting this option to `true` will enable app listing.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_0({
+    listApps: true, // List installed apps on device
+});
+```

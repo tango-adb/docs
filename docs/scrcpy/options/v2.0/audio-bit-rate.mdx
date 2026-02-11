@@ -1,0 +1,36 @@
+---
+sidebar_position: 30
+---
+
+# audioBitRate
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `number`
+* **Default value**: `128000` (128 kbps)
+
+Sets the audio bitrate for the stream in bits per second.
+
+This option controls the bitrate for audio encoding. Higher bitrates result in better audio quality but require more bandwidth. The default value is 128 kbps (128,000 bits per second).
+
+This option does not apply when using the `raw` or `flac` audio codecs, as these codecs do not use variable bitrate encoding.
+
+## Related options
+
+- [`audio`](./audio.mdx): Controls whether audio is enabled
+- [`audioCodec`](./audio-codec.mdx): Specifies the audio codec to use
+- [`videoBitRate`](./video-bit-rate.mdx): Controls the video bitrate separately
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    audioBitRate: 256000, // Set audio bitrate to 256 kbps
+});
+```

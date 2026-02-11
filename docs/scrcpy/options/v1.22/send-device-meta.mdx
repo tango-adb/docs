@@ -1,0 +1,28 @@
+---
+sidebar_position: 19
+---
+
+# sendDeviceMeta
+
+:::info
+
+Added in Scrcpy 1.22
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Controls whether the server should send device name and size at the start of the video stream.
+
+By default, sending device metadata is enabled in Scrcpy, meaning the server sends the device name and size information at the start of the video stream. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable sending device name and size information at the start of the video stream.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_22 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_22({
+    sendDeviceMeta: false, // Disable sending device metadata
+});
+```

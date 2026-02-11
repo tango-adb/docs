@@ -1,0 +1,93 @@
+---
+sidebar_position: 52
+---
+
+import Version from "../../version-span";
+
+# newDisplay
+
+:::info
+
+Added in Scrcpy 3.0
+
+:::
+
+* **Type**: `NewDisplay | string | undefined`
+* **Default value**: `undefined`
+
+Creates a new virtual display for video streaming.
+
+This option allows creating a virtual display with custom dimensions and DPI settings for video streaming. It accepts either a structured object of display settings or a string with the format "WIDTHxHEIGHT/DPI" (e.g., "1920x1080/240").
+
+## ScrcpyNewDisplay
+
+```ts
+export class NewDisplay implements ScrcpyOptionValue {
+    static Default: NewDisplay;
+
+    width?: number | undefined;
+    height?: number | undefined;
+    dpi?: number | undefined;
+
+    constructor();
+    constructor(width: number, height: number);
+    constructor(dpi: number);
+    constructor(width: number, height: number, dpi: number);
+
+    toOptionValue(): string;
+}
+```
+
+### Default
+
+`static readonly Default: NewDisplay`
+
+Represents the default display settings.
+
+### width
+
+`width?: number | undefined`
+
+The width of the virtual display in pixels.
+
+### height
+
+`height?: number | undefined`
+
+The height of the virtual display in pixels.
+
+### dpi
+
+`dpi?: number | undefined`
+
+The DPI (dots per inch) of the virtual display.
+
+## Related options
+
+- [`displayId`](../v1.15/display-id.mdx): Specifies which display to mirror (cannot be used simultaneously with `newDisplay`)
+
+## Examples
+
+Using new display class instance for type-safe configuration:
+
+```ts transpile
+import { ScrcpyOptions3_0, ScrcpyNewDisplay } from "@yume-chan/scrcpy";
+
+// Using ScrcpyNewDisplay class instance
+const newDisplay = new ScrcpyNewDisplay(1920, 1080, 240); // 1920x1080 resolution with 240 DPI
+
+const options1 = new ScrcpyOptions3_0({
+    newDisplay: newDisplay,
+});
+```
+
+Using string format for simple configuration:
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+// Using string format
+const options2 = new ScrcpyOptions3_0({
+    newDisplay: "1920x1080/240", // Same as above but using string format
+});
+```

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 24
 ---
 
 # videoCodec
@@ -38,3 +38,13 @@ AV1 can provide even better video quality at the same bitrate compared to H.265.
 AV1 encoder is mandatory since Android 14, however, the built-in, software-based encoder by Google is too slow to be used in production.
 
 Support for hardware-based AV1 encoders can be found at https://en.wikipedia.org/wiki/AV1#Hardware.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    videoCodec: "h265", // Use H.265 codec
+});
+```

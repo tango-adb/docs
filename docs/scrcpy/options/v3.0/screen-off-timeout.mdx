@@ -1,0 +1,30 @@
+---
+sidebar_position: 50
+---
+
+import Version from "../../version-span";
+
+# screenOffTimeout
+
+:::info
+
+Added in Scrcpy 3.0
+
+:::
+
+* **Type**: `number | undefined`
+* **Default value**: `undefined`
+
+Controls how long the device screen should remain on after the scrcpy connection is established.
+
+When not specified, the device will use its default timeout settings. This option allows specifying a custom timeout in milliseconds for how long the screen should stay on after connection. This option modifies the system's screen timeout setting temporarily during the scrcpy session.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_0({
+    screenOffTimeout: 30000, // Keep screen on for 30 seconds after connection
+});
+```

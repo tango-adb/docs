@@ -1,0 +1,32 @@
+---
+sidebar_position: 18
+---
+
+# downsizeOnError
+
+:::info
+
+Added in Scrcpy 1.22
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Controls whether the server should downsize the video resolution when encountering initial encoding errors during startup.
+
+By default, downsizing on error is enabled in Scrcpy, meaning the server will attempt to retry with a lower resolution when it encounters encoding errors during the initial setup of the video stream.
+
+This only applies to errors encountered during the first attempt to start the video encoding, not to errors that occur later during the streaming session.
+
+If disabled (`false`), any encoding error during the initial setup will immediately cause the server to quit without attempting to use a lower resolution.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_22 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_22({
+    downsizeOnError: false, // Disable downsizing on error
+});
+```

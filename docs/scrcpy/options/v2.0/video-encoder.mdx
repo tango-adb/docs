@@ -1,0 +1,34 @@
+---
+sidebar_position: 27
+---
+
+# videoEncoder
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `string | undefined`
+* **Default value**: `undefined`
+
+Specifies the name of the encoder to use for video encoding.
+
+By default, scrcpy will automatically select an appropriate encoder based on the device capabilities. When this option is specified, scrcpy will attempt to use the encoder with the given name. This is useful when you want to force the use of a specific encoder for compatibility or performance reasons.
+
+## Related options
+
+- [`videoCodec`](./video-codec.mdx): Specifies the video codec to use
+- [`videoBitRate`](./video-bit-rate.mdx): Controls the video bitrate
+- [`encoderName`](../v1.17/encoder-name.mdx) (deprecated): Previous option for specifying encoder name (replaced by this option)
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    videoEncoder: "OMX.google.h264.encoder", // Use a specific encoder
+});
+```

@@ -1,0 +1,33 @@
+---
+sidebar_position: 55
+---
+
+# displayImePolicy
+
+:::info
+
+Added in Scrcpy 3.2
+
+:::
+
+* **Type**: `"local" | "fallback" | "hide" | undefined`
+* **Default value**: `undefined`
+
+Controls the policy for displaying the Input Method Editor (IME) during screen mirroring.
+
+## Values
+
+- `"local"`: Show IME locally on the device
+- `"fallback"`: Use fallback IME behavior
+- `"hide"`: Hide the IME during screen mirroring
+- `undefined`: Use the system default policy (no explicit policy set)
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions3_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_2({
+    displayImePolicy: "hide", // Hide IME during screen mirroring
+});
+```

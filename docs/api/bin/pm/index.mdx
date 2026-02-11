@@ -1,0 +1,50 @@
+---
+---
+
+# Package Manager (`pm`)
+
+The `pm` (Package Manager) executable is Android's command-line tool for managing packages (applications). It handles installation, uninstallation, listing, and querying of applications on Android devices.
+
+## Overview
+
+The `pm` executable provides various operations for Android package management:
+
+- Install APK files with options like permissions, user targeting, and installation location
+- Uninstall applications while preserving or removing data
+- List installed packages with filtering and detailed information
+- Query package sources and resolve activities
+- Manage split APK installations
+
+## Creating a PackageManager Instance
+
+The `@yume-chan/ya-webadb` library provides a `PackageManager` class that wraps the `pm` executable with enhanced functionality and cross-version compatibility.
+
+```ts
+import { PackageManager } from "@yume-chan/ya-webadb";
+
+// highlight-start
+const packageManager = new PackageManager(adb, apiLevel);
+// highlight-end
+```
+
+The `PackageManager` constructor accepts two parameters:
+
+1. `adb`: An authenticated ADB connection instance
+2. `apiLevel`: The target device's Android API level (optional)
+
+### API Level Normalization
+
+The `apiLevel` parameter enables behavior normalization across different Android versions. The `PackageManager` class automatically adjusts command options and behaviors based on the provided API level:
+
+- **Option availability**: Certain options are only available on specific Android versions (e.g., `--restrict-permissions` is available from API level 29)
+- **Backward compatibility**: The class handles differences between older and newer Android versions, such as changes in default install behavior
+- **Command routing**: Routes commands through the appropriate service (`pm` vs `cmd package`) based on Android version for optimal performance and compatibility
+
+For example, the install behavior differs between Android versions:
+
+| Behavior | Previous Versions | Modern Versions |
+|----------|-------------------|-----------------|
+| Replace existing app | Requires `-r` flag | Default behavior (ignored if present) |
+| Skip existing app | Default behavior | Requires `-R` flag |
+
+The `PackageManager` class handles these differences transparently when the `apiLevel` is provided.

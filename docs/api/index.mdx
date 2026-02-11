@@ -1,5 +1,4 @@
 ---
-sidebar_position: 0
 ---
 
 # Overview
@@ -63,9 +62,11 @@ npm i @yume-chan/android-bin
     * [`binary`](./bin/logcat/binary.mdx): Read logcat entries in binary format
     * [`clear`](./bin/logcat/clear.mdx): Delete all logcat entries
 * **Overlay Display** Manages simulated secondary displays
-* `pm`: Manage apps
-    * [`install`](./bin/pm/install.mdx): Install APK files on device filesystem
-    * [`installStream`](./bin/pm/install-stream.mdx): Install APK files from a `ReadableStream`
+* [`pm`](./bin/pm/index.mdx): Manage apps
+      * [`listPackages`](./bin/pm/list-packages.mdx): Query installed packages with filtering options
+      * [`getPackageSources`](./bin/pm/get-package-sources.mdx): Get APK file paths for a package
+      * [`install`](./bin/pm/install.mdx): Install APK files on device filesystem
+      * [`installStream`](./bin/pm/install-stream.mdx): Install APK files from a `ReadableStream`
 * `settings`: Get/set Android system settings
 
 :::note

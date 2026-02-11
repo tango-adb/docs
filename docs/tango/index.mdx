@@ -1,5 +1,4 @@
 ---
-sidebar_position: 1
 slug: /
 ---
 
@@ -113,7 +112,7 @@ Tango provides two built-in transports: [**Daemon Transport**](./daemon/index.md
 
 ```mermaid
 flowchart TD
-    A["AdbDaemonAuthenticator<br/>.authenticate()"] & H["new AdbDaemonTransport"] --> B[/an AdbTransport object/]
+    A["adbDaemonAuthenticate()"] & H["new AdbDaemonTransport"] --> B[/an AdbTransport object/]
 
     subgraph C ["an AdbServerClient instance"]
         D["createTransport()"]

@@ -1,0 +1,39 @@
+---
+sidebar_position: 47
+---
+
+import Version from "../../version-span";
+
+# audioDup
+
+:::info
+
+Added in Scrcpy 2.6
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Controls whether to duplicate audio when capturing from the device.
+
+When enabled, this option automatically sets the audio source to `"playback"` and enables audio duplication mode, which keeps the audio playing on the device while mirroring it to the client. This feature is only available when using the `"playback"` audio source (which is automatically selected when this option is enabled).
+
+Adding this option with a value of `false` has no effect since this is the default behavior. Only setting this option to `true` will enable audio duplication mode.
+
+Audio duplication mode is only supported on Android 13 and above, and requires the audio source to be set to `"playback"`. When enabled, audio continues to play on the device while being mirrored to the client.
+
+## Related options
+
+- [`audioSource`](../v2.1/audio-source.mdx): Selects the audio source for capturing audio from the device (automatically set to `"playback"` when `audioDup` is enabled)
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_6 } from "@yume-chan/scrcpy";
+
+// Enable audio duplication mode (automatically sets audioSource to "playback")
+const options = new ScrcpyOptions2_6({
+    audioDup: true,
+});
+```

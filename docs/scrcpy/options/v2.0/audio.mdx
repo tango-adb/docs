@@ -1,0 +1,34 @@
+---
+sidebar_position: 28
+---
+
+# audio
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Disables the audio socket, allowing a video only mode.
+
+When enabled (default behavior), Scrcpy server captures and forwards audio from the device. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable audio forwarding from the device.
+
+## Related options
+
+- [`video`](../v2.1/video.mdx): Controls whether the video socket is enabled
+- [`audioCodec`](./audio-codec.mdx): Specifies the audio codec to use
+- [`audioBitRate`](./audio-bit-rate.mdx): Controls the audio bitrate
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    audio: false, // Disable audio socket for video only
+});
+```

@@ -279,7 +279,7 @@ const output: string = await adb.subprocess.noneProtocol
 Start a process in PTY mode.
 
 ```ts showLineNumbers
-export declare class AdbNoneProtocolPtyProcess {
+export declare class AdbNoneProtocolPty {
   get input(): WritableStream<MaybeConsumable<Uint8Array>>;
   get output(): ReadableStream<Uint8Array>;
   get exited(): Promise<undefined>;
@@ -289,7 +289,7 @@ export declare class AdbNoneProtocolPtyProcess {
 }
 
 export declare class AdbNoneProtocolSubprocessService {
-  pty(command?: string | string[]): Promise<AdbNoneProtocolPtyProcess>;
+  pty(command?: string | string[]): Promise<AdbNoneProtocolPty>;
 }
 ```
 

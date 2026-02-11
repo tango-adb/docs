@@ -1,0 +1,35 @@
+---
+sidebar_position: 25
+---
+
+# videoBitRate
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `number`
+* **Default value**: `8000000` (8 Mbps)
+
+Sets the video bitrate for the stream in bits per second.
+
+This option replaces the previous `bitRate` option and specifically controls the bitrate for video encoding. Higher bitrates result in better video quality but require more bandwidth. The default value is 8 Mbps (8,000,000 bits per second).
+
+Controls the quality and bandwidth usage of the video stream. Higher values result in better quality but require more bandwidth. Lower values save bandwidth but may reduce video quality. The default value provides a good balance between quality and performance for most use cases.
+
+## Related options
+
+- [`videoCodec`](./video-codec.mdx): Specifies the video codec to use
+- [`audioBitRate`](./audio-bit-rate.mdx): Controls the audio bitrate separately
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    videoBitRate: 4000000, // Set video bitrate to 4 Mbps
+});
+```

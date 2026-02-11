@@ -1,0 +1,83 @@
+---
+sidebar_position: 5
+---
+
+# Web Workers
+
+Although WebCodecs API already runs in its own thread, and the renderers are very fast, you might still want to run them in a dedicated Web Worker, so other tasks on the main thread won't affect its responsiveness.
+
+Only `WebGLVideoFrameRenderer` and `BitmapVideoFrameRenderer` are supported in Web Worker. There are two ways to render the frames:
+
+## Method A: Create `OffscreenCanvas` directly
+
+When their constructors are called without arguments, they will create an [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) object internally.
+
+This `OffscreenCanvas` is not bound to a `<canvas>` element. See [Synchronous display of frames produced by an OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas#synchronous_display_of_frames_produced_by_an_offscreencanvas) on MDN for how send the image data to a normal `<canvas>` element.
+
+## Method B: Create `OffscreenCanvas` from a `<canvas>` element
+
+An [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) object can be created by calling [`transferControlToOffscreen()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/transferControlToOffscreen) method on an existing [`<canvas>`](https://developer.mozilla.org/en-US/html/Element/canvas) element.
+
+It can then be [`postMessage`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage) to the worker, and pass into [renderer constructors](./renderer.mdx). When the renderer draws on the `OffscreenCanvas`, the content will be displayed on the source `<canvas>` element automatically.
+
+```html
+<!-- index.html -->
+<canvas id="canvas"></canvas>
+```
+
+```ts transpile
+// index.js
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+
+const canvas = document.getElementById("canvas");
+const offscreenCanvas = canvas.transferControlToOffscreen();
+
+const worker = new Worker("worker.js");
+worker.postMessage(
+  {
+    codec: ScrcpyVideoCodecId.H264,
+    canvas: offscreenCanvas,
+    stream: videoPacketStream,
+  },
+  [offscreenCanvas, videoPacketStream],
+);
+worker.addEventListener("message", (e) => {
+  const { width, height } = e.data;
+  canvas.width = width;
+  canvas.height = height;
+});
+```
+
+```ts transpile
+// worker.js
+import type {
+  ScrcpyVideoCodecId,
+  ScrcpyMediaStreamPacket,
+} from "@yume-chan/scrcpy";
+import {
+  WebGLVideoFrameRenderer,
+  WebCodecsVideoDecoder,
+} from "@yume-chan/scrcpy-decoder-webcodecs";
+
+self.addEventListener("message", (e) => {
+  const { codec, canvas, stream } = e.data as {
+    codec: ScrcpyVideoCodecId;
+    canvas: OffscreenCanvas;
+    stream: ReadableStream<ScrcpyMediaStreamPacket>;
+  };
+
+  const renderer = new WebGLVideoFrameRenderer(canvas);
+  const decoder = new WebCodecsVideoDecoder({ codec, renderer });
+
+  decoder.sizeChanged(({ width, height }) => {
+    postMessage({ width, height });
+  });
+
+  void stream.pipeTo(decoder.writable).catch((e) => {
+    console.error(e);
+  });
+});
+```

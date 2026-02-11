@@ -1,0 +1,33 @@
+---
+sidebar_position: 22
+---
+
+# powerOn
+
+:::info
+
+Added in Scrcpy 1.24
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Controls whether the server should power on the device when starting streaming.
+
+By default, powering on the device is enabled in Scrcpy, meaning the server will wake up the device when starting the streaming session if it's currently off. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will prevent the server from powering on the device when starting streaming.
+
+## Related options
+
+- [`stayAwake`](../v1.15/stay-awake.mdx): Controls whether the device stays awake during the streaming session
+- [`powerOffOnClose`](../v1.18/power-off-on-close.mdx): Controls whether the device powers off when the scrcpy connection is closed
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_24 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_24({
+    powerOn: false, // Don't power on device when starting streaming
+});
+```

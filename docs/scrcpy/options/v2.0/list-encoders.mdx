@@ -1,0 +1,35 @@
+---
+sidebar_position: 33
+---
+
+# listEncoders
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Lists available encoders on the device and exits.
+
+When enabled, this option causes Scrcpy to enumerate and display all available video and audio encoders on the device, then exit without starting a streaming session. This is useful for discovering which encoders are available for use with other options.
+
+Adding this option with a value of `false` has no effect since this is the default behavior. Only setting this option to `true` will enable encoder listing.
+
+## Related options
+
+- [`videoEncoder`](./video-encoder.mdx): Specifies the video encoder to use
+- [`audioEncoder`](./audio-encoder.mdx): Specifies the audio encoder to use
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    listEncoders: true, // List available encoders on device
+});
+```

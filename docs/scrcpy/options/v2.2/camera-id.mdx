@@ -1,0 +1,35 @@
+---
+sidebar_position: 39
+---
+
+# cameraId
+
+:::info
+
+Added in Scrcpy 2.2
+
+:::
+
+* **Type**: `string | undefined`
+* **Default value**: `undefined`
+
+Specifies the camera ID to use when `videoSource` is set to `"camera"`.
+
+When not specified, Scrcpy will use the default camera based on other camera settings like `cameraFacing`. This option allows specifying a particular camera by its unique identifier if you need to select a specific camera on devices with multiple cameras.
+
+## Related options
+
+- [`videoSource`](./video-source.mdx): Must be set to `"camera"` for this option to take effect
+- [`cameraFacing`](./camera-facing.mdx): Alternative way to select camera based on facing direction
+- [`cameraSize`](./camera-size.mdx): Sets the camera capture size
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+    videoSource: "camera", // Enable camera source
+    cameraId: "0", // Use camera with ID "0"
+});
+```

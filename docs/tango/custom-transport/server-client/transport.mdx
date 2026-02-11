@@ -57,7 +57,7 @@ const httpServer = createServer(async (request, response) => {
     }
 
     const connection = await device.connect();
-    const transport = await AdbDaemonTransport.authenticate({
+    const transport = await adbDaemonAuthenticate({
       serial,
       connection,
       credentialStore: CredentialStore,

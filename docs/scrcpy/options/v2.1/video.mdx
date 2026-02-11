@@ -1,0 +1,28 @@
+---
+sidebar_position: 37
+---
+
+# video
+
+:::info
+
+Added in Scrcpy 2.1
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Disables the [video socket](../../connect-server.mdx#sockets), allowing an audio only mode.
+
+Control messages that requires video size won't work with video disabled.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_1 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_1({
+    video: false, // Disable video socket for audio-only mode
+});
+```

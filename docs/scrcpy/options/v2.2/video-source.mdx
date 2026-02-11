@@ -1,0 +1,36 @@
+---
+sidebar_position: 38
+---
+
+# videoSource
+
+:::info
+
+Added in Scrcpy 2.2
+
+:::
+
+* **Type**: `"display" | "camera"`
+* **Default value**: `"display"`
+
+Selects the video source for capturing video from the device.
+
+This option allows choosing between two different video sources:
+- `"display"`: Captures video from the device's display (default behavior)
+- `"camera"`: Captures video from the device's camera
+
+## Related options
+
+- [`cameraId`](./camera-id.mdx): Specifies which camera to use when `videoSource` is set to `"camera"`
+- [`cameraSize`](./camera-size.mdx): Sets the camera capture size when `videoSource` is set to `"camera"`
+- [`cameraFacing`](./camera-facing.mdx): Specifies which camera facing direction to use when `videoSource` is set to `"camera"`
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+    videoSource: "camera", // Capture video from device camera
+});
+```

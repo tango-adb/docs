@@ -1,0 +1,35 @@
+---
+sidebar_position: 43
+---
+
+# cameraFps
+
+:::info
+
+Added in Scrcpy 2.2
+
+:::
+
+* **Type**: `number | undefined`
+* **Default value**: `undefined`
+
+Sets the camera capture frame rate when `videoSource` is set to `"camera"`.
+
+When not specified, Scrcpy will use the default frame rate. This option allows specifying the frame rate in frames per second (FPS) for camera capture.
+
+## Related options
+
+- [`videoSource`](./video-source.mdx): Must be set to `"camera"` for this option to take effect
+- [`cameraSize`](./camera-size.mdx): Sets the camera capture size
+- [`cameraAr`](./camera-ar.mdx): Sets the camera aspect ratio
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+    videoSource: "camera", // Enable camera source
+    cameraFps: 30, // Set camera capture frame rate to 30 FPS
+});
+```

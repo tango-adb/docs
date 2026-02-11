@@ -1,0 +1,84 @@
+---
+sidebar_position: 4
+---
+
+# getPackageSources
+
+The `getPackageSources` method retrieves the APK file paths for a given package. On supported Android versions, all split APKs are included.
+
+## Signature
+
+```ts
+async getPackageSources(
+    packageName: string,
+    options?: {
+        user?: number | undefined;
+    },
+): Promise<string[]>
+```
+
+## Parameters
+
+- `packageName`: The package name to query
+- `options`: Optional parameters
+  - `user`: The user ID to query (optional)
+
+## Result
+
+Returns a `Promise` that resolves to an array of APK file paths.
+
+## Example
+
+```ts transpile
+import { PackageManager } from "@yume-chan/android-bin";
+
+const packageManager = new PackageManager(adb);
+
+// Get APK paths for a package
+const apkPaths = await packageManager.getPackageSources("com.example.app");
+console.log("APK paths:", apkPaths);
+
+// Get APK paths for a package in a specific user context
+const apkPathsForUser = await packageManager.getPackageSources("com.example.app", { 
+    user: 10 
+});
+console.log("APK paths for user 10:", apkPathsForUser);
+```
+
+### Pulling APK Files
+
+After getting the APK paths, you can download them using the `sync.read` method:
+
+```ts transpile
+// Get APK paths
+const apkPaths = await packageManager.getPackageSources("com.example.app");
+
+// Create a sync connection to read files
+const sync = await adb.sync();
+
+try {
+  // Download each APK file
+  for (const apkPath of apkPaths) {
+    console.log(`Downloading ${apkPath}...`);
+    
+    // Get the filename from the path
+    const filename = apkPath.split('/').pop();
+    
+    // Read the APK file content
+    const content = sync.read(apkPath);
+    
+    // Process the content (e.g., save to local filesystem or blob)
+    await content.pipeTo(
+      new WritableStream({
+        write(chunk) {
+          console.log(`Received ${chunk.length} bytes for ${filename}`);
+          // Handle the chunk as needed
+        },
+      }),
+    );
+  }
+} finally {
+  // Always dispose of the sync connection
+  await sync.dispose();
+}
+```

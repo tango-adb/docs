@@ -1,0 +1,22 @@
+---
+sidebar_position: 11
+---
+
+# displayId
+
+* **Type**: `number`
+* **Default value**: `0` (primary display)
+
+Specifies which display to mirror.
+
+On devices with multiple displays (such as foldable phones or tablets with external monitors), this option specifies which display to capture. If omitted, the primary display will be mirrored.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    displayId: 1, // Mirror secondary display
+});
+```

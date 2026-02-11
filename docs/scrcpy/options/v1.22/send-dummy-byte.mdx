@@ -1,0 +1,28 @@
+---
+sidebar_position: 20
+---
+
+# sendDummyByte
+
+:::info
+
+Added in Scrcpy 1.22
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Controls whether the server should send a `0` byte at the start of the video stream to detect connection issues.
+
+By default, sending a dummy byte is enabled in Scrcpy, meaning the server sends a `0` byte at the start of the video stream to detect connection issues. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable sending the dummy byte at the start of the video stream.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_22 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_22({
+    sendDummyByte: false, // Disable sending dummy byte
+});
+```

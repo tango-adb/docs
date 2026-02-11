@@ -1,0 +1,22 @@
+---
+sidebar_position: 3
+---
+
+# maxSize
+
+* **Type**: `number`
+* **Default value**: `0` (unlimited)
+
+Sets the maximum width and height of the video stream.
+
+The maximum value of both width and height. When set, Scrcpy will scale down the video stream to fit within these dimensions while preserving aspect ratio. This can help reduce bandwidth usage and improve performance on slower networks or devices.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    maxSize: 1024, // Limit video to 1024x1024 maximum
+});
+```

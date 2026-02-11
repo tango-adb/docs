@@ -1,0 +1,36 @@
+---
+sidebar_position: 15
+---
+
+# encoderName
+
+:::info
+
+Added in Scrcpy 1.17
+
+:::
+
+:::danger
+
+Deprecated in Scrcpy 2.0
+
+Use [`videoEncoder`](../v2.0/video-encoder.mdx) instead.
+
+:::
+
+* **Type**: `string`
+* **Default value**: `undefined`
+
+Specifies the name of the encoder to use for video encoding.
+
+By default, scrcpy will automatically select an appropriate encoder based on the device capabilities. When this option is specified, scrcpy will attempt to use the encoder with the given name. This is useful when you want to force the use of a specific encoder for compatibility or performance reasons.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_17 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_17({
+    encoderName: "OMX.qcom.video.encoder.avc", // Use a specific encoder
+});
+```

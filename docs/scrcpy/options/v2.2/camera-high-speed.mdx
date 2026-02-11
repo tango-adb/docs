@@ -1,0 +1,35 @@
+---
+sidebar_position: 44
+---
+
+# cameraHighSpeed
+
+:::info
+
+Added in Scrcpy 2.2
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Controls whether the camera should operate in high-speed mode when `videoSource` is set to `"camera"`.
+
+By default, high-speed mode is disabled in Scrcpy. Adding this option with a value of `false` has no effect since this is the default behavior. Only setting this option to `true` will enable high-speed mode for camera capture.
+
+## Related options
+
+- [`videoSource`](./video-source.mdx): Must be set to `"camera"` for this option to take effect
+- [`cameraFps`](./camera-fps.mdx): Sets the camera capture frame rate
+- [`cameraSize`](./camera-size.mdx): Sets the camera capture size
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+    videoSource: "camera", // Enable camera source
+    cameraHighSpeed: true, // Enable high-speed camera capture
+});
+```

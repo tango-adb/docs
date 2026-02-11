@@ -1,0 +1,51 @@
+---
+sidebar_position: 29
+---
+
+import Version from "../../version-span";
+
+# audioCodec
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**:
+  * <Version until="2.3">`"raw" | "opus" | "aac"`</Version>
+  * <Version since="2.3">`"raw" | "opus" | "aac" | "flac"`</Version>
+* **Default value**: `"opus"`
+
+Specifies the audio codec to use by the server.
+
+Different audio codecs provide different trade-offs between quality, compression, and compatibility:
+
+- `opus`: Opus audio codec, provides good quality at low bitrates
+- `raw`: Raw audio, uncompressed but high quality
+- `aac`: AAC audio codec, widely supported
+- <Version since="2.3">`flac`: FLAC audio codec, provides lossless compression</Version>
+
+The specified `audioCodec` must be supported by the device (has an encoder for it), otherwise an error will be thrown in the startup process.
+
+## Related options
+
+- [`audio`](./audio.mdx): Controls whether audio is enabled
+- [`audioBitRate`](./audio-bit-rate.mdx): Controls the audio bitrate
+- [`videoCodec`](./video-codec.mdx): Specifies the video codec to use
+
+## Changelog
+
+### v2.3
+
+Added support for `"flac"` audio codec.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    audioCodec: "aac", // Use AAC audio codec
+});
+```

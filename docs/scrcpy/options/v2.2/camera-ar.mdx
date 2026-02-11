@@ -1,0 +1,35 @@
+---
+sidebar_position: 42
+---
+
+# cameraAr
+
+:::info
+
+Added in Scrcpy 2.2
+
+:::
+
+* **Type**: `string | undefined`
+* **Default value**: `undefined`
+
+Sets the camera aspect ratio when `videoSource` is set to `"camera"`.
+
+When not specified, Scrcpy will use the default aspect ratio. This option allows specifying the aspect ratio for camera capture in the format "WIDTH:HEIGHT" (e.g., "16:9") or as a decimal (e.g., "1.77").
+
+## Related options
+
+- [`videoSource`](./video-source.mdx): Must be set to `"camera"` for this option to take effect
+- [`cameraSize`](./camera-size.mdx): Sets the camera capture size
+- [`cameraFps`](./camera-fps.mdx): Sets the camera capture frame rate
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_2 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_2({
+    videoSource: "camera", // Enable camera source
+    cameraAr: "16:9", // Set camera aspect ratio to 16:9
+});
+```

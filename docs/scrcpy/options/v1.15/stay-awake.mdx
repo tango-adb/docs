@@ -1,0 +1,28 @@
+---
+sidebar_position: 13
+---
+
+# stayAwake
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Prevents the device from sleeping while screen casting is active.
+
+When enabled, the device will remain awake and the screen will not turn off automatically while the scrcpy session is active. 
+
+This option enables the "Stay awake" developer option (also known as "Keep screen on while charging"), which prevents the screen from turning off. 
+
+It only works when the device is physically connected to a charger or computer via USB. It does not work when devices are connected wirelessly (ADB over WiFi) and not charging, as the system considers the device to be in a battery-saving state. 
+
+This is useful when using the device remotely and you want to prevent the screen from turning off.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    stayAwake: true, // Keep device awake during session
+});
+```

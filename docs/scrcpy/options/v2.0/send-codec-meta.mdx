@@ -1,0 +1,33 @@
+---
+sidebar_position: 35
+---
+
+# sendCodecMeta
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Controls whether codec metadata should be sent at the start of the video and audio streams.
+
+By default, sending codec metadata is enabled in Scrcpy, meaning the server sends codec configuration data needed for proper decoding. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable sending codec metadata.
+
+## Related options
+
+- [`videoCodec`](./video-codec.mdx): Specifies the video codec to use
+- [`audioCodec`](./audio-codec.mdx): Specifies the audio codec to use
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions2_0({
+    sendCodecMeta: false, // Disable sending codec metadata
+});
+```

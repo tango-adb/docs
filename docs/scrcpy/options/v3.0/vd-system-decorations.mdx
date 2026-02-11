@@ -1,0 +1,35 @@
+---
+sidebar_position: 53
+---
+
+import Version from "../../version-span";
+
+# vdSystemDecorations
+
+:::info
+
+Added in Scrcpy 3.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `true`
+
+Controls whether the virtual display should include system decorations (status bar, navigation bar, etc.).
+
+By default, virtual display system decorations are enabled in Scrcpy. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable system decorations in the virtual display.
+
+## Related options
+
+- [`newDisplay`](./new-display.mdx): Creates a new virtual display for video streaming
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions3_0, ScrcpyNewDisplay } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions3_0({
+    newDisplay: new ScrcpyNewDisplay(1920, 1080), // Required for virtual display to be created
+    vdSystemDecorations: false, // Disable system decorations in virtual display
+});
+```

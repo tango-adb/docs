@@ -36,11 +36,11 @@ To support different runtime and connection method, `AdbDaemonTransport` class i
 
 ### Default authentication process
 
-The most common usage is to use `AdbDaemonAuthenticator.authenticate()` static method to create an authenticated transport instance. It requires an [`AdbDaemonConnection`](#connections) object to send and receive packets and an [`AdbCredentialManager`](./credential-store/index.mdx) object to provide authentication keys.
+The most common usage is to use `adbDaemonAuthenticate()` function to create an authenticated transport instance. It requires an [`AdbDaemonConnection`](#connections) object to send and receive packets and an [`AdbCredentialManager`](./credential-store/index.mdx) object to provide authentication keys.
 
 ```mermaid
 flowchart TD
-    A[/an AdbDaemonConnection<br>object/] & B[/an AdbCredentialManager<br/>object/] --> C["AdbDaemonAuthenticator<br/>.authenticate()"] --> D[\an AdbDaemonTransport<br/>instance\] --> E["new Adb()"] --> F[\an Adb instance\]
+    A[/an AdbDaemonConnection<br>object/] & B[/an AdbCredentialManager<br/>object/] --> C["adbDaemonAuthenticate()"] --> D[\an AdbDaemonTransport<br/>instance\] --> E["new Adb()"] --> F[\an Adb instance\]
 
     classDef link text-decoration: underline;
     class A,B,C,F link;
@@ -116,7 +116,7 @@ flowchart TD
     end
 
     B & C[/ADB over Wi-Fi connection/] --> D[\"an AdbDaemonConnection<br/>object"\]
-    D & E[/an AdbCredentialManager<br/>object/] --> F["AdbDaemonAuthenticator<br/>.authenticate()"] --> G[\an AdbDaemonTransport<br/>instance\] --> H["new Adb()"] --> I[\an Adb instance\]
+    D & E[/an AdbCredentialManager<br/>object/] --> F["adbDaemonAuthenticate()"] --> G[\an AdbDaemonTransport<br/>instance\] --> H["new Adb()"] --> I[\an Adb instance\]
 
     J[/Custom connection/] --> K["new AdbDaemonTransport()"] --> G
 

@@ -1,0 +1,32 @@
+---
+sidebar_position: 2
+---
+
+import Version from "../../version-span";
+
+# logLevel
+
+* **Type**:
+  * <Version until="1.18">`"debug" | "info" | "warn" | "error"`</Version>
+  * <Version since="1.18">`"verbose" | "debug" | "info" | "warn" | "error"`</Version>
+* **Default value**: `"debug"`
+
+Sets the logging level for the Scrcpy server.
+
+Controls the verbosity of server-side logging. Different log levels provide varying amounts of diagnostic information which can be useful for troubleshooting connection or functionality issues.
+
+## Changelog
+
+### v1.18
+
+Extended type to include `"verbose"`.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions1_15({
+    logLevel: "debug", // Enable debug level logging
+});
+```

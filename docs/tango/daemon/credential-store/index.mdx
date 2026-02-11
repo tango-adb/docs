@@ -43,21 +43,21 @@ However, Web browsers and Node.js don't share a common API to store data. Thus, 
 flowchart TD
     A[/A TangoKeyStorage instance/] --> B["new AdbWebCryptoCredentialManager()"]
     B --> C[\An AdbWebCryptoCredentialManager instance\]
-    C --> D["AdbDaemonAuthenticator.authenticate()"]
+    C --> D["adbDaemonAuthenticate()"]
 ```
 
 ### Definition
 
 ```ts
 import type {
-  AdbCredentialStore,
+  AdbCredentialManager,
   AdbPrivateKey,
   MaybeError,
 } from "@yume-chan/adb";
 import type { TangoKeyStorage } from "@yume-chan/adb-credential-web";
 
 export declare class AdbWebCryptoCredentialManager
-  implements AdbCredentialStore
+  implements AdbCredentialManager
 {
   constructor(storage: TangoKeyStorage, name?: string);
 
@@ -160,13 +160,51 @@ const manager = new AdbWebCryptoCredentialManager(storage);
 
 ### `TangoIndexedDbStorage`
 
-Stores keys using IndexedDB API. It will create a database named `"Tango"` and a store (table) named `"Authentication"` in it.
+[IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) is a low-level API for client-side storage of significant amounts of structured data, including files/blobs. An IndexedDB database contains object stores (similar to tables in traditional databases) where data is stored as key-value pairs. Each database can contain multiple object stores, allowing for organized data persistence in web applications.
 
 | Characteristic | Description |
 | -------------- | ----------- |
 | Number of keys | Unlimited   |
 | Encrypted      | No          |
 | Web Worker     | Yes         |
+
+```ts
+export declare class TangoIndexedDbStorage implements TangoKeyStorage {
+  constructor(options?: {
+    databaseName?: string;
+    storeName?: string;
+  });
+
+  save(
+    privateKey: Uint8Array,
+    name: string | undefined
+  ): Promise<undefined>;
+
+  load(): AsyncGenerator<TangoKey, void, void>;
+
+  clear(): Promise<undefined>;
+}
+```
+
+#### Constructor parameters
+
+##### `databaseName` (optional)
+
+The name of the IndexedDB database to use. Defaults to `"Tango"`.
+
+##### `storeName` (optional)
+
+The name of the object store to use. Defaults to `"Authentication"`.
+
+#### Additional methods
+
+##### `clear()`
+
+Removes all stored keys from the database.
+
+#### Migration
+
+`TangoIndexedDbStorage` will automatically migrate keys from the previous version (v1) of the database if any are found. The migration occurs during the first access to the database and moves keys from the old schema to the new schema.
 
 ```ts transpile
 import {
@@ -176,11 +214,21 @@ import {
 
 const storage = new TangoIndexedDbStorage();
 const manager = new AdbWebCryptoCredentialManager(storage);
+
+// Or with custom database and store names
+const customStorage = new TangoIndexedDbStorage({
+  databaseName: "MyAppADBKeys",
+  storeName: "Keys",
+});
 ```
 
 ### `TangoPasswordProtectedStorage`
 
 Encrypts the ADB key using a password. It requires another `TangoKeyStorage` instance to store the encrypted data.
+
+`TangoPasswordProtectedStorage` uses PBKDF2 (Password-Based Key Derivation Function 2) to derive an AES key for encrypting the ADB private key. PBKDF2 applies a pseudorandom function (HMAC-SHA-256) to the password along with a salt value and repeats this process many times to produce a derived key. This process makes brute-force attacks computationally expensive by increasing the time required to test each possible password.
+
+The `pbkdf2SaltLength` parameter specifies the length of the random salt used in the derivation process. A longer salt increases resistance to rainbow table attacks. The `pbkdf2Iterations` parameter controls how many times the hash function is applied. Higher iteration counts significantly slow down password guessing attempts, making brute-force attacks more difficult but also increasing the time required for legitimate password verification.
 
 | Characteristic | Description                                                  |
 | -------------- | ------------------------------------------------------------ |
@@ -195,17 +243,31 @@ export namespace TangoPasswordProtectedStorage {
     name: string | undefined
   ) => MaybePromiseLike<string>;
 
-  declare class PasswordIncorrectError extends Error {
-    get keyName(): string | undefined;
-    constructor(keyName: string | undefined);
-  }
+  export type PasswordIncorrectError = typeof PasswordIncorrectError;
 }
 
 export declare class TangoPasswordProtectedStorage implements TangoKeyStorage {
-  constructor(
-    storage: TangoKeyStorage,
-    requestPassword: TangoPasswordProtectedStorage.RequestPassword
-  );
+  static PasswordIncorrectError: typeof PasswordIncorrectError;
+
+  constructor(options: {
+    storage: TangoKeyStorage;
+    requestPassword: TangoPasswordProtectedStorage.RequestPassword;
+    pbkdf2SaltLength?: number | undefined;
+    pbkdf2Iterations?: number | undefined;
+    aesIvLength?: number | undefined;
+  });
+
+  save(
+    privateKey: Uint8Array,
+    name: string | undefined
+  ): Promise<undefined>;
+
+  load(): AsyncGenerator<MaybeError<TangoKey>, void, void>;
+}
+
+declare class PasswordIncorrectError extends Error {
+  get keyName(): string | undefined;
+  constructor(keyName: string | undefined);
 }
 ```
 
@@ -224,6 +286,27 @@ Parameters:
 - `reason`: `"save"` when saving (encrypting) the key, `"load"` when loading (decrypting) the key.
 - `name`: The name of the key. When saving, it's the `AdbWebCryptoCredentialManager`'s `name` parameter. When loading, it's the name of the loaded key from its inner `TangoKeyStorage`.
 
+##### `pbkdf2SaltLength` (optional)
+
+The length of the PBKDF2 salt in bytes. Defaults to 16.
+
+- Minimum: 8
+- Maximum: 255
+
+##### `pbkdf2Iterations` (optional)
+
+The number of PBKDF2 iterations. Defaults to 1,000,000.
+
+- Minimum: 10,000
+- Maximum: 4,294,967,295
+
+##### `aesIvLength` (optional)
+
+The length of the AES initialization vector in bytes. Defaults to 12.
+
+- Minimum: 1
+- Maximum: 255
+
 #### Example
 
 ```ts transpile
@@ -234,19 +317,20 @@ import {
 } from "@yume-chan/adb-credential-web";
 
 const innerStorage = new TangoIndexedDbStorage();
-const storage = new TangoPasswordProtectedStorage(
-  innerStorage,
-  (reason, name) =>
+const storage = new TangoPasswordProtectedStorage({
+  storage: innerStorage,
+  requestPassword: (reason, name) =>
     prompt(
       `Password for ${reason === "save" ? "encrypting" : "decrypting"} ${name}:`
-    )
-);
+    ),
+  pbkdf2Iterations: 100000, // Custom security parameters
+});
 const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
 #### Error
 
-If the password is incorrect when loading (decrypting) the key, a `TangoPasswordProtectedStorage.PasswordIncorrectError` will be thrown.
+If the password is incorrect when loading (decrypting) the key, a `TangoPasswordProtectedStorage.PasswordIncorrectError` will be yielded from the generator.
 
 The `keyName` property contains the name of the key that failed to decrypt.
 
@@ -310,38 +394,6 @@ const manager = new AdbWebCryptoCredentialManager(storage);
 
 ## Custom credential manager
 
-:::danger
+For implementing custom credential managers, see the [detailed guide](./custom-credential-manager.mdx).
 
-This part of the documentation is out of date. To be updated.
 
-:::
-
-In Tango, each private key is a plain object with the following fields:
-
-- `buffer`: A [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) (or Node.js [`Buffer`](https://nodejs.org/api/buffer.html)) containing the private key in [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8) format.
-- `name`: A `string`, the name of the key. On Android 11 and above, it will appear in "Settings -> Developer options -> Wireless debugging -> Paired devices". The default value is `nouser@nohostname`.
-
-To create a custom credential store implementation, you need to provide two methods:
-
-- `generateKey`: Generate a new RSA private key with a modulus length of 2048 bits, a public exponent of 65537, and use SHA-1 as the hash algorithm. It can either synchronously or asynchronously return a private key in the above format. It should store the generated key somewhere so that it can be retrieved later.
-- `iterateKeys`: Iterate through all stored private keys. It can return either a synchronous or an asynchronous iterator. Each item in the iterator must be a private key in the above format. The iterator can have either zero, one, or multiple items.
-
-:::info
-
-You can choose to not saving the private key and generate a new one every time. However, this will cause the device to display a dialog asking the user to confirm the connection every time.
-
-:::
-
-:::danger
-
-You must not use a fixed private key for all users. Everyone can see the private key and use it to connect to other people's devices.
-
-:::
-
-The authentication process is as follows:
-
-1. Tango calls `iterateKeys`
-   1. For each key, Tango uses it in signature authentication. If the authentication succeeds, no further steps will be taken.
-2. Tango calls `iterateKeys` again
-   1. If it returns at least one key, Tango uses the first key in public key authentication. No matter the authentication succeeds or not, no further steps will be taken.
-3. `generateKey` is called, and the generated key is used in public key authentication.

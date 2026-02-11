@@ -1,0 +1,47 @@
+---
+sidebar_position: 8
+---
+
+# crop
+
+- **Type**: `ScrcpyCrop` class instance or `string`
+- **Default value**: `undefined` (no cropping)
+
+Crops the video stream to a specific region.
+
+Allows capturing only a portion of the screen by specifying a rectangle in the format `"WIDTH:HEIGHT:X:Y"`.
+
+For example, `"1080:1920:0:0"` would capture a 1080x1920 area starting from coordinates (0,0).
+
+Can be passed as either a string in the format mentioned or as a `ScrcpyCrop` class instance which implements `ScrcpyOptionValue` interface and serializes to the required format via its `toOptionValue()` method.
+
+```ts
+export class ScrcpyCrop implements ScrcpyOptionValue {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+
+  constructor(width: number, height: number, x: number, y: number);
+
+  toOptionValue(): string | undefined;
+}
+```
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions1_15, ScrcpyCrop } from "@yume-chan/scrcpy";
+
+// Using ScrcpyCrop class instance
+const options1 = new ScrcpyOptions1_15({
+  crop: new ScrcpyCrop(1080, 1920, 0, 0), // Crop to 1080x1920 from position (0,0)
+});
+```
+
+```ts transpile
+// Using string format
+const options2 = new ScrcpyOptions1_15({
+  crop: "1080:1920:0:0", // Same as above but using string format
+});
+```

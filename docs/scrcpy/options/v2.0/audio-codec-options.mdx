@@ -1,0 +1,59 @@
+---
+sidebar_position: 31
+---
+
+# audioCodecOptions
+
+:::info
+
+Added in Scrcpy 2.0
+
+:::
+
+* **Type**: `CodecOptions | string | undefined`
+* **Default value**: `undefined`
+
+Configures audio encoding parameters for the selected audio codec.
+
+This option allows fine-tuning of audio encoding parameters. It accepts either a structured object of codec options or a string with key-value pairs in the format "key1=value1,key2=value2".
+
+For detailed information about codec options, refer to the [Android MediaFormat documentation](https://developer.android.com/reference/android/media/MediaFormat).
+
+## Codec Options Classes
+
+For structured configuration, Scrcpy provides codec options classes that implement the `ScrcpyOptionValue` interface. These classes offer type-safe methods for setting codec parameters.
+
+- [ScrcpyCodecOptions](../v1.15/codec-options.mdx#scrcpycodecoptions): Base class for configuring codec options
+
+## Related options
+
+- [`audioCodec`](./audio-codec.mdx): Specifies the audio codec to use
+- [`audioBitRate`](./audio-bit-rate.mdx): Controls the audio bitrate
+
+## Examples
+
+Using codec options class instance for type-safe configuration:
+
+```ts transpile
+import { ScrcpyOptions2_0, ScrcpyCodecOptions } from "@yume-chan/scrcpy";
+
+// Using ScrcpyCodecOptions class instance
+const audioCodecOptions = new ScrcpyCodecOptions()
+    .setInt("complexity", 10) // Set audio complexity parameter
+    .setString("vbr", "on");  // Set variable bitrate to on
+
+const options1 = new ScrcpyOptions2_0({
+    audioCodecOptions: audioCodecOptions,
+});
+```
+
+Using string format for simple configuration:
+
+```ts transpile
+import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
+
+// Using string format
+const options2 = new ScrcpyOptions2_0({
+    audioCodecOptions: "complexity=10,vbr=on", // Simple string format
+});
+```

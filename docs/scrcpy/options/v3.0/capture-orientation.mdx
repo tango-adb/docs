@@ -1,0 +1,83 @@
+---
+sidebar_position: 48
+---
+
+import Version from "../../version-span";
+
+# captureOrientation
+
+:::info
+
+Added in Scrcpy 3.0
+
+:::
+
+* **Type**: `CaptureOrientation | string | undefined`
+* **Default value**: `undefined`
+
+Controls the orientation for video capture, replacing the previous `lockVideoOrientation` option with enhanced capabilities.
+
+This option allows more sophisticated control over video capture orientation, supporting locking to initial orientation, specific orientations, and flipping.
+
+## ScrcpyCaptureOrientation
+
+```ts
+export class CaptureOrientation implements ScrcpyOptionValue {
+    static Unlocked: CaptureOrientation;
+
+    lock: LockOrientation;
+    orientation: Orientation;
+    flip: boolean;
+
+    constructor(lock: LockOrientation, orientation: Orientation, flip?: boolean);
+
+    toOptionValue(): string | undefined;
+}
+```
+
+### Unlocked
+
+`static readonly Unlocked: CaptureOrientation`
+
+Represents an unlocked orientation state.
+
+### constructor
+
+`constructor(lock: LockOrientation, orientation: Orientation, flip?: boolean)`
+
+Creates a new CaptureOrientation with the specified parameters.
+
+### toOptionValue
+
+`toOptionValue(): string | undefined`
+
+Serializes the capture orientation to a string format for scrcpy.
+
+## Related options
+
+- [`angle`](./angle.mdx): Sets the rotation angle of the video stream
+- [`lockVideoOrientation`](../v1.15/lock-video-orientation.mdx) (deprecated): Previous option for orientation control (replaced by this option)
+
+## Examples
+
+Using capture orientation class instance for type-safe configuration:
+
+```ts transpile
+import { ScrcpyOptions3_0, ScrcpyCaptureOrientation } from "@yume-chan/scrcpy";
+
+// Using ScrcpyCaptureOrientation class instance
+const options1 = new ScrcpyOptions3_0({
+    captureOrientation: new ScrcpyCaptureOrientation(0, 0, false), // Unlocked orientation
+});
+```
+
+Using string format for simple configuration:
+
+```ts transpile
+import { ScrcpyOptions3_0 } from "@yume-chan/scrcpy";
+
+// Using string format
+const options2 = new ScrcpyOptions3_0({
+    captureOrientation: "90", // Rotate 90 degrees
+});
+```

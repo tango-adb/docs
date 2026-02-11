@@ -1,6 +1,16 @@
 ---
-sidebar_position: 5
 ---
+{/* 
+To Agents:
+When editing this file, please follow these specific formatting rules:
+1. Maintain two separate listings of options:
+   - "by version introduced" section: Each option appears only once in the version it was first introduced, with nested lists showing type changes/deprecations across versions
+   - "by category" section: Options may appear in multiple categories as applicable, with subcategories for broader areas like "Video" (broken down into Physical Display, Camera, Virtual Display, etc.)
+2. For options with type changes across versions, use nested list items with both "since" and "until" props where appropriate (e.g., `<Version since="v2.1" until="v2.5">type</Version>`)
+3. Deprecation notices should be separate nested list items (e.g., `<Version since="v3.0">Deprecated, use X instead</Version>`)
+4. Categories should be logically grouped to help users find related functionality
+5. Keep the chronological integrity of the "by version" section while allowing flexibility in the "by category" section
+*/}
 
 import Version from "../version-span";
 
@@ -89,9 +99,235 @@ const options = new AdbScrcpyOptions2_1({
 });
 ```
 
-## List of server options
+## List of server options (by version introduced)
 
-* <Version since="v2.1">[`video: boolean`](./video.mdx): Disables the video socket</Version>
-* <Version since="v2.0">[`videoCodec: string`](./video-codec.mdx): Use H.265 or AV1 video codecs</Version>
-* <Version since="v2.0">[`audio: boolean`](./audio.mdx): Disables the audio socket</Version>
-* <Version since="v1.22">[`control: boolean`](./control.mdx): Disables the control socket</Version>
+### v1.15
+
+  - [`logLevel`](./v1.15/log-level.mdx): Sets the logging level for the Scrcpy server
+    - <Version until="1.17">`"debug" | "info" | "warn" | "error"`</Version>
+    - <Version since="1.18">`"verbose" | "debug" | "info" | "warn" | "error"`</Version>
+  - [`maxSize`](./v1.15/max-size.mdx) (`number`): Sets the maximum width and height of the video stream
+  - [`maxFps`](./v1.15/max-fps.mdx) (`number`): Sets the maximum frame rate for the video stream in frames per second
+  - [`lockVideoOrientation`](./v1.15/lock-video-orientation.mdx): Locks the orientation of the video stream
+    - <Version until="1.17">`"-1 | 0 | 1 | 2 | 3"`</Version>
+    - <Version since="1.18">`"-2 | -1 | 0 | 1 | 2 | 3"`</Version>
+  - [`tunnelForward`](./v1.15/tunnel-forward.mdx) (`boolean`): Use ADB forward tunnel instead of reverse tunnel
+  - [`crop`](./v1.15/crop.mdx) (`string | ScrcpyCrop`): Crops the video stream to a specific region
+  - [`sendFrameMeta`](./v1.15/send-frame-meta.mdx) (`boolean`): Send presentation timestamps so that the client may record properly
+  - [`control`](./v1.15/control.mdx) (`boolean`): Disables the control socket
+  - [`displayId`](./v1.15/display-id.mdx) (`number`): Specifies which display to mirror
+  - [`showTouches`](./v1.15/show-touches.mdx) (`boolean`): Shows visual feedback for touches on the device screen
+  - [`stayAwake`](./v1.15/stay-awake.mdx) (`boolean`): Prevents the device from sleeping while screen casting is active
+  - [`codecOptions`](./v1.15/codec-options.mdx): Configures video encoding parameters for the selected codec
+    - <Version until="v1.17">`string | ScrcpyCodecOptions`</Version>
+    - <Version since="v2.0">Deprecated, use `videoCodecOptions` instead</Version>
+  - [`bitRate`](./v1.15/bit-rate.mdx): Sets the video bitrate for the stream in bits per second
+    - <Version until="v1.17">`number`</Version>
+    - <Version since="v2.0">Deprecated, use `videoBitRate` instead</Version>
+
+### v1.17
+
+  - [`encoderName`](./v1.17/encoder-name.mdx): Specifies the name of the encoder to use for video encoding
+    - <Version until="v1.17">`string`</Version>
+    - <Version since="v2.0">Deprecated, use `videoEncoder` instead</Version>
+
+### v1.18
+
+  - [`powerOffOnClose`](./v1.18/power-off-on-close.mdx) (`boolean`): Automatically powers off the Android device when the scrcpy connection is closed
+
+### v1.21
+
+  - [`clipboardAutosync`](./v1.21/clipboard-autosync.mdx) (`boolean`): Enables or disables automatic synchronization of clipboard content between device and client
+
+### v1.22
+
+  - [`downsizeOnError`](./v1.22/downsize-on-error.mdx) (`boolean`): Controls whether the server should downsize the video resolution when encountering initial encoding errors during startup
+  - [`sendDeviceMeta`](./v1.22/send-device-meta.mdx) (`boolean`): Controls whether the server should send device name and size at the start of the video stream
+  - [`sendDummyByte`](./v1.22/send-dummy-byte.mdx) (`boolean`): Controls whether the server should send a `0` byte at the start of the video stream to detect connection issues
+
+### v1.23
+
+  - [`cleanup`](./v1.23/cleanup.mdx) (`boolean`): Controls whether the server should perform cleanup tasks on exit
+
+### v1.24
+
+  - [`powerOn`](./v1.24/power-on.mdx) (`boolean`): Controls whether the server should power on the device when starting streaming
+
+### v2.0
+
+  - [`scid`](./v2.0/scid.mdx) (`InstanceId | string | undefined`): Specifies a session identifier for the Scrcpy server instance
+  - [`videoCodec`](./v2.0/video-codec.mdx) (`"h264" | "h265" | "av1"`): Use H.265 or AV1 video codecs
+  - [`videoBitRate`](./v2.0/video-bit-rate.mdx) (`number`): Sets the video bitrate for the stream in bits per second
+  - [`videoCodecOptions`](./v2.0/video-codec-options.mdx) (`CodecOptions | string | undefined`): Configures video encoding parameters for the selected video codec
+  - [`videoEncoder`](./v2.0/video-encoder.mdx) (`string | undefined`): Specifies the name of the encoder to use for video encoding
+  - [`audio`](./v2.0/audio.mdx) (`boolean`): Disables the audio socket
+  - [`audioCodec`](./v2.0/audio-codec.mdx): Specifies the audio codec to use by the server
+    - <Version since="v2.0" until="v2.2">`"raw" | "opus" | "aac"`</Version>
+    - <Version since="v2.3">`"raw" | "opus" | "aac" | "flac"`</Version>
+  - [`audioBitRate`](./v2.0/audio-bit-rate.mdx) (`number`): Sets the audio bitrate for the stream in bits per second
+  - [`audioCodecOptions`](./v2.0/audio-codec-options.mdx) (`CodecOptions | string | undefined`): Configures audio encoding parameters for the selected audio codec
+  - [`audioEncoder`](./v2.0/audio-encoder.mdx) (`string | undefined`): Specifies the name of the encoder to use for audio encoding
+  - [`listEncoders`](./v2.0/list-encoders.mdx) (`boolean`): Lists available encoders on the device and exits
+  - [`listDisplays`](./v2.0/list-displays.mdx) (`boolean`): Lists available displays on the device and exits
+  - [`sendCodecMeta`](./v2.0/send-codec-meta.mdx) (`boolean`): Controls whether codec metadata should be sent at the start of the video and audio streams
+
+### v2.1
+
+  - [`audioSource`](./v2.1/audio-source.mdx): Selects the audio source for capturing audio from the device
+    - <Version since="v2.1" until="v2.5">`"output" | "mic"`</Version>
+    - <Version since="v2.6" until="v3.1">`"output" | "mic" | "playback"`</Version>
+    - <Version since="v3.2">`"output" | "mic" | "playback" | "mic-unprocessed" | "mic-camcorder" | "mic-voice-recognition" | "mic-voice-communication" | "voice-call" | "voice-call-uplink" | "voice-call-downlink" | "voice-performance"`</Version>
+  - [`video`](./v2.1/video.mdx) (`boolean`): Disables the video socket
+
+### v2.2
+
+  - [`videoSource`](./v2.2/video-source.mdx) (`"display" | "camera"`): Selects the video source for capturing video from the device
+  - [`cameraId`](./v2.2/camera-id.mdx) (`string | undefined`): Specifies the camera ID to use when `videoSource` is set to `"camera"`
+  - [`cameraSize`](./v2.2/camera-size.mdx) (`string | undefined`): Sets the camera capture size when `videoSource` is set to `"camera"`
+  - [`cameraFacing`](./v2.2/camera-facing.mdx) (`"front" | "back" | "external" | undefined`): Specifies which camera facing direction to use when `videoSource` is set to `"camera"`
+  - [`cameraAr`](./v2.2/camera-ar.mdx) (`string | undefined`): Sets the camera aspect ratio when `videoSource` is set to `"camera"`
+  - [`cameraFps`](./v2.2/camera-fps.mdx) (`number | undefined`): Sets the camera capture frame rate when `videoSource` is set to `"camera"`
+  - [`cameraHighSpeed`](./v2.2/camera-high-speed.mdx) (`boolean`): Controls whether the camera should operate in high-speed mode when `videoSource` is set to `"camera"`
+  - [`listCameras`](./v2.2/list-cameras.mdx) (`boolean`): Lists available cameras on the device and exits
+  - [`listCameraSizes`](./v2.2/list-camera-sizes.mdx) (`boolean`): Lists available camera sizes for a specific camera and exits
+
+
+
+### v2.6
+
+  - [`audioDup`](./v2.6/audio-dup.mdx) (`boolean`): Controls whether to duplicate audio when capturing from the device
+
+### v3.0
+
+  - [`captureOrientation`](./v3.0/capture-orientation.mdx) (`CaptureOrientation | string | undefined`): Controls the orientation for video capture
+  - [`angle`](./v3.0/angle.mdx) (`number`): Sets the rotation angle of the video stream in degrees
+  - [`screenOffTimeout`](./v3.0/screen-off-timeout.mdx) (`number | undefined`): Controls how long the device screen should remain on after the scrcpy connection is established
+  - [`listApps`](./v3.0/list-apps.mdx) (`boolean`): Lists installed applications on the device and exits
+  - [`newDisplay`](./v3.0/new-display.mdx) (`NewDisplay | string | undefined`): Creates a new virtual display for video streaming
+  - [`vdSystemDecorations`](./v3.0/vd-system-decorations.mdx) (`boolean`): Controls whether the virtual display should include system decorations
+
+### v3.1
+
+  - [`vdDestroyContent`](./v3.1/vd-destroy-content.mdx) (`boolean`): Controls whether the virtual display content is destroyed when the connection is closed
+
+### v3.2
+
+  - [`displayImePolicy`](./v3.2/display-ime-policy.mdx) (`"local" | "fallback" | "hide" | undefined`): Controls the policy for displaying the Input Method Editor (IME) during screen mirroring
+
+## List of server options (by category)
+
+### Core Functionality
+
+  - [`control`](./v1.15/control.mdx) (`boolean`): Disables the control socket
+  - [`scid`](./v2.0/scid.mdx) (`InstanceId | string | undefined`): Specifies a session identifier for the Scrcpy server instance
+
+### Physical Display
+
+  - [`displayId`](./v1.15/display-id.mdx) (`number`): Specifies which display to mirror
+  - [`maxSize`](./v1.15/max-size.mdx) (`number`): Sets the maximum width and height of the video stream
+  - [`maxFps`](./v1.15/max-fps.mdx) (`number`): Sets the maximum frame rate for the video stream in frames per second
+  - <Version since="v1.15">[`sendFrameMeta`](./v1.15/send-frame-meta.mdx) (`boolean`)</Version>: Send presentation timestamps so that the client may record properly
+  - <Version since="v1.22">[`sendDeviceMeta`](./v1.22/send-device-meta.mdx) (`boolean`)</Version>: Controls whether the server should send device name and size at the start of the video stream
+  - <Version since="v2.0">[`sendCodecMeta`](./v2.0/send-codec-meta.mdx) (`boolean`)</Version>: Controls whether codec metadata should be sent at the start of the video and audio streams
+
+### Display Orientation & Rotation
+
+  - [`lockVideoOrientation`](./v1.15/lock-video-orientation.mdx): Locks the orientation of the video stream
+    - <Version until="1.17">`"-1 | 0 | 1 | 2 | 3"`</Version>
+    - <Version since="1.18" until="3.0">`"-2 | -1 | 0 | 1 | 2 | 3"`</Version>
+    - <Version since="v3.0">Deprecated, use `captureOrientation` instead</Version>
+  - <Version since="v3.0">[`captureOrientation`](./v3.0/capture-orientation.mdx) (`CaptureOrientation | string | undefined`)</Version>: Controls the orientation for video capture
+  - <Version since="v3.0">[`angle`](./v3.0/angle.mdx) (`number`)</Version>: Sets the rotation angle of the video stream in degrees
+
+### Camera
+
+  - <Version since="v2.2">[`videoSource`](./v2.2/video-source.mdx) (`"display" | "camera"`)</Version>: Selects the video source for capturing video from the device
+  - <Version since="v2.2">[`cameraId`](./v2.2/camera-id.mdx) (`string | undefined`)</Version>: Specifies the camera ID to use when `videoSource` is set to `"camera"`
+  - <Version since="v2.2">[`cameraSize`](./v2.2/camera-size.mdx) (`string | undefined`)</Version>: Sets the camera capture size when `videoSource` is set to `"camera"`
+  - <Version since="v2.2">[`cameraFacing`](./v2.2/camera-facing.mdx) (`"front" | "back" | "external" | undefined`)</Version>: Specifies which camera facing direction to use when `videoSource` is set to `"camera"`
+  - <Version since="v2.2">[`cameraAr`](./v2.2/camera-ar.mdx) (`string | undefined`)</Version>: Sets the camera aspect ratio when `videoSource` is set to `"camera"`
+  - <Version since="v2.2">[`cameraFps`](./v2.2/camera-fps.mdx) (`number | undefined`)</Version>: Sets the camera capture frame rate when `videoSource` is set to `"camera"`
+  - <Version since="v2.2">[`cameraHighSpeed`](./v2.2/camera-high-speed.mdx) (`boolean`)</Version>: Controls whether the camera should operate in high-speed mode when `videoSource` is set to `"camera"`
+  - <Version since="v2.2">[`listCameras`](./v2.2/list-cameras.mdx) (`boolean`)</Version>: Lists available cameras on the device and exits
+  - <Version since="v2.2">[`listCameraSizes`](./v2.2/list-camera-sizes.mdx) (`boolean`)</Version>: Lists available camera sizes for a specific camera and exits
+
+### Virtual Display
+
+  - <Version since="v3.0">[`newDisplay`](./v3.0/new-display.mdx) (`NewDisplay | string | undefined`)</Version>: Creates a new virtual display for video streaming
+  - <Version since="v3.0">[`vdSystemDecorations`](./v3.0/vd-system-decorations.mdx) (`boolean`)</Version>: Controls whether the virtual display should include system decorations
+  - <Version since="v3.1">[`vdDestroyContent`](./v3.1/vd-destroy-content.mdx) (`boolean`)</Version>: Controls whether the virtual display content is destroyed when the connection is closed
+  - <Version since="v3.2">[`displayImePolicy`](./v3.2/display-ime-policy.mdx) (`"local" | "fallback" | "hide" | undefined`)</Version>: Controls the policy for displaying the Input Method Editor (IME) during screen mirroring
+
+### Video Processing
+
+  - <Version since="v2.0">[`videoCodec`](./v2.0/video-codec.mdx) (`"h264" | "h265" | "av1"`)</Version>: Use H.265 or AV1 video codecs
+  - <Version since="v2.0">[`videoBitRate`](./v2.0/video-bit-rate.mdx) (`number`)</Version>: Sets the video bitrate for the stream in bits per second
+  - <Version since="v2.0">[`videoCodecOptions`](./v2.0/video-codec-options.mdx) (`CodecOptions | string | undefined`)</Version>: Configures video encoding parameters for the selected video codec
+  - <Version since="v2.0">[`videoEncoder`](./v2.0/video-encoder.mdx) (`string | undefined`)</Version>: Specifies the name of the encoder to use for video encoding
+  - <Version since="v2.1">[`video`](./v2.1/video.mdx) (`boolean`)</Version>: Disables the video socket
+
+### Audio
+
+  - <Version since="v2.0">[`audio`](./v2.0/audio.mdx) (`boolean`)</Version>: Disables the audio socket
+  - [`audioCodec`](./v2.0/audio-codec.mdx): Specifies the audio codec to use by the server
+    - <Version since="v2.0" until="v2.2">`"raw" | "opus" | "aac"`</Version>
+    - <Version since="v2.3">`"raw" | "opus" | "aac" | "flac"`</Version>
+  - <Version since="v2.0">[`audioBitRate`](./v2.0/audio-bit-rate.mdx) (`number`)</Version>: Sets the audio bitrate for the stream in bits per second
+  - <Version since="v2.0">[`audioCodecOptions`](./v2.0/audio-codec-options.mdx) (`CodecOptions | string | undefined`)</Version>: Configures audio encoding parameters for the selected audio codec
+  - <Version since="v2.0">[`audioEncoder`](./v2.0/audio-encoder.mdx) (`string | undefined`)</Version>: Specifies the name of the encoder to use for audio encoding
+  - [`audioSource`](./v2.1/audio-source.mdx): Selects the audio source for capturing audio from the device
+    - <Version since="v2.1" until="v2.5">`"output" | "mic"`</Version>
+    - <Version since="v2.6" until="v3.1">`"output" | "mic" | "playback"`</Version>
+    - <Version since="v3.2">`"output" | "mic" | "playback" | "mic-unprocessed" | "mic-camcorder" | "mic-voice-recognition" | "mic-voice-communication" | "voice-call" | "voice-call-uplink" | "voice-call-downlink" | "voice-performance"`</Version>
+  - <Version since="v2.6">[`audioDup`](./v2.6/audio-dup.mdx) (`boolean`)</Version>: Controls whether to duplicate audio when capturing from the device
+
+### Device Controls
+
+  - [`showTouches`](./v1.15/show-touches.mdx) (`boolean`): Shows visual feedback for touches on the device screen
+  - [`stayAwake`](./v1.15/stay-awake.mdx) (`boolean`): Prevents the device from sleeping while screen casting is active
+  - <Version since="v1.18">[`powerOffOnClose`](./v1.18/power-off-on-close.mdx) (`boolean`)</Version>: Automatically powers off the Android device when the scrcpy connection is closed
+  - <Version since="v1.24">[`powerOn`](./v1.24/power-on.mdx) (`boolean`)</Version>: Controls whether the server should power on the device when starting streaming
+  - <Version since="v3.0">[`screenOffTimeout`](./v3.0/screen-off-timeout.mdx) (`number | undefined`)</Version>: Controls how long the device screen should remain on after the scrcpy connection is established
+
+### Data Management
+
+  - [`crop`](./v1.15/crop.mdx) (`string | ScrcpyCrop`): Crops the video stream to a specific region
+  - <Version since="v1.21">[`clipboardAutosync`](./v1.21/clipboard-autosync.mdx) (`boolean`)</Version>: Enables or disables automatic synchronization of clipboard content between device and client
+
+### Network & Connection
+
+  - [`tunnelForward`](./v1.15/tunnel-forward.mdx) (`boolean`): Use ADB forward tunnel instead of reverse tunnel
+  - <Version since="v1.22">[`sendDummyByte`](./v1.22/send-dummy-byte.mdx) (`boolean`)</Version>: Controls whether the server should send a `0` byte at the start of the video stream to detect connection issues
+
+### Encoding & Quality
+
+  - [`bitRate`](./v1.15/bit-rate.mdx): Sets the video bitrate for the stream in bits per second
+    - <Version since="v1.15" until="v1.17">`number`</Version>
+    - <Version since="v2.0">Deprecated, use `videoBitRate` instead</Version>
+  - [`codecOptions`](./v1.15/codec-options.mdx): Configures video encoding parameters for the selected codec
+    - <Version since="v1.15" until="v1.17">`string | ScrcpyCodecOptions`</Version>
+    - <Version since="v2.0">Deprecated, use `videoCodecOptions` instead</Version>
+  - [`encoderName`](./v1.17/encoder-name.mdx): Specifies the name of the encoder to use for video encoding
+    - <Version since="v1.17" until="v1.17">`string`</Version>
+    - <Version since="v2.0">Deprecated, use `videoEncoder` instead</Version>
+
+### Error Handling & Performance
+
+  - <Version since="v1.22">[`downsizeOnError`](./v1.22/downsize-on-error.mdx) (`boolean`)</Version>: Controls whether the server should downsize the video resolution when encountering initial encoding errors during startup
+
+### System & Cleanup
+
+  - <Version since="v1.23">[`cleanup`](./v1.23/cleanup.mdx) (`boolean`)</Version>: Controls whether the server should perform cleanup tasks on exit
+
+### Discovery & Debugging
+
+  - <Version since="v2.0">[`listEncoders`](./v2.0/list-encoders.mdx) (`boolean`)</Version>: Lists available encoders on the device and exits
+  - <Version since="v2.0">[`listDisplays`](./v2.0/list-displays.mdx) (`boolean`)</Version>: Lists available displays on the device and exits
+  - <Version since="v3.0">[`listApps`](./v3.0/list-apps.mdx) (`boolean`)</Version>: Lists installed applications on the device and exits
+
+### Foundational Concepts
+
+  - [`ScrcpyOptionValue`](./option-value.mdx): Interface for values that can be converted to scrcpy option strings
+  - [`logLevel`](./v1.15/log-level.mdx): Sets the logging level for the Scrcpy server
+    - <Version until="1.17">`"debug" | "info" | "warn" | "error"`</Version>
+    - <Version since="1.18">`"verbose" | "debug" | "info" | "warn" | "error"`</Version>
