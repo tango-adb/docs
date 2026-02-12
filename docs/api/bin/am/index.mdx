@@ -1,0 +1,46 @@
+---
+sidebar_position: 1
+---
+
+# Activity Manager (`am`)
+
+The `am` (Activity Manager) executable is Android's command-line tool for managing activities and broadcasting intents. It handles launching activities, sending broadcasts, and managing application lifecycle events on Android devices.
+
+## Overview
+
+The `am` executable provides various operations for Android activity management:
+
+- Starting activities with specific intents, actions, and components
+- Broadcasting intents to registered receivers
+- Managing application lifecycle with options for user targeting and display control
+- Supporting compatibility across different Android API levels
+
+## Creating an ActivityManager Instance
+
+The `@yume-chan/android-bin` library provides an `ActivityManager` class that wraps the `am` executable with enhanced functionality and cross-version compatibility.
+
+```ts
+import { ActivityManager } from "@yume-chan/android-bin";
+
+// highlight-start
+const activityManager = new ActivityManager(adb, apiLevel);
+// highlight-end
+```
+
+The `ActivityManager` constructor accepts two parameters:
+
+1. `adb`: An authenticated ADB connection instance
+2. `apiLevel`: The target device's Android API level (optional)
+
+### API Level Compatibility
+
+The `apiLevel` parameter enables behavior normalization across different Android versions. The `ActivityManager` class automatically adjusts command routing based on the provided API level:
+
+- **Command routing**: On older Android versions (API level ≤ 25), commands are routed through the direct `am` executable. On newer versions, commands use the `cmd activity` interface for better performance and reliability.
+- **Feature availability**: Certain options and behaviors are adjusted based on the Android version to ensure compatibility.
+
+## Available Methods
+
+- [startActivity](./start-activity) - Starts an Android activity with specified options
+- [broadcast](./broadcast) - Sends a broadcast intent to registered receivers
+- [Intent Format](./intent-format) - Details about the Intent interface and its properties

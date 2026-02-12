@@ -1,0 +1,42 @@
+---
+sidebar_position: 2
+---
+
+# startActivity
+
+The `startActivity` method launches an Android activity with the specified options and intent.
+
+## Signature
+
+```ts
+async startActivity(options: ActivityManager.StartActivityOptions): Promise<void>
+```
+
+## Parameters
+
+The `StartActivityOptions` interface includes the following properties:
+
+| Property        | Type                            | Description                                            |
+| --------------- | ------------------------------- | ------------------------------------------------------ |
+| `displayId`     | `number`                        | Specify which display to launch the activity on        |
+| `windowingMode` | `number`                        | Specify the windowing mode for the activity            |
+| `forceStop`     | `boolean`                       | Force stop the target app before starting the activity |
+| `user`          | `SingleUser`                    | Target a specific user for the activity                |
+| `intent`        | [`Intent`](./intent-format.mdx) | The intent describing the activity to start (required) |
+
+## Usage
+
+```ts
+await activityManager.startActivity({
+  intent: {
+    action: "android.intent.action.MAIN",
+    component: {
+      packageName: "com.android.settings",
+      className: "com.android.settings.Settings",
+    },
+  },
+  user: 0,
+});
+```
+
+The method waits for the activity to start and returns when the process completes or throws an error if the activity fails to start.

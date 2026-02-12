@@ -56,9 +56,7 @@ import type {
 } from "@yume-chan/adb";
 import type { TangoKeyStorage } from "@yume-chan/adb-credential-web";
 
-export declare class AdbWebCryptoCredentialManager
-  implements AdbCredentialManager
-{
+export declare class AdbWebCryptoCredentialManager implements AdbCredentialManager {
   constructor(storage: TangoKeyStorage, name?: string);
 
   generateKey(): Promise<AdbPrivateKey>;
@@ -94,7 +92,7 @@ export interface TangoKey {
 export interface TangoKeyStorage {
   save(
     privateKey: Uint8Array,
-    name: string | undefined
+    name: string | undefined,
   ): MaybePromiseLike<undefined>;
 
   load(): Iterable<MaybeError<TangoKey>> | AsyncIterable<MaybeError<TangoKey>>;
@@ -170,15 +168,9 @@ const manager = new AdbWebCryptoCredentialManager(storage);
 
 ```ts
 export declare class TangoIndexedDbStorage implements TangoKeyStorage {
-  constructor(options?: {
-    databaseName?: string;
-    storeName?: string;
-  });
+  constructor(options?: { databaseName?: string; storeName?: string });
 
-  save(
-    privateKey: Uint8Array,
-    name: string | undefined
-  ): Promise<undefined>;
+  save(privateKey: Uint8Array, name: string | undefined): Promise<undefined>;
 
   load(): AsyncGenerator<TangoKey, void, void>;
 
@@ -240,7 +232,7 @@ The `pbkdf2SaltLength` parameter specifies the length of the random salt used in
 export namespace TangoPasswordProtectedStorage {
   export type RequestPassword = (
     reason: "save" | "load",
-    name: string | undefined
+    name: string | undefined,
   ) => MaybePromiseLike<string>;
 
   export type PasswordIncorrectError = typeof PasswordIncorrectError;
@@ -257,10 +249,7 @@ export declare class TangoPasswordProtectedStorage implements TangoKeyStorage {
     aesIvLength?: number | undefined;
   });
 
-  save(
-    privateKey: Uint8Array,
-    name: string | undefined
-  ): Promise<undefined>;
+  save(privateKey: Uint8Array, name: string | undefined): Promise<undefined>;
 
   load(): AsyncGenerator<MaybeError<TangoKey>, void, void>;
 }
@@ -321,7 +310,7 @@ const storage = new TangoPasswordProtectedStorage({
   storage: innerStorage,
   requestPassword: (reason, name) =>
     prompt(
-      `Password for ${reason === "save" ? "encrypting" : "decrypting"} ${name}:`
+      `Password for ${reason === "save" ? "encrypting" : "decrypting"} ${name}:`,
     ),
   pbkdf2Iterations: 100000, // Custom security parameters
 });
@@ -368,32 +357,8 @@ The `@yume-chan/adb-credential-nodejs` package re-exports `AdbWebCryptoCredentia
 npm i @yume-chan/adb-credential-nodejs
 ```
 
-### `TangoNodeStorage`
-
-| Characteristic   | Description                         |
-| ---------------- | ----------------------------------- |
-| Number of keys   | Unlimited for loading, 1 for saving |
-| Encrypted        | No                                  |
-| `worker_threads` | Yes                                 |
-
-This storage uses a file to store the ADB key.
-
-It follows the same convention as [Google ADB](../../../internal/key.mdx), plus it will read the public key for key name (and fallback to the default name if not found).
-
-To interop with Google ADB, don't chain `TangoNodeStorage` with any other encrypted storages.
-
-```ts transpile
-import {
-  AdbWebCryptoCredentialManager,
-  TangoNodeStorage,
-} from "@yume-chan/adb-credential-nodejs";
-
-const storage = new TangoNodeStorage();
-const manager = new AdbWebCryptoCredentialManager(storage);
-```
+See the [TangoNodeStorage](./node-storage.mdx) page for more details.
 
 ## Custom credential manager
 
 For implementing custom credential managers, see the [detailed guide](./custom-credential-manager.mdx).
-
-

@@ -8,6 +8,32 @@ For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
 
 ## `@yume-chan/adb`
 
+### Breaking: Renamed `AdbCredentialStore` to `AdbCredentialManager`
+
+The credential store interface has been renamed from `AdbCredentialStore` to `AdbCredentialManager` to better reflect its role in credential management. The old interface has been completely removed.
+
+**Migration guide:**
+
+- Replace all imports of `AdbCredentialStore` with `AdbCredentialManager`
+- Replace all usages of `AdbCredentialStore` with `AdbCredentialManager`
+- The interface API remains the same, so only import/type name changes are required
+
+**Before:**
+
+```ts
+import type { AdbCredentialStore } from "@yume-chan/adb-credential-web";
+
+const store: AdbCredentialStore = ...;
+```
+
+**After:**
+
+```ts
+import type { AdbCredentialManager } from "@yume-chan/adb-credential-web";
+
+const store: AdbCredentialManager = ...;
+```
+
 ### Server client can filter devices by state
 
 `AdbServerClient.prototype.getDevices` and `AdbServerClient.prototype.trackDevices` now accept an optional `includeStates` parameter.
@@ -88,6 +114,45 @@ const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
 });
 ```
 
+### Breaking: PTY Type Renaming
+
+The PTY types have been renamed to simplify the naming convention. The main interface `AdbPtyProcess` has been renamed to `AdbPty`, and the specific implementations have also been renamed:
+
+- `AdbNoneProtocolPtyProcess` → `AdbNoneProtocolPty`
+- `AdbShellProtocolPtyProcess` → `AdbShellProtocolPty`
+
+**Migration guide:**
+
+- Replace all imports and references to `AdbPtyProcess` with `AdbPty`
+- Replace all imports and references to `AdbNoneProtocolPtyProcess` with `AdbNoneProtocolPty`
+- Replace all imports and references to `AdbShellProtocolPtyProcess` with `AdbShellProtocolPty`
+
+**Before:**
+
+```ts
+import type { AdbPtyProcess } from "@yume-chan/adb";
+
+// Using old PTY process
+const pty: AdbPtyProcess = await adb.subprocess.shellProtocol.pty({
+  command: ["bash"],
+});
+```
+
+**After:**
+
+```ts
+import type {
+  AdbPty,
+  AdbNoneProtocolPty,
+  AdbShellProtocolPty,
+} from "@yume-chan/adb";
+
+// Using new PTY interface
+const pty: AdbPty = await adb.subprocess.shellProtocol.pty({
+  command: ["bash"],
+});
+```
+
 ### Shell protocol raw mode now supports closing `stdin`
 
 Shell protocol in raw mode is the only combination that supports [closing `stdin`](../api/adb/subprocess/shell-protocol.mdx#closing-stdin). Some programs (like `cat`) might rely on this behavior to properly function.
@@ -128,4 +193,128 @@ const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
     },
   }),
 });
+```
+
+## `@yume-chan/adb-credential-web`
+
+### Breaking: `AdbWebCredentialStore` replaced by `AdbWebCryptoCredentialManager`
+
+The legacy `AdbWebCredentialStore` class has been completely removed and replaced with the new modular architecture. Users must migrate to the new `AdbWebCryptoCredentialManager` with a `TangoKeyStorage` implementation.
+
+**Migration guide:**
+
+- Replace `new AdbWebCredentialStore()` with `new AdbWebCryptoCredentialManager(storage)`
+- Choose an appropriate storage implementation:
+  - `TangoIndexedDbStorage`: Uses IndexedDB for storing multiple keys with unlimited capacity, supports Web Workers
+  - `TangoLocalStorage`: Uses browser localStorage for simple single-key storage
+  - `TangoPasswordProtectedStorage`: Provides password-based encryption for stored keys (requires an underlying storage)
+  - `TangoPrfStorage`: Uses WebAuthn PRF extension for multi-factor authentication (requires an underlying storage)
+
+**Before:**
+
+```ts
+import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
+
+const store = new AdbWebCredentialStore();
+```
+
+**After:**
+
+```ts
+import {
+  AdbWebCryptoCredentialManager,
+  TangoIndexedDbStorage,
+} from "@yume-chan/adb-credential-web";
+
+const storage = new TangoIndexedDbStorage();
+const credentialManager = new AdbWebCryptoCredentialManager(storage);
+```
+
+## `@yume-chan/adb-credential-nodejs`
+
+### Added `TangoNodeStorage` class
+
+Added `TangoNodeStorage` class which is a Node.js ADB key storage manager that implements the `TangoKeyStorage` interface. It supports all Google ADB key storage conventions including:
+
+- File-based storage compatible with Google ADB format (`~/.android/adbkey`)
+- Secure file permissions (0o600 for private keys, 0o644 for public keys)
+- Automatic directory creation and username generation using `username@hostname` format
+- ADB_VENDOR_KEYS environment variable support for additional vendor keys
+- Proper PEM format handling with both strict and lax format parsing
+- Custom error types for robust key management (`KeyError`, `InvalidKeyError`, `VendorKeyError`)
+
+See documentation page [TangoNodeStorage](./daemon/credential-store/node-storage.mdx) for more details and usages.
+
+## `@yume-chan/adb-daemon-webusb`
+
+### Fixed WebUSB SharedArrayBuffer Issue
+
+Fixed an issue where WebUSB transfers would fail when using SharedArrayBuffer. The problem occurred because WebUSB doesn't support SharedArrayBuffer directly, which could cause connection failures.
+
+**Fix**: Added conversion to local Uint8Array before WebUSB transfer using `toLocalUint8Array()` function.
+
+### Fixed WebUSB Connection Event Handling
+
+Fixed an issue where device observers would lose track of manually selected devices. When a device was selected via `navigator.usb.requestDevice()`, Chrome wouldn't fire a "connect" event, causing device observers to miss the device.
+
+**Fix**: Now manually dispatches a connect event after successful device selection to notify observers.
+
+## `@yume-chan/adb-server-node-tcp`
+
+### New constructor signatures for `AdbServerNodeTcpConnector`
+
+The `AdbServerNodeTcpConnector` class has been completely rewritten with new constructor signatures and functionality, replacing the old API entirely.
+
+**Migration guide:**
+
+- The old constructor that only accepted `SocketConnectOpts` directly has been replaced
+- The new constructor supports multiple parameter types: no parameters, string specifications, TCP socket options, and IPC socket options
+
+**Before:**
+
+```ts
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
+// Old constructor only accepted SocketConnectOpts directly
+const connector = new AdbServerNodeTcpConnector({
+  host: "localhost",
+  port: 5037,
+});
+```
+
+**After:**
+
+```ts
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
+// New constructor supports multiple parameter types:
+// 1. No parameters - uses environment variables or defaults
+const connector1 = new AdbServerNodeTcpConnector();
+
+// 2. String specification
+const connector2 = new AdbServerNodeTcpConnector("tcp:localhost:5037");
+
+// 3. TCP socket options with optional port
+const connector3 = new AdbServerNodeTcpConnector({
+  host: "localhost",
+  port: 5037,
+});
+
+// 4. IPC socket options (Unix domain sockets)
+const connector4 = new AdbServerNodeTcpConnector({ path: "/path/to/socket" });
+```
+
+### Environment Variable Support
+
+Added support for ADB environment variables that automatically reads `ADB_SERVER_SOCKET`, `ANDROID_ADB_SERVER_ADDRESS`, and `ANDROID_ADB_SERVER_PORT` environment variables.
+
+**Usage:**
+
+```ts
+// Automatically uses environment variables if set:
+// ADB_SERVER_SOCKET - full socket specification
+// ANDROID_ADB_SERVER_ADDRESS - server address
+// ANDROID_ADB_SERVER_PORT - server port
+process.env.ADB_SERVER_SOCKET = "tcp:192.168.1.100:5037";
+const connector = new AdbServerNodeTcpConnector(); // Will use env var
 ```

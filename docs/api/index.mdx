@@ -12,15 +12,15 @@ There are three sub categories:
 
 The `Adb` class implements core ADB commands. These commands are handle by ADB Daemon on Android devices.
 
-* [**Forward tunnel**](./adb/socket.mdx#forward-tunnel): Connect to a socket address on the device
-* [`subprocess`](./adb/subprocess/index.mdx): Spawn processes on device
-* [`power`](./adb/power.mdx): Shutdown/reboot device
-* [`reverse`](./adb/reverse/index.mdx): Manage reverse port forwarding
-* [`tcpip`](./adb/tcpip.mdx): Enable/disable ADB over Wi-Fi
-* [`getProp`](./adb/get-prop.mdx): Shorthand for `getprop` executable
-* [`rm`](./adb/rm.md): Delete files on device
-* [`sync`](./adb/sync/index.mdx): Interact with device filesystem
-* [`framebuffer`](./adb/framebuffer.mdx): Capture device screen
+- [**Forward tunnel**](./adb/socket.mdx#forward-tunnel): Connect to a socket address on the device
+- [`subprocess`](./adb/subprocess/index.mdx): Spawn processes on device
+- [`power`](./adb/power.mdx): Shutdown/reboot device
+- [`reverse`](./adb/reverse/index.mdx): Manage reverse port forwarding
+- [`tcpip`](./adb/tcpip.mdx): Enable/disable ADB over Wi-Fi
+- [`getProp`](./adb/get-prop.mdx): Shorthand for `getprop` executable
+- [`rm`](./adb/rm.md): Delete files on device
+- [`sync`](./adb/sync/index.mdx): Interact with device filesystem
+- [`framebuffer`](./adb/framebuffer.mdx): Capture device screen
 
 ## `AdbServerClient` from `@yume-chan/adb`
 
@@ -30,21 +30,21 @@ There are two types of ADB server commands:
 
 ### Commands handled by server itself
 
-* [`getVersion`](./server/get-version.mdx): Get ADB server version
-* [`killServer`](./server/kill-server.mdx): Kill ADB server
-* [`getServerFeatures`](./server/get-server-features.mdx): Get ADB server features
-* [`getDevices`](./server/get-devices.mdx): Get devices connected to ADB server
-* [`trackDevices`](./server/track-devices.mdx): Watch devices connected to ADB server
+- [`getVersion`](./server/get-version.mdx): Get ADB server version
+- [`killServer`](./server/kill-server.mdx): Kill ADB server
+- [`getServerFeatures`](./server/get-server-features.mdx): Get ADB server features
+- [`getDevices`](./server/get-devices.mdx): Get devices connected to ADB server
+- [`trackDevices`](./server/track-devices.mdx): Watch devices connected to ADB server
 
 ### Commands handled by device
 
 These commands target a specific device. All these commands accepts a [Device selector](./server/selector.mdx).
 
-* [`getDeviceFeatures`](./server/get-device-features.mdx): Get device features
-* [`createDeviceConnection`](./server/create-device-connection.mdx): Create a socket to ADB Daemon on device
-* [`createTransport`](./server/create-transport.mdx): Create an `AdbTransport` object for the device, for low-level usages
-* [`createAdb`](./server/create-adb.mdx): Creates an `Adb` object for the device, for high-level usages
-* [`waitFor`](./server/wait-for.mdx): Wait for a device to be connected or disconnected
+- [`getDeviceFeatures`](./server/get-device-features.mdx): Get device features
+- [`createDeviceConnection`](./server/create-device-connection.mdx): Create a socket to ADB Daemon on device
+- [`createTransport`](./server/create-transport.mdx): Create an `AdbTransport` object for the device, for low-level usages
+- [`createAdb`](./server/create-adb.mdx): Creates an `Adb` object for the device, for high-level usages
+- [`waitFor`](./server/wait-for.mdx): Wait for a device to be connected or disconnected
 
 ## `@yume-chan/android-bin`
 
@@ -54,21 +54,25 @@ Exposed as individual classes from [`@yume-chan/android-bin`](https://www.npmjs.
 npm i @yume-chan/android-bin
 ```
 
-* `bu`: Backup/restore apps and data
-* `bugreport`: Dump device information
-* `cmd`: Interact with Android system services
-* **Demo mode**: Control demo mode
-* `dumpsys`: Dump system service information
-* `logcat`: View device logs
-    * [`binary`](./bin/logcat/binary.mdx): Read logcat entries in binary format
-    * [`clear`](./bin/logcat/clear.mdx): Delete all logcat entries
-* **Overlay Display** Manages simulated secondary displays
-* [`pm`](./bin/pm/index.mdx): Manage apps
-      * [`listPackages`](./bin/pm/list-packages.mdx): Query installed packages with filtering options
-      * [`getPackageSources`](./bin/pm/get-package-sources.mdx): Get APK file paths for a package
-      * [`install`](./bin/pm/install.mdx): Install APK files on device filesystem
-      * [`installStream`](./bin/pm/install-stream.mdx): Install APK files from a `ReadableStream`
-* `settings`: Get/set Android system settings
+- `bu`: Backup/restore apps and data
+- `bugreport`: Dump device information
+- `cmd`: Interact with Android system services
+- **Demo mode**: Control demo mode
+- `dumpsys`: Dump system service information
+- `logcat`: View device logs
+  - [`binary`](./bin/logcat/binary.mdx): Read logcat entries in binary format
+  - [`clear`](./bin/logcat/clear.mdx): Delete all logcat entries
+- **Overlay Display** Manages simulated secondary displays
+- [`pm`](./bin/pm/index.mdx): Manage apps
+  - [`listPackages`](./bin/pm/list-packages.mdx): Query installed packages with filtering options
+  - [`getPackageSources`](./bin/pm/get-package-sources.mdx): Get APK file paths for a package
+  - [`install`](./bin/pm/install.mdx): Install APK files on device filesystem
+  - [`installStream`](./bin/pm/install-stream.mdx): Install APK files from a `ReadableStream`
+- `settings`: Get/set Android system settings
+- [`am`](./bin/am/index.mdx): Manage activities and broadcasts
+  - [`startActivity`](./bin/am/start-activity.mdx): Start Android activities with specific intents
+  - [`broadcast`](./bin/am/broadcast.mdx): Send broadcast intents to registered receivers
+  - [`Intent Format`](./bin/am/intent-format.mdx): Details about the Intent interface and its properties
 
 :::note
 

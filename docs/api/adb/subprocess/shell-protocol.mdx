@@ -8,7 +8,7 @@ sidebar_position: 2
 export declare class AdbShellProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<AdbShellProtocolProcess>;
 
   pty(options?: {
@@ -45,7 +45,7 @@ export interface AdbShellProtocolProcess {
 export declare class AdbShellProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<AdbShellProtocolProcess>;
 }
 ```
@@ -108,7 +108,7 @@ setTimeout(() => abortController.abort(), 1000);
 
 const process = await adb.subprocess.shellProtocol!.spawn(
   "logcat",
-  abortController.signal
+  abortController.signal,
 );
 ```
 
@@ -157,14 +157,14 @@ await Promise.all([
       write(chunk) {
         console.log("stdout", chunk);
       },
-    })
+    }),
   ),
   process.stderr.pipeThrough(new TextDecoderStream()).pipeTo(
     new WritableStream({
       write(chunk) {
         console.log("stderr", chunk);
       },
-    })
+    }),
   ),
 ]);
 ```
@@ -185,10 +185,10 @@ If the remaining data of a stream is not needed, `stream.cancel()` (or `reader.c
 
 A `Promise` that resolves with the process's exit code.
 
-* If the process exits normally using `exit(code)`, the promise resolves with `code & 0x7f`.
-* If the process is killed by a signal, the promise resolves with `128 + signal number`. (For example, `SIGKILL` is signal number `9`, so the exit code will be `128 + 9 = 137`)
-* If the [`signal`](#signal) option aborts the process, the promise rejects with `signal.reason`.
-* If the process is killed by calling [`kill()`](#kill), the promise rejects with a "Socket ended without exit message" error.
+- If the process exits normally using `exit(code)`, the promise resolves with `code & 0x7f`.
+- If the process is killed by a signal, the promise resolves with `128 + signal number`. (For example, `SIGKILL` is signal number `9`, so the exit code will be `128 + 9 = 137`)
+- If the [`signal`](#signal) option aborts the process, the promise rejects with `signal.reason`.
+- If the process is killed by calling [`kill()`](#kill), the promise rejects with a "Socket ended without exit message" error.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -287,6 +287,15 @@ await Promise.all([
 The result of `spawn` is a mixin between `Promise<AdbShellProtocolProcess>` and a `Wait` helper.
 
 It provides a simple way to wait for the process to exit, and read its output.
+
+:::info[Important: Consumption Once]
+The result of `spawn()` can only be consumed once. You must choose one of these approaches:
+
+1. Await the promise directly to get the process object for manual interaction
+2. Use the wait interface to get the output directly when the process completes
+
+You cannot use both approaches with the same result of `spawn()`.
+:::
 
 ```ts showLineNumbers
 export interface WaitOptions {

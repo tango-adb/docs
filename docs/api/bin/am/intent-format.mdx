@@ -1,0 +1,373 @@
+---
+sidebar_position: 4
+---
+
+# Intent Format
+
+The `Intent` interface allows specifying various aspects of an Android intent when using Activity Manager methods.
+
+## Properties
+
+| Property     | Type                  | Description                                                |
+| ------------ | --------------------- | ---------------------------------------------------------- |
+| `action`     | `string`              | The action to perform (e.g., `android.intent.action.MAIN`) |
+| `data`       | `string`              | URI data associated with the intent                        |
+| `type`       | `string`              | MIME type of the data                                      |
+| `identifier` | `string`              | Unique identifier for the intent                           |
+| `categories` | `string[]`            | Categories that apply to the intent                        |
+| `extras`     | `Record<string, any>` | Additional key-value pairs to pass with the intent         |
+| `flags`      | `number`              | Flags controlling how the intent is handled                |
+| `package`    | `string`              | Package name containing the component                      |
+| `component`  | `ComponentName`       | Explicitly specify the component to handle the intent      |
+
+## Intent Extras
+
+The `extras` field supports various data types:
+
+- Basic types: `string`, `number`, `boolean`, `null`
+- Objects: `ComponentName`, `IntentStringExtra`, `IntentNumberExtra`
+- Arrays: `IntentStringArrayExtra`, `IntentNumberArrayExtra`
+
+### Null
+
+Null values are serialized using the `--esn` flag:
+
+- **Type**: `null`
+- **Flag**: `--esn`
+- **Format**: `--esn key`
+
+**Example**:
+
+```ts
+({
+  extras: {
+    optionalValue: null, // Serializes as: --esn optionalValue
+  },
+});
+```
+
+### String
+
+String values are serialized using the `--es` flag:
+
+- **Type**: `string`
+- **Flag**: `--es`
+- **Format**: `--es key value`
+
+**Example**:
+
+```ts
+({
+  extras: {
+    name: "example", // Serializes as: --es name example
+  },
+});
+```
+
+### Number
+
+JavaScript `number` type values are treated as integers only. Decimal values will cause an error and must use `IntentNumberExtra` instead.
+
+#### Small Integer Numbers (int)
+
+- **Flag**: `--ei`
+- **Format**: `--ei key value`
+- **Range**: -2,147,483,648 to 2,147,483,647
+
+**Example**:
+
+```ts
+({
+  extras: {
+    count: 42, // Serializes as: --ei count 42
+  },
+});
+```
+
+#### Large Integer Numbers (long)
+
+- **Flag**: `--el`
+- **Format**: `--el key value`
+- **Range**: Outside int range
+
+**Example**:
+
+To always serialize a number as long, even if it falls within the int range, use [`BigInt`](#bigint) or `IntentNumberExtra` with `type: "long"`:
+
+```ts
+({
+  extras: {
+    bigNumber: 3000000000, // Serializes as: --el bigNumber 3000000000
+  },
+});
+```
+
+#### Decimal Numbers (ERROR)
+
+- **Note**: JavaScript `number` type with decimal values will throw an error
+- **Solution**: Use `IntentNumberExtra` with appropriate type instead
+
+**Example**:
+
+```ts
+({
+  extras: {
+    // This will throw an error:
+    percentage: 99.5,
+
+    // Instead use:
+    percentage: {
+      type: "float", // or "double"
+      value: 99.5,
+    }, // Serializes as: --ef percentage 99.5
+  },
+});
+```
+
+### BigInt
+
+BigInt values are serialized using the `--el` flag:
+
+- **Type**: `bigint`
+- **Flag**: `--el`
+- **Format**: `--el key value`
+
+**Example**:
+
+```ts
+({
+  extras: {
+    id: 12345678901234567890n, // Serializes as: --el id 12345678901234567890
+  },
+});
+```
+
+### Boolean
+
+Boolean values are serialized using the `--ez` flag:
+
+- **Type**: `boolean`
+- **Flag**: `--ez`
+- **Format**: `--ez key true/false`
+
+**Example**:
+
+```ts
+({
+  extras: {
+    enabled: true, // Serializes as: --ez enabled true
+    disabled: false, // Serializes as: --ez disabled false
+  },
+});
+```
+
+### Component Name
+
+Component names are serialized using the `--ecn` flag:
+
+- **Type**: `ComponentName`
+- **Flag**: `--ecn`
+- **Format**: `--ecn key package/class`
+
+**Example**:
+
+```ts
+({
+  extras: {
+    target: {
+      packageName: "com.example.app",
+      className: "com.example.app.MainActivity",
+    },
+    // Serializes as: --ecn target com.example.app/com.example.app.MainActivity
+  },
+});
+```
+
+### URI
+
+URI values are serialized using the `--eu` flag:
+
+- **Type**: `IntentStringExtra` with `type: "uri"`
+- **Flag**: `--eu`
+- **Format**: `--eu key value`
+
+**Example**:
+
+```ts
+({
+  extras: {
+    uriValue: {
+      type: "uri",
+      value: "https://example.com",
+    },
+    // Serializes as: --eu uriValue https://example.com
+  },
+});
+```
+
+### Typed number
+
+Typed number extras allow specifying the exact type of numeric value to be passed to the intent:
+
+- **Type**: `IntentNumberExtra`
+- **Properties**:
+  - `type`: One of `"long"`, `"float"`, `"double"`
+  - `value`: The numeric value
+- **Flags**: 
+  - `--el` for long
+  - `--ef` for float
+  - `--ed` for double
+- **Format**: `--ef key value`
+
+**Example**:
+```ts
+{
+    extras: {
+        floatValue: {
+            type: "float",
+            value: 3.14
+        }
+        // Serializes as: --ef floatValue 3.14
+    }
+}
+```
+
+### Array and ArrayList
+
+Arrays and ArrayLists allow passing collections of values with different type handling on the Android side:
+
+- **Type**: `IntentNumberArrayExtra` or `IntentStringArrayExtra`
+- **Properties**:
+  - `type`: Either `"array"` or `"arrayList"`
+  - `itemType`: The type of items in the array (`"string"`, `"int"`, `"long"`, `"float"`, `"double"`)
+  - `value`: An array of values
+- **Flags**:
+  - Arrays: Add `a` suffix (e.g., `--eia`, `--esa`, `--ela`)
+  - ArrayLists: Add `al` suffix (e.g., `--eial`, `--esal`, `--elal`)
+- **Format**: `--eia key value1,value2,value3`
+
+**Example**:
+```ts
+{
+    extras: {
+        intArray: {
+            type: "array",      // Results in --eia flag
+            itemType: "int",
+            value: [1, 2, 3]
+        },
+        stringArrayList: {
+            type: "arrayList",  // Results in --esal flag
+            itemType: "string",
+            value: ["a", "b", "c"]
+        }
+        // Serializes as: --eia intArray 1,2,3 --esal stringArrayList a,b,c
+    }
+}
+```
+
+### Examples
+
+```ts
+{
+    // String extra
+    name: "value",
+
+    // Number extra (automatically detected as int or long)
+    count: 42,
+
+    // Boolean extra
+    enabled: true,
+
+    // URI extra
+    uriValue: {
+        type: "uri",
+        value: "https://example.com"
+    },
+
+    // Component name
+    target: {
+        packageName: "com.example.app",
+        className: "com.example.app.MainActivity"
+    },
+
+    // Array extras
+    stringArray: {
+        type: "array",
+        itemType: "string",
+        value: ["item1", "item2"]
+    }
+}
+```
+
+## Component Name
+
+The `ComponentName` interface specifies a specific component to handle the intent:
+
+```ts
+interface ComponentName {
+  packageName: string;
+  className: string;
+}
+```
+
+Example:
+
+```ts
+{
+    component: {
+        packageName: "com.example.app",
+        className: "com.example.app.MainActivity"
+    }
+}
+```
+
+## `serializeIntent`
+
+The `serializeIntent` function converts an `Intent` object into an array of command-line arguments that can be passed to Android's Activity Manager (`am`) command.
+
+### Signature
+
+```ts
+function serializeIntent(intent: Intent): string[];
+```
+
+### Purpose
+
+This function transforms the structured `Intent` object into the appropriate command-line arguments used by Android's `am` command. Each property of the intent is converted to its corresponding command-line flag and value(s).
+
+### Returned Arguments
+
+The function returns an array of strings representing the command-line arguments. Each intent property maps to specific flags:
+
+| Intent Property | Command-Line Flag | Description                              |
+| --------------- | ----------------- | ---------------------------------------- |
+| `action`        | `-a`              | Specifies the action to perform          |
+| `data`          | `-d`              | Specifies the URI data                   |
+| `type`          | `-t`              | Specifies the MIME type                  |
+| `identifier`    | `-i`              | Specifies the intent identifier          |
+| `categories`    | `-c`              | Adds one or more categories              |
+| `extras`        | Various flags     | Converts to appropriate extra type flags |
+| `component`     | `-n`              | Specifies the component to launch        |
+| `package`       | `-p`              | Specifies the package name               |
+| `flags`         | `-f`              | Specifies intent flags                   |
+
+### Example
+
+```ts
+import { serializeIntent } from "@yume-chan/ya-webadb";
+
+const intent = {
+  action: "android.intent.action.VIEW",
+  data: "https://example.com",
+  extras: {
+    name: "example",
+    count: 42,
+    enabled: true,
+  },
+};
+
+const args = serializeIntent(intent);
+// Result: ["-a", "android.intent.action.VIEW", "-d", "https://example.com", "--es", "name", "example", "--ei", "count", "42", "--ez", "enabled", "true"]
+```
+
+The resulting array can be used directly as arguments to the `am` command, such as `am start -W ...` or `am broadcast ...`.

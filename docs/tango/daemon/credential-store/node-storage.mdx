@@ -1,0 +1,185 @@
+---
+sidebar_position: 2
+---
+
+# Node.js
+
+`TangoNodeStorage` is a Node.js implementation of the `TangoKeyStorage` interface that provides file-based credential storage compatible with Google ADB's format. It stores RSA private keys in the standard `~/.android/adbkey` location with proper file permissions and supports the `ADB_VENDOR_KEYS` environment variable for additional vendor keys.
+
+| Characteristic   | Description                         |
+| ---------------- | ----------------------------------- |
+| Number of keys   | Unlimited for loading, 1 for saving |
+| Encrypted        | No                                  |
+| `worker_threads` | Yes                                 |
+
+## Installation
+
+```sh npm2yarn
+npm i @yume-chan/adb-credential-nodejs
+```
+
+## Usage
+
+```ts transpile
+import {
+  AdbWebCryptoCredentialManager,
+  TangoNodeStorage,
+} from "@yume-chan/adb-credential-nodejs";
+
+const storage = new TangoNodeStorage();
+const manager = new AdbWebCryptoCredentialManager(storage);
+```
+
+To interop with Google ADB, don't chain `TangoNodeStorage` with any other encrypted storages.
+
+## Features
+
+### File-Based Storage
+
+`TangoNodeStorage` stores keys in `~/.android/adbkey` format compatible with Google ADB. The class creates both private and public key files with the following characteristics:
+
+- Private key file: `~/.android/adbkey` with permissions `0o600`
+- Public key file: `~/.android/adbkey.pub` with permissions `0o644`
+
+### Secure File Permissions
+
+The storage automatically sets proper file permissions to match Google ADB security standards:
+
+- Private key files get secure permissions (`0o600`)
+- Public key files get appropriate permissions (`0o644`)
+
+```ts
+// Private key files get secure permissions
+await writeFile(userKeyPath, pem, { encoding: "utf8", mode: 0o600 });
+await chmod(userKeyPath, 0o600);
+
+// Public key files get appropriate permissions
+await writeFile(publicKeyPath, content, { encoding: "utf8", mode: 0o644 });
+```
+
+### Automatic Directory Creation
+
+Automatically creates the `.android` directory in the user's home directory with appropriate permissions:
+
+```ts
+const dir = resolve(homedir(), ".android");
+await mkdir(dir, { mode: 0o750, recursive: true });
+```
+
+### Automatic Username Generation
+
+Generates default key names using `username@hostname` format to match Google ADB behavior:
+
+```ts
+#getDefaultName() {
+    return userInfo().username + "@" + hostname();
+}
+```
+
+### ADB_VENDOR_KEYS Environment Variable Support
+
+Supports the standard `ADB_VENDOR_KEYS` environment variable that allows specifying additional vendor key paths. The implementation follows the same convention as Google ADB:
+
+- **Multiple paths**: Paths are separated by the OS-specific delimiter (`:` on Unix-like systems, `;` on Windows)
+- **Individual key files**: The path can point to a single private key file
+- **Key directories**: The path can point to a directory containing files with `.adb_key` extension
+- **Format compatibility**: Both individual files and directory files are parsed with the same lax PEM format handling
+
+Example usage:
+
+```bash
+# Single file
+export ADB_VENDOR_KEYS=/path/to/vendor.key
+
+# Multiple files/directories
+export ADB_VENDOR_KEYS=/path/to/vendor1.key:/path/to/vendor2.key
+
+# Mixed files and directories
+export ADB_VENDOR_KEYS=/path/to/single.key:/path/to/key/directory
+```
+
+### PEM Format Handling
+
+Comprehensive handling of both strict and lax PEM formats for compatibility with various ADB implementations:
+
+- **Strict Format Generation**: Produces properly formatted PEM output with 64-character base64 lines as per RFC 7468
+- **Lax Format Parsing**: Can parse PEM files with extra whitespace and line breaks for compatibility
+
+```ts
+// Reading handles lax format (extra whitespace/line breaks)
+const privateKey = await storage.load();
+
+// Writing produces strict format (properly formatted with 64-char lines)
+await storage.save(key, name);
+```
+
+### Key Loading and Validation
+
+Robust system for loading existing keys, validating them, and handling errors gracefully:
+
+- Attempts to read the name from the public key file, with fallback to default name
+- Yields errors wrapped in error objects rather than throwing, allowing graceful handling of individual key failures
+
+```ts
+async *load(): AsyncGenerator<MaybeError<TangoKey>, void, void> {
+    // On error, yields error object instead of throwing
+    yield new InvalidKeyError(userKeyPath, { cause: e });
+}
+```
+
+## Custom Error Types
+
+The implementation includes specialized error types for handling different credential storage issues:
+
+### KeyError Base Class
+
+Base error class with branded symbol for reliable instanceof checks across module boundaries:
+
+```ts
+const KeyErrorBrand = Symbol.for("KeyError.brand");
+
+class KeyError extends Error {
+  [KeyErrorBrand] = true;
+
+  static override [Symbol.hasInstance](value: unknown) {
+    return !!(value as KeyError | undefined)?.[KeyErrorBrand];
+  }
+
+  readonly path: string;
+}
+```
+
+### InvalidKeyError
+
+Specific error for when private key files cannot be read or parsed:
+
+```ts
+class InvalidKeyError extends KeyError {
+  constructor(path: string, options?: ErrorOptions) {
+    super(`Can't read private key file at "${path}"`, path, options);
+  }
+}
+```
+
+**When InvalidKeyError is generated:**
+
+- When the user's main private key file (`~/.android/adbkey`) cannot be read from disk
+- When the user's private key file is corrupted or fails PEM format parsing
+
+### VendorKeyError
+
+Specific error for when vendor key files cannot be processed:
+
+```ts
+class VendorKeyError extends KeyError {
+  constructor(path: string, options?: ErrorOptions) {
+    super(`Can't read vendor key file at "${path}"`, path, options);
+  }
+}
+```
+
+**When VendorKeyError is generated:**
+
+- When a path specified in `ADB_VENDOR_KEYS` doesn't exist or isn't accessible
+- When a vendor key file cannot be read or parsed correctly
+- When a vendor key directory cannot be accessed or read

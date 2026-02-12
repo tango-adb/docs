@@ -1,0 +1,42 @@
+---
+sidebar_position: 3
+---
+
+# broadcast
+
+The `broadcast` method sends an intent as a broadcast to registered receivers on the device.
+
+## Signature
+
+```ts
+async broadcast(
+    intent: Intent,
+    options?: { user?: SingleUserOrAll; receiverPermission?: string }
+): Promise<void>
+```
+
+## Parameters
+
+The `broadcast` method takes two parameters:
+
+1. `intent`: An [`Intent`](./intent-format.mdx) object describing the broadcast
+2. `options` (optional): Additional options including:
+   - `user`: Target a specific user for the broadcast
+   - `receiverPermission`: Require receivers to hold a specific permission
+
+## Usage
+
+```ts
+await activityManager.broadcast({
+    action: "android.intent.action.BATTERY_CHANGED",
+    extras: {
+        level: 80,
+        scale: 100
+    }
+}, {
+    user: 0,
+    receiverPermission: "android.permission.BROADCAST_STICKY"
+});
+```
+
+The method returns a promise that resolves when the broadcast is sent.

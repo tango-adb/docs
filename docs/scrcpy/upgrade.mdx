@@ -6,9 +6,38 @@ For changes in other packages, see [this page](../tango/upgrade.mdx).
 
 ## `@yume-chan/scrcpy`
 
-### Add support for new options in version 3.2
+### Support for Multiple Minor Versions (v3.3.2, v3.3.3, v3.3.4)
 
-- `audioSource` now includes many more options.
-- `displayImePolicy` option can control whether to show IME on mirrored display.
+Added support for newer Scrcpy server versions with dedicated option classes:
 
-See https://github.com/Genymobile/scrcpy/releases/tag/v3.2 for details.
+- `AdbScrcpyOptions3_3_2` - Supports Scrcpy server v3.3.2
+- `AdbScrcpyOptions3_3_3` - Supports Scrcpy server v3.3.3
+- `AdbScrcpyOptions3_3_4` - Supports Scrcpy server v3.3.4
+
+These versions extend the corresponding core `ScrcpyOptions` classes and implement the `AdbScrcpyOptions` interface, providing ADB-specific functionality like connection creation, display listing, and encoder listing.
+
+### Updated CLASSPATH Parameter Usage
+
+The ADB shell command format for launching Scrcpy server has been changed to use `CLASSPATH=` environment variable instead of the `-cp` flag. This change provides broader Android version compatibility, as the `-cp` argument requires Android 8.0:
+
+**Old approach:**
+
+```typescript
+const args = [
+  "app_process",
+  "-cp", // Old parameter format
+  path,
+  /* ... */
+];
+```
+
+**New approach:**
+
+```typescript
+const args = [
+  // Use `CLASSPATH=` as `-cp` argument requires Android 8.0
+  `CLASSPATH=${path}`, // New environment variable format
+  "app_process",
+  /* ... */
+];
+```

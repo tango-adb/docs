@@ -161,7 +161,7 @@ export interface TangoPrfSource {
    * @param input The input data
    */
   create(
-    input: Uint8Array<ArrayBuffer>
+    input: Uint8Array<ArrayBuffer>,
   ): MaybePromiseLike<TangoPrfCreationResult>;
 
   /**
@@ -172,7 +172,7 @@ export interface TangoPrfSource {
    */
   get(
     id: BufferSource,
-    input: Uint8Array<ArrayBuffer>
+    input: Uint8Array<ArrayBuffer>,
   ): MaybePromiseLike<BufferSource>;
 }
 ```
@@ -298,9 +298,9 @@ import {
 const storage = new TangoPrfStorage(
   new TangoPasswordProtectedStorage(
     new TangoLocalStorage("key"),
-    () => "password"
+    () => "password",
   ),
-  new TangoWebAuthnPrfSource("Tango", "ADB Key")
+  new TangoWebAuthnPrfSource("Tango", "ADB Key"),
 );
 ```
 

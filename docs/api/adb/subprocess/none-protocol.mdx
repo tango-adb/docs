@@ -8,7 +8,7 @@ sidebar_position: 1
 export declare class AdbNoneProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<AdbNoneProtocolProcess>;
 
   pty(command?: string | string[]): Promise<AdbNoneProtocolPtyProcess>;
@@ -40,7 +40,7 @@ export interface AdbNoneProtocolProcess {
 export declare class AdbNoneProtocolSubprocessService {
   spawn(
     command: string | string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<AdbNoneProtocolProcess>;
 }
 ```
@@ -103,7 +103,7 @@ setTimeout(() => abortController.abort(), 1000);
 
 const process = await adb.subprocess.noneProtocol.spawn(
   "logcat",
-  abortController.signal
+  abortController.signal,
 );
 ```
 
@@ -177,8 +177,8 @@ Note: `adb exec-out` doesn't forward `stdin` to the process, so it's not 100% eq
 
 A `Promise` that resolves when the process exits.
 
-* If the process exits normally, was killed by a signal, or was killed by calling [`kill()`](#kill), the promise resolves with `undefined`.
-* If the [`signal`](#signal) option aborts the process, the promise rejects with `signal.reason`.
+- If the process exits normally, was killed by a signal, or was killed by calling [`kill()`](#kill), the promise resolves with `undefined`.
+- If the [`signal`](#signal) option aborts the process, the promise rejects with `signal.reason`.
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
@@ -215,6 +215,15 @@ for await (const chunk of process.output.pipeThrough(new TextDecoderStream())) {
 The result of `spawn` is a mixin between `Promise<AdbNoneProtocolProcess>` and a `Wait` helper.
 
 It provides a simple way to wait for the process to exit, and read its output.
+
+:::info[Important: Consumption Once]
+The result of `spawn()` can only be consumed once. You must choose one of these approaches:
+
+1. Await the promise directly to get the process object for manual interaction
+2. Use the wait interface to get the output directly when the process completes
+
+You cannot use both approaches with the same result of `spawn()`.
+:::
 
 ```ts showLineNumbers
 export interface WaitOptions {
