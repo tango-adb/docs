@@ -41,3 +41,19 @@ const args = [
   /* ... */
 ];
 ```
+
+### Renamed Method: `setScreenPowerMode` → `setDisplayPower`
+
+The `setScreenPowerMode` method on `ScrcpyControlMessageWriter` has been renamed to `setDisplayPower` for better clarity and consistency:
+
+**Old approach:**
+
+```typescript
+writer.setScreenPowerMode(mode);
+```
+
+**New approach:**
+
+```typescript
+writer.setDisplayPower(mode);
+```

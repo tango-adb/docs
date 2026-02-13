@@ -8,25 +8,88 @@ The `Intent` interface allows specifying various aspects of an Android intent wh
 
 ## Properties
 
-| Property     | Type                  | Description                                                |
-| ------------ | --------------------- | ---------------------------------------------------------- |
-| `action`     | `string`              | The action to perform (e.g., `android.intent.action.MAIN`) |
-| `data`       | `string`              | URI data associated with the intent                        |
-| `type`       | `string`              | MIME type of the data                                      |
-| `identifier` | `string`              | Unique identifier for the intent                           |
-| `categories` | `string[]`            | Categories that apply to the intent                        |
-| `extras`     | `Record<string, any>` | Additional key-value pairs to pass with the intent         |
-| `flags`      | `number`              | Flags controlling how the intent is handled                |
-| `package`    | `string`              | Package name containing the component                      |
-| `component`  | `ComponentName`       | Explicitly specify the component to handle the intent      |
+| Property     | Type                  | Description                                                                                                                                         |
+| ------------ | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `action`     | `string`              | The action to perform (e.g., `android.intent.action.MAIN`)                                                                                          |
+| `data`       | `string`              | URI data associated with the intent                                                                                                                 |
+| `type`       | `string`              | MIME type of the data                                                                                                                               |
+| `identifier` | `string`              | Unique identifier for the intent                                                                                                                    |
+| `categories` | `string[]`            | Categories that apply to the intent                                                                                                                 |
+| `extras`     | `Record<string, any>` | Additional key-value pairs to pass with the intent (supports string, number, boolean, null, bigint, ComponentName, and specific Intent.Extra types) |
+| `flags`      | `number`              | Flags controlling how the intent is handled                                                                                                         |
+| `package`    | `string`              | Package name containing the component                                                                                                               |
+| `component`  | `ComponentName`       | Explicitly specify the component to handle the intent                                                                                               |
+
+## TypeScript Interface Definitions
+
+Here are the complete TypeScript interface definitions:
+
+```ts
+interface Intent {
+  action?: string | undefined;
+  data?: string | undefined;
+  type?: string | undefined;
+  identifier?: string | undefined;
+  categories?: string[] | undefined;
+  extras?:
+    | Record<
+        string,
+        | string
+        | null
+        | number
+        | bigint
+        | Intent.Extra.String
+        | ComponentName
+        | Intent.Extra.NumberArray
+        | Intent.Extra.StringArray
+        | Intent.Extra.Number
+        | boolean
+      >
+    | undefined;
+  flags?: number | undefined;
+  package?: string | undefined;
+  component?: ComponentName | undefined;
+}
+
+interface ComponentName {
+  packageName: string;
+  className: string;
+}
+
+namespace Intent {
+  namespace Extra {
+    interface Number {
+      type: "long" | "float" | "double";
+      value: number;
+    }
+
+    interface String {
+      type: "uri";
+      value: string;
+    }
+
+    interface NumberArray {
+      type: "array" | "arrayList";
+      itemType: "int" | Number["type"];
+      value: number[];
+    }
+
+    interface StringArray {
+      type: "array" | "arrayList";
+      itemType: "string";
+      value: string[];
+    }
+  }
+}
+```
 
 ## Intent Extras
 
 The `extras` field supports various data types:
 
 - Basic types: `string`, `number`, `boolean`, `null`
-- Objects: `ComponentName`, `IntentStringExtra`, `IntentNumberExtra`
-- Arrays: `IntentStringArrayExtra`, `IntentNumberArrayExtra`
+- Objects: `ComponentName`, `Intent.Extra.String`, `Intent.Extra.Number`
+- Arrays: `Intent.Extra.StringArray`, `Intent.Extra.NumberArray`
 
 ### Null
 
@@ -209,17 +272,18 @@ URI values are serialized using the `--eu` flag:
 
 Typed number extras allow specifying the exact type of numeric value to be passed to the intent:
 
-- **Type**: `IntentNumberExtra`
+- **Type**: `Intent.Extra.Number`
 - **Properties**:
   - `type`: One of `"long"`, `"float"`, `"double"`
   - `value`: The numeric value
-- **Flags**: 
+- **Flags**:
   - `--el` for long
   - `--ef` for float
   - `--ed` for double
 - **Format**: `--ef key value`
 
 **Example**:
+
 ```ts
 {
     extras: {
@@ -236,7 +300,7 @@ Typed number extras allow specifying the exact type of numeric value to be passe
 
 Arrays and ArrayLists allow passing collections of values with different type handling on the Android side:
 
-- **Type**: `IntentNumberArrayExtra` or `IntentStringArrayExtra`
+- **Type**: `Intent.Extra.NumberArray` or `Intent.Extra.StringArray`
 - **Properties**:
   - `type`: Either `"array"` or `"arrayList"`
   - `itemType`: The type of items in the array (`"string"`, `"int"`, `"long"`, `"float"`, `"double"`)
@@ -247,6 +311,7 @@ Arrays and ArrayLists allow passing collections of values with different type ha
 - **Format**: `--eia key value1,value2,value3`
 
 **Example**:
+
 ```ts
 {
     extras: {
@@ -308,6 +373,7 @@ interface ComponentName {
   packageName: string;
   className: string;
 }
+
 ```
 
 Example:
