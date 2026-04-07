@@ -27,7 +27,6 @@ The authentication process for daemon transport has been refactored from a stati
 - Replace `AdbDaemonTransport.authenticate()` calls with `adbDaemonAuthenticate()` function
 - Replace `credentialStore` option with `credentialManager` (part of new credential system)
 - The `authenticators` option is now handled internally through the authentication processor system
-- Authentication options are now passed directly to the function instead of as a separate object
 
 **Before:**
 
@@ -109,8 +108,6 @@ It can be an array of `AdbServerClient.ConnectionState`, i.e., `"unauthorized"` 
 
 The default value is `["unauthorized", "device"]` for backward compatibility. In a future major version, the default value will be changed to `["unauthorized", "offline", "device"]`.
 
-See documentation pages [Get devices](./server/devices.mdx) and [Watch devices](./server/watch.mdx) for more details and usages.
-
 {/*
 Source files:
 
@@ -137,9 +134,11 @@ const observer: DeviceObserver<AdbServerClient.Device> =
 // highlight-end
 ```
 
+See documentation pages [Get devices](./server/devices.mdx) and [Watch devices](./server/watch.mdx) for more details and usages.
+
 ### ✨ Add `state` property to `AdbServerClient.Device`
 
-To comply with the new API, `AdbServerClient.Device` now has a `state` property.
+To comply with the change in `getDevices` and `trackDevices`, `AdbServerClient.Device` now also has a `state` property.
 
 The old `authenticating` property is deprecated, and will be removed in a future major version. It now only returns `true` when `state` is `"unauthorized"`.
 
@@ -681,15 +680,17 @@ declare const handler: Adb.IncomingSocketHandler;
 
 ## `@yume-chan/adb-credential-web`
 
-### 💥🗑️ Remove `AdbWebCredentialStore` and replace with `AdbWebCryptoCredentialManager`
+### 💥🔄 Replace `AdbWebCredentialStore` with `AdbWebCryptoCredentialManager`
 
-The legacy `AdbWebCredentialStore` class has been completely removed and replaced with the new modular architecture. Users must migrate to the new `AdbWebCryptoCredentialManager` with a `TangoKeyStorage` implementation.
+The old `AdbWebCredentialStore` class can only store private keys in IndexedDB.
+
+It has been replaced with the new `AdbWebCryptoCredentialManager` and `TangoKeyStorage` types, which support multiple plaintext and encrypted key storage implementations.
 
 **Migration guide:**
 
 - Replace `new AdbWebCredentialStore()` with `new AdbWebCryptoCredentialManager(storage)`
 - Choose an appropriate storage implementation:
-  - `TangoIndexedDbStorage`: Uses IndexedDB for storing multiple keys with unlimited capacity, supports Web Workers
+  - `TangoIndexedDbStorage`: Uses IndexedDB for storing multiple keys with unlimited capacity. It can read keys stored by previous versions of Tango.
   - `TangoLocalStorage`: Uses browser localStorage for simple single-key storage
   - `TangoPasswordProtectedStorage`: Provides password-based encryption for stored keys (requires an underlying storage)
   - `TangoPrfStorage`: Uses WebAuthn PRF extension for multi-factor authentication (requires an underlying storage)
@@ -761,30 +762,9 @@ Fixed an issue where device observers would lose track of manually selected devi
 
 ## `@yume-chan/adb-server-node-tcp`
 
-### 💥🔄 Rewrite `AdbServerNodeTcpConnector` with new constructor signatures
+### ✨ Add new `AdbServerNodeTcpConnector` constructor overloads
 
-The `AdbServerNodeTcpConnector` class has been completely rewritten with new constructor signatures and functionality, replacing the old API entirely.
-
-**Migration guide:**
-
-- The old constructor that only accepted `SocketConnectOpts` directly has been replaced
-- The new constructor supports multiple parameter types: no parameters, string specifications, TCP socket options, and IPC socket options
-
-**Before:**
-
-```ts
-import type { SocketConnectOpts } from "node:net";
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
-
-// highlight-start
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
-  host: "localhost",
-  port: 5037,
-});
-// highlight-end
-```
-
-**After:**
+The `AdbServerNodeTcpConnector` class has been completely rewritten with support for Google ADB-style socket specs and environment variable support.
 
 {/*
 Source files:
@@ -796,21 +776,26 @@ Source files:
 import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
 
 // highlight-start
-// 1. No parameters - uses environment variables or defaults
-const connector1: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
-
-// 2. String specification
-const connector2: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector(
-  "tcp:localhost:5037",
-);
-
-// 3. TCP socket options with optional port
-const connector3: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+// Using a Node.js `SocketConnectOpts` interface is still supported
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
   host: "localhost",
   port: 5037,
 });
 
-// 4. IPC socket options (Unix domain sockets)
+// 1. ✨ No parameters - uses environment variables or defaults
+const connector1: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
+
+// 2. ✨ String specification
+const connector2: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector(
+  "tcp:localhost:5037",
+);
+
+// 3. ✨ TCP socket options with optional port
+const connector3: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+  host: "localhost",
+});
+
+// 4. ✨ IPC socket options (Unix domain sockets)
 const connector4: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
   path: "/path/to/socket",
 });

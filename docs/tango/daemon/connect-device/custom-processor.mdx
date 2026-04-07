@@ -4,9 +4,9 @@ sidebar_position: 7
 
 # Custom Authentication Processor
 
-A custom `AdbDaemonAuthProcessor` implementation to handle the authentication process. When provided, this overrides the default authentication processor that would be created from `credentialManager`.
+For advanced use cases that require custom authentication logic, you can provide your own `AdbDaemonAuthProcessor` implementation instead of using the default credential manager-based flow.
 
-Use this option when you need custom authentication logic that differs from the standard flow.
+When you pass a custom `processor` to `adbDaemonAuthenticate`, it completely replaces the default authentication processor. This gives you full control over how authentication packets are handled during the handshake process.
 
 ## Interface
 
