@@ -1,6 +1,6 @@
 import Script from "./script";
 
-export default function CanIUse(props: { feature: string }) {
+export default function CanIUse(props: { feature: string; }) {
     return (
         <>
             <p
@@ -10,7 +10,7 @@ export default function CanIUse(props: { feature: string }) {
                 data-accessible-colours="true"
             />
 
-            <Script src="https://caniuse-embed.vercel.app/embed.js" />
+            <Script type="module" src="https://caniuse-embed.vercel.app/embed.js" />
         </>
     );
 }

@@ -6,21 +6,11 @@ sidebar_position: 1
 
 ADB over Wi-Fi allows you to connect to your device wirelessly. This is useful when you want to connect to your device without using a USB cable, or if you want to connect multiple devices to the same computer.
 
-## Android 11 and above
+## TCP/IP Mode
 
-Android 11 added a Wireless Debugging feature in Developer Options, which allows you connect to the device wirelessly.
+TCP/IP mode allows the ADB daemon on the device to listen for connections on a TCP port. This mode requires enabling on the device side first.
 
-However, Wireless Debugging is different from ADB over Wi-Fi, and not supported by Tango.
-
-Technical details:
-
-* Wireless Debugging uses mDNS to automatically discover devices in the same network.
-  * It's not implemented on Windows
-  * Some Linux distributions compiles ADB themselves, and doesn't include mDNS support.
-* Wireless Debugging uses TLS to validate the client and encrypt the connection.
-* Wireless Debugging adds trusted client certificates using the new ADB pairing feature.
-
-## Rooted devices
+### Rooted devices
 
 On rooted devices, ADB over Wi-Fi can be enabled by running the following command on the device:
 
@@ -31,20 +21,53 @@ stop adbd
 start adbd
 ```
 
-`5555` is the port ADB daemon will listen at, and can be freely changed.
+`5555` is the port the ADB daemon will listen on and can be freely changed.
 
-## Other devices
+### Non-rooted devices (Android 10 and below)
 
 On non-rooted devices with Android 10 and below, enabling ADB over Wi-Fi requires first connecting the device using a USB cable.
 
-- To enable ADB over Wi-Fi using Google ADB, run the following command in a terminal:
+To enable TCP/IP mode using Google ADB, run the following command in a terminal:
 
-  ```sh
-  adb tcpip 5555
-  ```
+```sh
+adb tcpip 5555
 
-  `5555` is the port ADB daemon will listen at, and can be freely changed.
+```
 
-- To enable ADB over Wi-Fi using Tango, use the [`tcpip` command](/api/adb/tcpip.mdx).
+`5555` is the port the ADB daemon will listen on and can be freely changed.
 
-When device is restarted, ADB over Wi-Fi will be disabled. To re-enable it, connect the device using a USB cable and follow the steps above again.
+After enabling TCP/IP mode, disconnect the USB cable and connect wirelessly using the device's IP address.
+
+### Connecting with Daemon Transport
+
+For daemon transport (direct connection without ADB server), TCP/IP mode is only supported when running on Node.js. See [Create connection](./create-connection.mdx) for implementation details.
+
+:::note
+
+For a better experience with TCP/IP mode, consider using [Server Transport](../../server/wireless.mdx) which provides built-in support for wireless connections through the ADB server.
+
+:::
+
+## Wireless Debugging Mode (Android 11+)
+
+Android 11 added a Wireless Debugging feature in Developer Options, which allows you to connect to the device wirelessly without USB.
+
+Technical details:
+
+- Wireless Debugging uses mDNS to automatically discover devices in the same network.
+  - It's not implemented on Windows
+  - Some Linux distributions compile ADB themselves and don't include mDNS support.
+- Wireless Debugging uses TLS to validate the client and encrypt the connection.
+- Wireless Debugging adds trusted client certificates using the ADB pairing feature.
+
+### Connecting with Daemon Transport
+
+Wireless Debugging mode requires pairing and TLS support, which is complex to implement in daemon transport. For the best experience with Wireless Debugging, use [Server Transport](../../server/wireless.mdx) which provides built-in support through the `client.wireless.pair()` and `client.wireless.connect()` methods.
+
+## Notes
+
+- When the device is restarted, ADB over Wi-Fi will be disabled. To re-enable it, connect the device using a USB cable and follow the steps above again.
+- Wireless connections may be less stable than USB connections.
+- Make sure the device and computer are on the same network.
+- The device's IP address may change if it reconnects to the network.
+- For Android 11+ devices, Wireless Debugging mode doesn't require USB connection for initial setup.

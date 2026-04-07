@@ -14,15 +14,17 @@ ADB is a multiplexing protocol, each logical stream is called a socket. A socket
 
 Each socket also has a service name, which is similar to the hostname and port number in a TCP socket, or the URL in an HTTP request
 
-In Tango, a socket is represented by an `AdbSocket` object, while each transport may extend it with additional properties.
+In Tango, a socket is represented by an `Adb.Socket` object, while each transport may extend it with additional properties.
 
 ```ts
-interface AdbSocket {
-  readonly readable: ReadableStream<Uint8Array>;
-  readonly writable: WritableStream<MaybeConsumable<Uint8Array>>;
-  readonly service: string;
-  readonly closed: Promise<void>;
-  close(): Promise<void>;
+namespace Adb {
+  interface Socket {
+    readonly readable: ReadableStream<Uint8Array>;
+    readonly writable: WritableStream<MaybeConsumable<Uint8Array>>;
+    readonly service: string;
+    readonly closed: Promise<void>;
+    close(): Promise<void>;
+  }
 }
 ```
 
@@ -32,7 +34,7 @@ The `Adb` class provides a `createSocket` method to create a socket. It calls th
 
 ```ts
 declare class Adb {
-  createSocket(address: string): Promise<AdbSocket>;
+  createSocket(address: string): Promise<Adb.Socket>;
 }
 ```
 
@@ -54,7 +56,7 @@ await socket.readable.pipeTo(
     write(chunk) {
       console.log(chunk);
     },
-  })
+  }),
 );
 ```
 
@@ -162,7 +164,7 @@ await socket.readable.pipeTo(
     write(chunk) {
       console.log(chunk);
     },
-  })
+  }),
 );
 
 await socket.close();

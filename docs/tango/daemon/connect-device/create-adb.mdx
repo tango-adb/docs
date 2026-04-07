@@ -1,0 +1,34 @@
+---
+sidebar_position: 8
+---
+
+# Create an Adb Instance
+
+After successfully authenticating with the device, create an `Adb` instance to access higher-level ADB protocol commands.
+
+## Overview
+
+The transport object only contains the lower-level logic to communicate with devices. The `Adb` class provides a higher-level abstraction over ADB protocol and ADB commands.
+
+This step only initializes some internal states, but does not actually send any packets to the device.
+
+## Usage
+
+```ts transpile
+import { Adb } from "@yume-chan/adb";
+import type { AdbDaemonTransport } from "@yume-chan/adb";
+
+declare const transport: AdbDaemonTransport;
+
+// highlight-start
+const adb: Adb = new Adb(transport);
+// highlight-end
+```
+
+## Next Steps
+
+:::note[Next Step]
+
+See [API](/api/index.mdx) section for all supported ADB commands.
+
+:::

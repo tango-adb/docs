@@ -83,3 +83,66 @@ adb shell stat /sdcard/Download
 ```
 
 :::
+
+## Internal API
+
+:::info
+
+**Note:** This is an internal API that is usually not needed directly. Most users should use the public API (`adb.sync.lstat` or `adb.sync.stat`) instead.
+
+:::
+
+The stat functions use `AdbSync.Stat.lstat()` and `AdbSync.Stat.stat()` internally, which operate on a `SocketPool`:
+
+```ts
+import type { SocketPool } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const pool: SocketPool;
+declare const path: string;
+
+// highlight-start
+// lstat: doesn't follow symlinks (works on all Android versions)
+const stat = await AdbSync.Stat.lstat(pool, path, {
+  version: 2, // or 1 for legacy protocol
+});
+
+// stat: follows symlinks (requires stat_v2 feature)
+const stat = await AdbSync.Stat.stat(pool, path);
+// highlight-end
+```
+
+### Protocol versions
+
+**lstat Version 1 (legacy, Android 7 and below):**
+
+- Uses `STAT` request
+- Returns `STAT` response (12 bytes)
+- Limited to 32-bit file sizes
+- No `uid`, `gid`, `atime`, `ctime` fields
+- Returns all zeros on error (no error code)
+
+**lstat Version 2 (Android 8+):**
+
+- Uses `LST2` request
+- Returns `LST2` response (full stat structure)
+- Supports 64-bit file sizes
+- Includes `uid`, `gid`, `atime`, `ctime` fields
+- Returns error codes for proper error handling
+
+**stat (Android 8+):**
+
+- Uses `STA2` request
+- Same response format as `LST2`
+- Follows symlinks to get target file info
+- Requires `stat_v2` feature
+
+### How it works
+
+1. Acquires a socket from the pool
+2. Sends a `STAT`, `LST2`, or `STA2` request with the file path
+3. Waits for single stat response
+4. Parses response and throws error if needed
+5. Automatically releases the socket back to the pool
+
+The socket is automatically released after completion or error. If a non-sync error occurs (like a network issue), the socket is discarded to prevent connection corruption.

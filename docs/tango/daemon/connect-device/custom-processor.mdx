@@ -1,0 +1,66 @@
+---
+sidebar_position: 7
+---
+
+# Custom Authentication Processor
+
+A custom `AdbDaemonAuthProcessor` implementation to handle the authentication process. When provided, this overrides the default authentication processor that would be created from `credentialManager`.
+
+Use this option when you need custom authentication logic that differs from the standard flow.
+
+## Interface
+
+```ts
+interface AdbDaemonAuthProcessor {
+  process(packet: AdbPacketData): Promise<AdbPacketData>;
+
+  close?(): MaybePromiseLike<undefined>;
+}
+```
+
+### `process(packet)`
+
+The main method that processes incoming ADB packets during authentication. It should return a response packet to send back to the device.
+
+### `close()`
+
+An optional cleanup method that gets called when authentication completes or fails.
+
+## Example
+
+When using a custom authentication processor:
+
+```ts transpile
+import type {
+  AdbDaemonAuthProcessor,
+  AdbDaemonTransport,
+  AdbPacketData,
+  AdbPacketInit,
+} from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import { adbDaemonAuthenticate } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+declare const device: AdbDaemonWebUsbDevice;
+declare const connection: ReadableWritablePair<
+  AdbPacketData,
+  Consumable<AdbPacketInit>
+>;
+declare const customAuthProcessor: AdbDaemonAuthProcessor;
+
+// highlight-start
+const transport: AdbDaemonTransport = await adbDaemonAuthenticate({
+  serial: device.serial,
+  connection,
+  processor: customAuthProcessor,
+});
+// highlight-end
+```
+
+This approach allows for completely custom authentication logic when the default flow is insufficient.
+
+:::note[Next Step]
+
+After authentication, see [Create an Adb Instance](./create-adb.mdx) to create a higher-level ADB client.
+
+:::

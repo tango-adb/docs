@@ -2,39 +2,106 @@
 
 import DiffTable from "../tango/diff-table";
 
+:::info[Legend]
+
+- 💥 Breaking change
+- 🔄 Renamed/Refactored
+- ✨ New feature
+- 🐛 Bug fix
+- 🗑️ Removed
+
+:::
+
 This page lists changes from version 2.0.0 in core packages.
 
 For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
 
 ## `@yume-chan/adb`
 
-### Breaking: Renamed `AdbCredentialStore` to `AdbCredentialManager`
+### 💥🔄 Replace `AdbDaemonTransport.authenticate` with `adbDaemonAuthenticate` function
 
-The credential store interface has been renamed from `AdbCredentialStore` to `AdbCredentialManager` to better reflect its role in credential management. The old interface has been completely removed.
+The authentication process for daemon transport has been refactored from a static method on `AdbDaemonTransport` class to a standalone `adbDaemonAuthenticate` function. This change provides better flexibility and separates authentication logic from the transport class.
 
 **Migration guide:**
 
-- Replace all imports of `AdbCredentialStore` with `AdbCredentialManager`
-- Replace all usages of `AdbCredentialStore` with `AdbCredentialManager`
-- The interface API remains the same, so only import/type name changes are required
+- Replace `AdbDaemonTransport.authenticate()` calls with `adbDaemonAuthenticate()` function
+- Replace `credentialStore` option with `credentialManager` (part of new credential system)
+- The `authenticators` option is now handled internally through the authentication processor system
+- Authentication options are now passed directly to the function instead of as a separate object
 
 **Before:**
 
 ```ts
-import type { AdbCredentialStore } from "@yume-chan/adb-credential-web";
+import { AdbDaemonTransport } from "@yume-chan/adb";
 
-const store: AdbCredentialStore = ...;
+// highlight-start
+const transport: AdbDaemonTransport = await AdbDaemonTransport.authenticate({
+  serial: device.serial,
+  connection,
+  credentialStore: CredentialStore,
+});
+// highlight-end
 ```
 
 **After:**
 
-```ts
-import type { AdbCredentialManager } from "@yume-chan/adb-credential-web";
+{/*
+Source files:
 
-const store: AdbCredentialManager = ...;
+- libraries/adb/src/daemon/auth/authenticator.ts (adbDaemonAuthenticate)
+- libraries/adb/src/daemon/auth/packet-processor.ts (AdbDaemonDefaultAuthProcessor)
+  */}
+
+```ts transpile
+import type { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import {
+  adbDaemonAuthenticate,
+  AdbWebCryptoCredentialManager,
+} from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+declare const device: AdbDaemonWebUsbDevice;
+declare const connection: ReadableWritablePair<
+  AdbPacketData,
+  Consumable<AdbPacketInit>
+>;
+declare const CredentialManager: AdbWebCryptoCredentialManager;
+
+// highlight-start
+const transport: AdbDaemonTransport = await adbDaemonAuthenticate({
+  serial: device.serial,
+  connection,
+  credentialManager: CredentialManager,
+});
+// highlight-end
 ```
 
-### Server client can filter devices by state
+The new authentication system also supports custom authentication processors for advanced use cases:
+
+```ts transpile
+import type { AdbPacketData, AdbPacketInit } from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import { adbDaemonAuthenticate, AdbDaemonAuthProcessor } from "@yume-chan/adb";
+
+declare const connection: ReadableWritablePair<
+  AdbPacketData,
+  Consumable<AdbPacketInit>
+>;
+declare const customAuthProcessor: AdbDaemonAuthProcessor;
+
+// highlight-start
+const transport: AdbDaemonTransport = await adbDaemonAuthenticate({
+  serial: "device-serial",
+  connection,
+  processor: customAuthProcessor,
+});
+// highlight-end
+```
+
+See documentation page [Handshake and authenticate](./daemon/connect-device/index.mdx) for more details about authentication options and usage.
+
+### ✨ Add state filtering to server client device methods
 
 `AdbServerClient.prototype.getDevices` and `AdbServerClient.prototype.trackDevices` now accept an optional `includeStates` parameter.
 
@@ -42,67 +109,121 @@ It can be an array of `AdbServerClient.ConnectionState`, i.e., `"unauthorized"` 
 
 The default value is `["unauthorized", "device"]` for backward compatibility. In a future major version, the default value will be changed to `["unauthorized", "offline", "device"]`.
 
+See documentation pages [Get devices](./server/devices.mdx) and [Watch devices](./server/watch.mdx) for more details and usages.
+
+{/*
+Source files:
+
+- libraries/adb/src/server/client.ts (AdbServerClient, Device, ConnectionState)
+- libraries/adb/src/device-observer.ts (DeviceObserver)
+  */}
+
 ```ts transpile
-import type { AdbServerClient } from "@yume-chan/adb";
+import type { AdbServerClient, DeviceObserver } from "@yume-chan/adb";
 
 declare const client: AdbServerClient;
 
+// highlight-start
 const devices: AdbServerClient.Device[] = await client.getDevices([
   "unauthorized",
   "offline",
   "device",
 ]);
 
-const observer = await client.trackDevices({
-  includeStates: ["unauthorized", "offline", "device"],
-});
+const observer: DeviceObserver<AdbServerClient.Device> =
+  await client.trackDevices({
+    includeStates: ["unauthorized", "offline", "device"],
+  });
+// highlight-end
 ```
 
-### Add device state to `AdbServerClient.Device`
+### ✨ Add `state` property to `AdbServerClient.Device`
 
 To comply with the new API, `AdbServerClient.Device` now has a `state` property.
 
 The old `authenticating` property is deprecated, and will be removed in a future major version. It now only returns `true` when `state` is `"unauthorized"`.
+
+{/*
+Source files:
+
+- libraries/adb/src/server/client.ts (AdbServerClient, Device)
+  */}
 
 ```ts transpile
 import type { AdbServerClient } from "@yume-chan/adb";
 
 declare const device: AdbServerClient.Device;
 
+// highlight-start
 console.log(device.state); // "unauthorized" | "offline" | "device"
 console.log(device.authenticating); // `true` when `device.state === "unauthorized"`
+// highlight-end
 ```
 
-### Subprocess `spawnWait` and `spawnWaitText` methods has been moved to method chaining
+See documentation page [Get devices](./server/devices.mdx) for more details about the `state` property and device states.
+
+### 💥🔄 Move subprocess `spawnWait` and `spawnWaitText` to method chaining
+
+**Before:**
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+// highlight-start
+const output: Uint8Array =
+  await adb.subprocess.noneProtocol.spawnWait("ls -al /");
+
+const output: string =
+  await adb.subprocess.noneProtocol.spawnWaitText("ls -al /");
+// highlight-end
+```
+
+**After:**
+
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+- libraries/adb/src/service/subprocess/none/service.ts (noneProtocol)
+  */}
 
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
 
 declare const adb: Adb;
 
-// Before
-const output = await adb.subprocess.noneProtocol.spawnWait("ls -al /");
-// After
-const output = await adb.subprocess.noneProtocol.spawn("ls -al /").wait();
+// highlight-start
+const output: Uint8Array = await adb.subprocess.noneProtocol
+  .spawn("ls -al /")
+  .wait();
 
-// Before
-const output = await adb.subprocess.noneProtocol.spawnWaitText("ls -al /");
-// After
-const output = await adb.subprocess.noneProtocol
+const output: string = await adb.subprocess.noneProtocol
   .spawn("ls -al /")
   .wait()
   .toString();
+// highlight-end
 ```
 
 The `wait` method now accepts a `ReadableStream` for `stdin`:
 
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+- libraries/adb/src/service/subprocess/shell/service.ts (shellProtocol)
+- libraries/adb/src/service/subprocess/shell/spawner.ts (AdbShellProtocolSpawner.WaitResult)
+  */}
+
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
-import { ReadableStream } from "@yume-chan/stream-extra";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+import { encodeUtf8 } from "@yume-chan/struct";
 
 declare const adb: Adb;
 
-const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
+const result = await adb.subprocess.shellProtocol!.spawn("cat").wait({
   // highlight-start
   stdin: new ReadableStream<Uint8Array>({
     start(controller) {
@@ -112,62 +233,39 @@ const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
   }),
   // highlight-end
 });
+
+const output: Uint8Array = result.stdout;
+const exitCode: number = result.exitCode;
 ```
 
-### Breaking: PTY Type Renaming
+See documentation pages [None protocol](../api/adb/subprocess/none-protocol.mdx) and [Shell protocol](../api/adb/subprocess/shell-protocol.mdx) for more details about subprocess protocols and their APIs.
 
-The PTY types have been renamed to simplify the naming convention. The main interface `AdbPtyProcess` has been renamed to `AdbPty`, and the specific implementations have also been renamed:
-
-- `AdbNoneProtocolPtyProcess` → `AdbNoneProtocolPty`
-- `AdbShellProtocolPtyProcess` → `AdbShellProtocolPty`
-
-**Migration guide:**
-
-- Replace all imports and references to `AdbPtyProcess` with `AdbPty`
-- Replace all imports and references to `AdbNoneProtocolPtyProcess` with `AdbNoneProtocolPty`
-- Replace all imports and references to `AdbShellProtocolPtyProcess` with `AdbShellProtocolPty`
-
-**Before:**
-
-```ts
-import type { AdbPtyProcess } from "@yume-chan/adb";
-
-// Using old PTY process
-const pty: AdbPtyProcess = await adb.subprocess.shellProtocol.pty({
-  command: ["bash"],
-});
-```
-
-**After:**
-
-```ts
-import type {
-  AdbPty,
-  AdbNoneProtocolPty,
-  AdbShellProtocolPty,
-} from "@yume-chan/adb";
-
-// Using new PTY interface
-const pty: AdbPty = await adb.subprocess.shellProtocol.pty({
-  command: ["bash"],
-});
-```
-
-### Shell protocol raw mode now supports closing `stdin`
+### ✨ Add `stdin` closing support to shell protocol raw mode
 
 Shell protocol in raw mode is the only combination that supports [closing `stdin`](../api/adb/subprocess/shell-protocol.mdx#closing-stdin). Some programs (like `cat`) might rely on this behavior to properly function.
 
 When using `spawn`, `stdin` can be closed by closing the `WritableStream`:
 
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+- libraries/adb/src/service/subprocess/shell/spawner.ts (AdbShellProtocolProcess)
+- libraries/adb/src/service/subprocess/shell/process.ts (AdbShellProtocolProcessImpl)
+  */}
+
 ```ts transpile
-import type { Adb } from "@yume-chan/adb";
-import { encodeUtf8 } from "@yume-chan/adb";
+import type { Adb, AdbShellProtocolProcess } from "@yume-chan/adb";
+import { encodeUtf8 } from "@yume-chan/struct";
+import type { WritableStreamDefaultWriter } from "@yume-chan/stream-extra";
 
 declare const adb: Adb;
 
-const process = await adb.subprocess.shellProtocol!.spawn("cat");
+const process: AdbShellProtocolProcess =
+  await adb.subprocess.shellProtocol!.spawn("cat");
 
-const writer = process.stdin.getWriter();
+const writer: WritableStreamDefaultWriter<Uint8Array> =
+  process.stdin.getWriter();
 await writer.write(encodeUtf8("Hello World!"));
 // highlight-start
 await writer.close();
@@ -176,28 +274,414 @@ await writer.close();
 
 When using `spawn.wait`, `stdin` can be closed by closing the `ReadableStream`:
 
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+  */}
+
 ```ts transpile
 import type { Adb } from "@yume-chan/adb";
-import { encodeUtf8 } from "@yume-chan/adb";
+import { encodeUtf8 } from "@yume-chan/struct";
 import { ReadableStream } from "@yume-chan/stream-extra";
 
 declare const adb: Adb;
 
-const output = await adb.subprocess.shellProtocol!.spawn("cat").wait({
-  stdin: new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(encodeUtf8("Hello World!"));
-      // highlight-start
-      controller.close();
-      // highlight-end
-    },
-  }),
+const output: Uint8Array = await adb.subprocess
+  .shellProtocol!.spawn("cat")
+  .wait({
+    stdin: new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encodeUtf8("Hello World!"));
+        // highlight-start
+        controller.close();
+        // highlight-end
+      },
+    }),
+  });
+```
+
+See documentation page [Shell protocol](../api/adb/subprocess/shell-protocol.mdx) for more details about closing stdin and shell protocol usage.
+
+### 💥🔄 Reorganize sync API with namespace structure
+
+The sync API has been completely reorganized with a new namespace structure and automatic socket pooling. The public API is now simpler and no longer requires manual socket management.
+
+#### Socket Pool Architecture
+
+The key change is the introduction of `SocketPool`, which manages sync socket connections automatically:
+
+- **Connection reuse**: Sockets are pooled and reused across operations instead of creating new connections for each operation
+- **Automatic lifecycle management**: No need to call `dispose()` - sockets are managed by the pool
+- **Configurable pooling**: Pool size and idle timeout can be configured via `ServiceOptions`
+- **Idle timeout**: Idle sockets are automatically closed after a configurable timeout (default: 60 seconds)
+
+The `AdbSync.Service` class now uses `SocketPool` internally, which enables the simplified public API.
+
+#### Public API Changes
+
+The `adb.sync()` method has been changed to `adb.sync` property, following the same pattern as other services like `subprocess`, `power`, `reverse`, and `tcpip`.
+
+**Migration guide:**
+
+- Replace all calls to `await adb.sync()` with `adb.sync`
+- No need to call `dispose()` anymore - socket pooling is handled automatically
+- The `AdbSync` class is now accessed as `AdbSync.Service`
+
+**Before:**
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const sync: AdbSync.Service = await adb.sync();
+try {
+  await sync.write({
+    filename,
+    file,
+  });
+  // highlight-start
+} finally {
+  await sync.dispose();
+}
+// highlight-end
+```
+
+**After:**
+
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+- libraries/adb/src/service/sync/service.ts (AdbSync.Service)
+- libraries/adb/src/service/sync/socket-pool.ts (SocketPool)
+  */}
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+// highlight-start
+await adb.sync.write({
+  filename,
+  file,
 });
+// highlight-end
+```
+
+#### Internal API Changes
+
+:::info
+
+**Note:** These are internal APIs that are usually not needed directly. Most users should use the public API (`adb.sync.read`, `adb.sync.write`, etc.) instead.
+
+:::
+
+Low-level sync functions have been moved into organized namespaces under `AdbSync`, and now use `SocketPool` instead of raw `AdbSyncSocket`:
+
+**Before:**
+
+```ts
+import type { AdbSyncSocket } from "@yume-chan/adb";
+import {
+  adbSyncPull,
+  adbSyncPush,
+  adbSyncOpenDir,
+  adbSyncLstat,
+} from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const socket: AdbSyncSocket;
+declare const path: string;
+declare const v2: boolean;
+
+// highlight-start
+const stream: ReadableStream<Uint8Array> = adbSyncPull(socket, path);
+
+await adbSyncPush({
+  v2: true,
+  socket,
+  filename,
+  file,
+});
+
+for await (const entry of adbSyncOpenDir(socket, path, v2)) {
+  console.log(entry.name);
+}
+
+const stat = await adbSyncLstat(socket, path, v2);
+// highlight-end
+```
+
+**After:**
+
+{/*
+Source files:
+
+- libraries/adb/src/service/sync/socket-pool.ts (SocketPool)
+- libraries/adb/src/service/sync/request/pull.ts (AdbSync.Receive.stream)
+- libraries/adb/src/service/sync/request/push.ts (AdbSync.Send.send)
+- libraries/adb/src/service/sync/request/list.ts (AdbSync.OpenDir.opendir)
+- libraries/adb/src/service/sync/request/stat.ts (AdbSync.Stat.lstat)
+  */}
+
+```ts
+import type { SocketPool } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const pool: SocketPool;
+declare const path: string;
+declare const file: ReadableStream<Uint8Array>;
+
+// highlight-start
+// Pull: AdbSync.Receive namespace
+const stream: ReadableStream<Uint8Array> = AdbSync.Receive.stream(pool, path);
+
+// Push: AdbSync.Send namespace
+await AdbSync.Send.send({
+  pool,
+  filename: path,
+  file,
+  version: 2,
+});
+
+// Directory listing: AdbSync.OpenDir namespace
+for await (const entry of AdbSync.OpenDir.opendir(pool, path, {
+  version: 2,
+})) {
+  console.log(entry.name);
+}
+
+// Stat: AdbSync.Stat namespace
+const stat = await AdbSync.Stat.lstat(pool, path, {
+  version: 2,
+});
+// highlight-end
+```
+
+#### Socket Pool Usage
+
+For advanced use cases requiring direct socket access, the pool provides `acquire()` and `release()` methods:
+
+{/*
+Source files:
+
+- libraries/adb/src/service/sync/socket-pool.ts (SocketPool)
+  */}
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+// highlight-start
+const socket = await adb.sync.acquireSocket();
+try {
+  // Use socket directly for custom operations
+} finally {
+  await adb.sync.releaseSocket(socket);
+}
+// highlight-end
+```
+
+The pool also provides a `withSocket()` helper for automatic resource management:
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+// highlight-start
+await adb.sync.withSocket(async (socket) => {
+  // Socket is automatically released after use
+});
+// highlight-end
+```
+
+#### Public API Usage Examples
+
+For most use cases, use the high-level public API:
+
+**Reading files:**
+
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+  */}
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const stream: ReadableStream<Uint8Array> = adb.sync.read(
+  "/sdcard/Download/file.txt",
+);
+```
+
+**Writing files:**
+
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+  */}
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+declare const readableStream: ReadableStream<Uint8Array>;
+
+await adb.sync.write({
+  filename: "/sdcard/Download/file.txt",
+  file: readableStream,
+});
+```
+
+**Listing directories:**
+
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+- libraries/adb/src/service/sync/request/list.ts (AdbSync.OpenDir.Entry)
+  */}
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import type { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+for await (const entry: AdbSync.OpenDir.Entry of adb.sync.opendir("/sdcard/Download")) {
+  console.log(entry.name);
+}
+
+// Or get all entries as array
+const entries: AdbSync.OpenDir.Entry[] = await adb.sync.readdir("/sdcard/Download");
+```
+
+**Getting file stats:**
+
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+- libraries/adb/src/service/sync/request/stat.ts (AdbSync.Stat.Stat)
+  */}
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import type { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const stat: AdbSync.Stat.Stat = await adb.sync.lstat(
+  "/sdcard/Download/file.txt",
+);
+
+// For stat (follows symlinks, requires stat2 feature)
+const stat: AdbSync.Stat.Stat = await adb.sync.stat(
+  "/sdcard/Download/file.txt",
+);
+```
+
+#### Additional Improvements
+
+- **Compression support**: Runtime-selectable compression (Brotli/LZ4/Zstd) for push operations via `compression` option
+- **Better error handling**: Improved error signaling with dedicated `AdbSyncError` types
+- **Abort signal support**: Pool can be disposed via abort signal in `ServiceOptions`
+
+See the [Sync API documentation](../api/adb/sync/index.mdx) for detailed usage examples.
+
+### 💥🔄 Type renames
+
+Several types and interfaces have been renamed for consistency and clarity. These are pure renaming changes without functional modifications.
+
+| Type                    | Before                       | After                       | Related Doc                                                |
+| :---------------------- | :--------------------------- | :-------------------------- | :--------------------------------------------------------- |
+| Credential Store        | `AdbCredentialStore`         | `AdbCredentialManager`      | [Credential manager](./daemon/credential-store/index.mdx)  |
+| PTY Process             | `AdbPtyProcess`              | `AdbPty`                    | [Shell protocol](../api/adb/subprocess/shell-protocol.mdx) |
+| PTY Process (None)      | `AdbNoneProtocolPtyProcess`  | `AdbNoneProtocolPty`        | [None protocol](../api/adb/subprocess/none-protocol.mdx)   |
+| PTY Process (Shell)     | `AdbShellProtocolPtyProcess` | `AdbShellProtocolPty`       | [Shell protocol](../api/adb/subprocess/shell-protocol.mdx) |
+| Socket                  | `AdbSocket`                  | `Adb.Socket`                | [Socket](../api/adb/socket.mdx)                            |
+| Incoming Socket Handler | `AdbIncomingSocketHandler`   | `Adb.IncomingSocketHandler` | [Socket](../api/adb/socket.mdx)                            |
+| Power Service           | `AdbPower`                   | `AdbPowerService`           | [Power](../api/adb/power.mdx)                              |
+| Device Observer Method  | `stop()`                     | `close()`                   | [Watch devices](./server/watch.mdx)                        |
+
+**Migration guide:**
+
+Update all imports and type references to use the new names. The APIs remain the same, only the names have changed.
+
+**Example 1: Credential Manager**
+
+{/*
+Source files:
+
+- libraries/adb-credential-web/src/manager.ts (AdbWebCryptoCredentialManager)
+- libraries/adb-credential-web/src/storage/type.ts (TangoKeyStorage)
+- libraries/adb-credential-web/src/storage/indexed-db/v2.ts (TangoIndexedDbStorage)
+  */}
+
+```ts
+import type {
+  AdbCredentialManager,
+  TangoKeyStorage,
+} from "@yume-chan/adb-credential-web";
+import {
+  AdbWebCryptoCredentialManager,
+  TangoIndexedDbStorage,
+} from "@yume-chan/adb-credential-web";
+
+// highlight-start
+const storage: TangoKeyStorage = new TangoIndexedDbStorage();
+const credentialManager: AdbCredentialManager =
+  new AdbWebCryptoCredentialManager(storage);
+// highlight-end
+```
+
+**Example 2: PTY and Socket Types**
+
+{/*
+Source files:
+
+- libraries/adb/src/service/subprocess/pty.ts (AdbPty)
+- libraries/adb/src/service/subprocess/shell/pty.ts (AdbShellProtocolPty)
+- libraries/adb/src/service/subprocess/none/pty.ts (AdbNoneProtocolPty)
+- libraries/adb/src/adb.ts (Adb)
+  */}
+
+```ts
+import type { AdbPty, Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+// highlight-start
+const pty: AdbPty = await adb.subprocess.shellProtocol.pty({
+  command: ["bash"],
+});
+// highlight-end
+
+// highlight-start
+declare const socket: Adb.Socket;
+declare const handler: Adb.IncomingSocketHandler;
+// highlight-end
 ```
 
 ## `@yume-chan/adb-credential-web`
 
-### Breaking: `AdbWebCredentialStore` replaced by `AdbWebCryptoCredentialManager`
+### 💥🗑️ Remove `AdbWebCredentialStore` and replace with `AdbWebCryptoCredentialManager`
 
 The legacy `AdbWebCredentialStore` class has been completely removed and replaced with the new modular architecture. Users must migrate to the new `AdbWebCryptoCredentialManager` with a `TangoKeyStorage` implementation.
 
@@ -215,24 +699,40 @@ The legacy `AdbWebCredentialStore` class has been completely removed and replace
 ```ts
 import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
 
-const store = new AdbWebCredentialStore();
+// highlight-start
+const store: AdbWebCredentialStore = new AdbWebCredentialStore();
+// highlight-end
 ```
 
 **After:**
 
+{/*
+Source files:
+
+- libraries/adb-credential-web/src/manager.ts (AdbWebCryptoCredentialManager)
+- libraries/adb-credential-web/src/storage/type.ts (TangoKeyStorage)
+- libraries/adb-credential-web/src/storage/indexed-db/v2.ts (TangoIndexedDbStorage)
+  */}
+
 ```ts
+import type { TangoKeyStorage } from "@yume-chan/adb-credential-web";
 import {
   AdbWebCryptoCredentialManager,
   TangoIndexedDbStorage,
 } from "@yume-chan/adb-credential-web";
 
-const storage = new TangoIndexedDbStorage();
-const credentialManager = new AdbWebCryptoCredentialManager(storage);
+// highlight-start
+const storage: TangoKeyStorage = new TangoIndexedDbStorage();
+const credentialManager: AdbWebCryptoCredentialManager =
+  new AdbWebCryptoCredentialManager(storage);
+// highlight-end
 ```
+
+See documentation page [Credential manager](./daemon/credential-store/index.mdx) for more details about credential managers and available storage implementations.
 
 ## `@yume-chan/adb-credential-nodejs`
 
-### Added `TangoNodeStorage` class
+### ✨ Add `TangoNodeStorage` class
 
 Added `TangoNodeStorage` class which is a Node.js ADB key storage manager that implements the `TangoKeyStorage` interface. It supports all Google ADB key storage conventions including:
 
@@ -240,20 +740,20 @@ Added `TangoNodeStorage` class which is a Node.js ADB key storage manager that i
 - Secure file permissions (0o600 for private keys, 0o644 for public keys)
 - Automatic directory creation and username generation using `username@hostname` format
 - ADB_VENDOR_KEYS environment variable support for additional vendor keys
-- Proper PEM format handling with both strict and lax format parsing
+- Proper PEM-format handling with both strict and lax format parsing
 - Custom error types for robust key management (`KeyError`, `InvalidKeyError`, `VendorKeyError`)
 
 See documentation page [TangoNodeStorage](./daemon/credential-store/node-storage.mdx) for more details and usages.
 
 ## `@yume-chan/adb-daemon-webusb`
 
-### Fixed WebUSB SharedArrayBuffer Issue
+### 🐛 Fix WebUSB SharedArrayBuffer transfer issue
 
 Fixed an issue where WebUSB transfers would fail when using SharedArrayBuffer. The problem occurred because WebUSB doesn't support SharedArrayBuffer directly, which could cause connection failures.
 
 **Fix**: Added conversion to local Uint8Array before WebUSB transfer using `toLocalUint8Array()` function.
 
-### Fixed WebUSB Connection Event Handling
+### 🐛 Fix WebUSB connection event handling
 
 Fixed an issue where device observers would lose track of manually selected devices. When a device was selected via `navigator.usb.requestDevice()`, Chrome wouldn't fire a "connect" event, causing device observers to miss the device.
 
@@ -261,7 +761,7 @@ Fixed an issue where device observers would lose track of manually selected devi
 
 ## `@yume-chan/adb-server-node-tcp`
 
-### New constructor signatures for `AdbServerNodeTcpConnector`
+### 💥🔄 Rewrite `AdbServerNodeTcpConnector` with new constructor signatures
 
 The `AdbServerNodeTcpConnector` class has been completely rewritten with new constructor signatures and functionality, replacing the old API entirely.
 
@@ -273,48 +773,71 @@ The `AdbServerNodeTcpConnector` class has been completely rewritten with new con
 **Before:**
 
 ```ts
+import type { SocketConnectOpts } from "node:net";
 import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
 
-// Old constructor only accepted SocketConnectOpts directly
-const connector = new AdbServerNodeTcpConnector({
+// highlight-start
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
   host: "localhost",
   port: 5037,
 });
+// highlight-end
 ```
 
 **After:**
 
+{/*
+Source files:
+
+- libraries/adb-server-node-tcp/src/connector.ts (AdbServerNodeTcpConnector)
+  */}
+
 ```ts
 import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
 
-// New constructor supports multiple parameter types:
+// highlight-start
 // 1. No parameters - uses environment variables or defaults
-const connector1 = new AdbServerNodeTcpConnector();
+const connector1: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
 
 // 2. String specification
-const connector2 = new AdbServerNodeTcpConnector("tcp:localhost:5037");
+const connector2: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector(
+  "tcp:localhost:5037",
+);
 
 // 3. TCP socket options with optional port
-const connector3 = new AdbServerNodeTcpConnector({
+const connector3: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
   host: "localhost",
   port: 5037,
 });
 
 // 4. IPC socket options (Unix domain sockets)
-const connector4 = new AdbServerNodeTcpConnector({ path: "/path/to/socket" });
+const connector4: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+  path: "/path/to/socket",
+});
+// highlight-end
 ```
 
-### Environment Variable Support
+### ✨ Add environment variable support
 
 Added support for ADB environment variables that automatically reads `ADB_SERVER_SOCKET`, `ANDROID_ADB_SERVER_ADDRESS`, and `ANDROID_ADB_SERVER_PORT` environment variables.
 
 **Usage:**
 
+{/*
+Source files:
+
+- libraries/adb-server-node-tcp/src/connector.ts (AdbServerNodeTcpConnector)
+  */}
+
 ```ts
+import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
 // Automatically uses environment variables if set:
 // ADB_SERVER_SOCKET - full socket specification
 // ANDROID_ADB_SERVER_ADDRESS - server address
 // ANDROID_ADB_SERVER_PORT - server port
 process.env.ADB_SERVER_SOCKET = "tcp:192.168.1.100:5037";
-const connector = new AdbServerNodeTcpConnector(); // Will use env var
+const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
 ```
+
+See documentation page [Server client transport](./custom-transport/server-client/transport.mdx) for more details about connector usage and transport configuration.

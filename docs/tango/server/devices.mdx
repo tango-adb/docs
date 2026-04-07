@@ -69,6 +69,8 @@ emulator-5554
 
 For all TCP devices, their serial number might change after disconnection and reconnection.
 
+For more information about connecting wireless devices, see [Connect wireless devices](./wireless.mdx).
+
 ## `transportId`
 
 Transport ID is a number that uniquely identify a connection between the server and the device.
@@ -77,31 +79,55 @@ It's not tied to a specific device, and will change when the device is disconnec
 
 However, transport ID is the only truly unique identifier, so it's recommended to use it to select devices when calling other methods.
 
-## Example
+## `state`
 
-```ts transpile
-import type { AdbServerClient } from "@yume-chan/adb";
+The `state` property indicates the connection state of the device.
 
-// highlight-start
-const devices: AdbServerClient.Device[] = await client.getDevices();
-// highlight-end
-if (devices.length === 0) {
-  alert("No device connected");
-  return;
-}
-
-const device = devices[0];
+```ts
+type ConnectionState =
+  | "offline"
+  | "bootloader"
+  | "device"
+  | "host"
+  | "recovery"
+  | "rescue"
+  | "sideload"
+  | "unauthorized"
+  | "authorizing"
+  | "detached";
 ```
+
+### Possible values
+
+- `"offline"`: The device is connected but not responding. This typically happens when a wireless device loses connection or the ADB daemon on the device is not responding.
+
+- `"bootloader"`: The device is in bootloader mode (also known as fastboot mode). In this state, you can flash images and perform low-level operations, but regular ADB commands are not available.
+
+- `"device"`: The device is connected, authorized, and ready for ADB commands. This is the normal operating state.
+
+- `"host"`: The connection is to the ADB server itself rather than a device. This is rarely seen in normal usage.
+
+- `"recovery"`: The device is in recovery mode. Similar to bootloader mode but with a different recovery system running.
+
+- `"rescue"`: The device is in rescue mode, a special state for system recovery operations. In this state, the device runs `minadbd` (a minimal ADB daemon) instead of the normal `adbd`. Only a limited set of commands are available, typically used for emergency system recovery and troubleshooting.
+
+- `"sideload"`: The device is in sideload mode, typically used for OTA updates via ADB. Like rescue mode, it runs `minadbd` instead of the normal `adbd`. The available commands are restricted to sideload-related operations, primarily for installing OTA update packages. Most regular ADB commands (like `shell`, `pull`, `push`) are not available in this state.
+
+- `"unauthorized"`: The device is connected but not yet authorized. A dialog should appear on the device asking the user to authorize the computer's RSA key.
+
+- `"authorizing"`: The device is in the process of being authorized. This is a transitional state between `"unauthorized"` and `"device"`.
+
+- `"detached"`: The device handle is not opened by the ADB server, allowing other programs to take exclusive access to the device. This state is only supported when the ADB server is using libusb to connect to USB devices. In this state, the device is physically connected but the server has released its handle, so no ADB commands can be executed until the device is reattached. For more information about USB interface exclusivity, see [Exclusivity](../../tango/daemon/usb/index.mdx#exclusivity).
 
 ### Filter devices by state
 
-`getDevices` method also accepts an optional `includeStates` parameter, to filter devices by state.
+`getDevices` method accepts an optional `includeStates` parameter to filter devices by connection state.
 
 It can be an array of `AdbServerClient.ConnectionState`:
 
-* `"unauthorized"`: the device is connected but not yet authorized (a popup should appear on the device)
-* `"offline"`: the device is connected previously, but now offline (for wireless devices)
-* `"device"`: the device is connected and authorized
+- `"unauthorized"`: The device is connected but not yet authorized (a popup should appear on the device to ask for authorization)
+- `"offline"`: The device is connected previously, but now offline (typically for wireless devices)
+- `"device"`: The device is connected and authorized
 
 The default value is `["unauthorized", "device"]` for backward compatibility. In a future major version, the default value will be changed to `["unauthorized", "offline", "device"]`.
 
@@ -119,6 +145,8 @@ const devices: AdbServerClient.Device[] = await client.getDevices([
 // highlight-end
 ```
 
+### Usage
+
 When devices with multiple states are returned, the `state` property can be used to determine which state each device is in.
 
 ```ts transpile
@@ -127,6 +155,22 @@ import type { AdbServerClient } from "@yume-chan/adb";
 declare const device: AdbServerClient.Device;
 
 // highlight-start
-console.log(device.state); // "unauthorized" | "offline" | "device"
+console.log(device.state); // "unauthorized" | "offline" | "device" | ...
 // highlight-end
+```
+
+## Example
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+
+// highlight-start
+const devices: AdbServerClient.Device[] = await client.getDevices();
+// highlight-end
+if (devices.length === 0) {
+  alert("No device connected");
+  return;
+}
+
+const device = devices[0];
 ```

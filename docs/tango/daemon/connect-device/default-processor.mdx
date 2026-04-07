@@ -1,0 +1,108 @@
+---
+sidebar_position: 6
+---
+
+# Default Authentication Processor
+
+When using the default authentication flow, you can provide these options:
+
+```ts
+interface AdbDaemonDefaultAuthProcessorInit {
+  /**
+   * An AdbCredentialManager implementation to store and retrieve private keys.
+   * Used to provide authentication keys during the handshake.
+   */
+  credentialManager: AdbCredentialManager;
+
+  /**
+   * An optional callback that gets invoked when a key fails to load from the credential manager.
+   */
+  onKeyLoadError?: ((error: Error) => void) | undefined;
+
+  /**
+   * An optional callback that gets invoked when signature authentication is attempted with a key.
+   */
+  onSignatureAuthentication?: ((key: AdbKeyInfo) => void) | undefined;
+
+  /**
+   * An optional callback that gets invoked when a signature is rejected by the device.
+   */
+  onSignatureRejected?: ((key: AdbKeyInfo) => void) | undefined;
+
+  /**
+   * An optional callback that gets invoked when public key authentication is initiated.
+   */
+  onPublicKeyAuthentication?: ((key: AdbKeyInfo) => void) | undefined;
+}
+```
+
+:::info
+
+These fields are passed directly into `adbDaemonAuthenticate`, not as a separate object. For example, `{ serial, connection, credentialManager, onKeyLoadError }` instead of `{ serial, connection, authProcessor: { credentialManager, onKeyLoadError } }`.
+
+:::
+
+## Options
+
+### `credentialManager`
+
+An `AdbCredentialManager` implementation is used to store and retrieve the private key. You can use any store that conforms to the interface.
+
+Passing `credentialManager` is a shortcut that creates a default authentication processor internally. This is the common case for standard authentication flows.
+
+### `onKeyLoadError`
+
+An optional callback that gets invoked when a key fails to load from the credential manager. This allows for handling errors during key iteration without stopping the entire authentication process.
+
+### `onSignatureAuthentication`
+
+An optional callback that gets invoked when signature authentication is attempted with a key. Provides information about the key being used.
+
+### `onSignatureRejected`
+
+An optional callback that gets invoked when a signature is rejected by the device. This indicates that the key hasn't been trusted by the user yet.
+
+### `onPublicKeyAuthentication`
+
+An optional callback that gets invoked when public key authentication is initiated. This typically happens when the device doesn't trust any of the available keys.
+
+## Example
+
+When using the default authentication flow with a credential manager:
+
+```ts transpile
+import type {
+  AdbDaemonTransport,
+  AdbPacketData,
+  AdbPacketInit,
+} from "@yume-chan/adb";
+import type { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
+import {
+  adbDaemonAuthenticate,
+  AdbWebCryptoCredentialManager,
+} from "@yume-chan/adb";
+import { AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+declare const device: AdbDaemonWebUsbDevice;
+declare const connection: ReadableWritablePair<
+  AdbPacketData,
+  Consumable<AdbPacketInit>
+>;
+declare const CredentialManager: AdbWebCryptoCredentialManager;
+
+// highlight-start
+const transport: AdbDaemonTransport = await adbDaemonAuthenticate({
+  serial: device.serial,
+  connection,
+  credentialManager: CredentialManager,
+});
+// highlight-end
+```
+
+If the private key is not yet trusted by the device, a dialog will be shown on device screen to let users confirm the connection.
+
+:::note[Next Step]
+
+After authentication, see [Create an Adb Instance](./create-adb.mdx) to create a higher-level ADB client.
+
+:::

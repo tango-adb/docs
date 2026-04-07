@@ -47,7 +47,7 @@ flowchart TD
 
     click A "#connections"
     click B "./credential-store/"
-    click C "./connect-device"
+    click C "./connect-device/"
     click F "../../api/"
 ```
 
@@ -126,7 +126,7 @@ flowchart TD
     click B "#usb-connection"
     click C "#tcp-connection"
     click E "./credential-store/"
-    click F "./connect-device"
+    click F "./connect-device/"
     click J "#custom-connection"
     click I "./api/"
 ```
@@ -145,8 +145,8 @@ Because USB connections are exclusive, Daemon Transport can't access a USB devic
 
 [`@yume-chan/adb-daemon-webusb`](https://www.npmjs.com/package/@yume-chan/adb-daemon-webusb) package provides an `AdbDaemonConnection` implementation based on [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API):
 
-* Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
-* Node.js can use the WebUSB implementation in the [`usb`](https://www.npmjs.com/package/usb) package.
+- Chromium-based browsers support WebUSB natively. Chrome for Android is supported, but Chrome for iOS is based on Safari and not supported.
+- Node.js can use the WebUSB implementation in the [`usb`](https://www.npmjs.com/package/usb) package.
 
 ```mermaid
 flowchart TD

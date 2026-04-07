@@ -2,37 +2,61 @@
 
 Sync command is used to interact with device filesystem.
 
-Sync connection has its own data protocol, so `Adb#sync` creates a connection that you can run commands on.
+## Socket Pool Architecture
 
-## Create a sync connection
+Tango ADB now uses a socket pool to manage sync connections automatically. The `adb.sync` property provides a high-level API that handles connection pooling internally.
 
-```ts transpile
-const sync: AdbSync = await adb.sync();
+```ts
+import type { Adb } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+// highlight-start
+// adb.sync is a property, not a method
+const sync: AdbSync.Service = adb.sync;
+// highlight-end
 ```
 
-## Reusability and concurrency
+### Connection Reuse
 
-Technically, a sync connection can be reused to run another command after the previous one finished. However, Google ADB never reuses sync connections, it always creates a new connection for each command.
+The socket pool automatically manages sync socket connections:
 
-Tango allows reusing the connection if you don't need to run commands in parallel. Tango uses an internal lock to ensure that only one command is running at a time. Calling another command while a command is still running will wait for the previous command to finish.
+- **Connection reuse**: Sockets are pooled and reused across operations
+- **Automatic lifecycle management**: No need to call `dispose()` - sockets are managed by the pool
+- **Configurable pooling**: Pool size and idle timeout can be configured via `ServiceOptions`
+- **Idle timeout**: Idle sockets are automatically closed after a configurable timeout (default: 60 seconds)
 
-Note that some commands use streaming output (e.g. `opendir` and `read`), if you don't read the output, the command will never finish.
+### Advanced Socket Access
 
-If you need to run commands in parallel, you should create a new `AdbSync` instance for each command.
+For advanced use cases requiring direct socket access, the pool provides methods to acquire and release sockets:
 
-## Close sync connection
+```ts
+import type { Adb } from "@yume-chan/adb";
 
-You should close the sync connection when you no longer need it. This closes the underlying socket.
+declare const adb: Adb;
 
-```ts transpile
-await sync.dispose();
+// Acquire a socket from the pool
+const socket = await adb.sync.acquireSocket();
+try {
+  // Use socket directly for custom operations
+} finally {
+  // Return socket to the pool
+  await adb.sync.releaseSocket(socket);
+}
 ```
 
-:::info
+The pool also provides a `withSocket()` helper for automatic resource management:
 
-Not closing sync connections will cause a small memory leak.
+```ts
+import type { Adb } from "@yume-chan/adb";
 
-:::
+declare const adb: Adb;
+
+await adb.sync.withSocket(async (socket) => {
+  // Socket is automatically released after use
+});
+```
 
 ## Supported methods
 

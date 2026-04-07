@@ -18,7 +18,6 @@ declare class AdbSync {
 
 :::
 
-
 ## Example
 
 ```ts transpile
@@ -39,3 +38,34 @@ adb pull /sdcard/Download/hello.txt
 ```
 
 :::
+
+## Internal API
+
+:::info
+
+**Note:** This is an internal API that is usually not needed directly. Most users should use the public API (`adb.sync.read`) instead.
+
+:::
+
+The `read` method uses `AdbSync.Receive.stream()` internally, which operates on a `SocketPool`:
+
+```ts
+import type { SocketPool } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const pool: SocketPool;
+declare const path: string;
+
+// highlight-start
+const stream: ReadableStream<Uint8Array> = AdbSync.Receive.stream(pool, path);
+// highlight-end
+```
+
+### How it works
+
+1. Acquires a socket from the pool
+2. Sends a `RECV` request with the file path
+3. Streams `DATA` responses until completion
+4. Automatically releases the socket back to the pool
+
+The socket is automatically released after the stream completes or errors. If a non-sync error occurs (like a network issue), the socket is discarded to prevent connection corruption.

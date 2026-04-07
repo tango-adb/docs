@@ -16,8 +16,7 @@ Delayed ACK allows the receiver to acknowledge multiple data packets with a sing
 2. They negotiate the initial byte count threshold (e.g., 16KB)
 3. Both sides store this threshold value for flow control
 
-In Tango ADB, delayed ack can be configured by the [`initialDelayedAckBytes`](../tango/daemon/connect-device.mdx#initialdelayedackbytes) option during the ADB connection setup.
-
+In Tango ADB, delayed ack can be configured by the [`initialDelayedAckBytes`](../tango/daemon/connect-device/index.mdx#initialdelayedackbytes) option during the ADB connection setup.
 
 ### Socket Structure
 
@@ -49,12 +48,12 @@ impl Socket {
 
 And the `OPEN` packet includes the initial byte threshold in its format:
 
-| Field     | Value                   | Description                          |
-| --------- | ----------------------- | ------------------------------------ |
-| `command` | `0x4e45504f`           | `OPEN` in UTF-8 encoding            |
-| `arg0`    | New local socket ID     | Unique identifier for new socket     |
-| `arg1`    | Initial byte threshold  | Threshold for delayed ACK (when enabled) |
-| `payload` | Service name            | Name of the service to connect to    |
+| Field     | Value                  | Description                              |
+| --------- | ---------------------- | ---------------------------------------- |
+| `command` | `0x4e45504f`           | `OPEN` in UTF-8 encoding                 |
+| `arg0`    | New local socket ID    | Unique identifier for new socket         |
+| `arg1`    | Initial byte threshold | Threshold for delayed ACK (when enabled) |
+| `payload` | Service name           | Name of the service to connect to        |
 
 ### WRTE Packet Processing and Byte Count Tracking
 
@@ -88,11 +87,11 @@ impl Socket {
 
 When delayed ACK is enabled, `OKAY` packets have a specific format to indicate how many bytes were received:
 
-| Field     | Value                   | Description                          |
-| --------- | ----------------------- | ------------------------------------ |
-| `command` | `0x59414b4f`           | `OKAY` in UTF-8 encoding            |
-| `arg0`    | Remote socket ID        | Identifier of the remote socket      |
-| `arg1`    | Local socket ID         | Identifier of the local socket       |
+| Field     | Value                        | Description                                    |
+| --------- | ---------------------------- | ---------------------------------------------- |
+| `command` | `0x59414b4f`                 | `OKAY` in UTF-8 encoding                       |
+| `arg0`    | Remote socket ID             | Identifier of the remote socket                |
+| `arg1`    | Local socket ID              | Identifier of the local socket                 |
 | `payload` | 4-byte little-endian integer | Number of bytes acknowledged since last `OKAY` |
 
 And when the client receives an `OKAY` packet, it updates the available bytes:

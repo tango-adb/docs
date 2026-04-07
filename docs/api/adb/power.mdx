@@ -9,7 +9,7 @@ Shut down or reboot the device.
 ## Power off the device
 
 ```ts
-declare class AdbPowerCommand extends AdbCommandBase {
+declare class AdbPowerService {
   powerOff(): Promise<string>;
 }
 ```
@@ -31,7 +31,7 @@ adb shell reboot -p
 ## Reboot the device
 
 ```ts
-declare class AdbPowerCommand extends AdbCommandBase {
+declare class AdbPowerService {
   reboot(mode?: string): Promise<string>;
 }
 ```
@@ -67,7 +67,7 @@ adb reboot download
 ## Reboot into recovery
 
 ```ts
-declare class AdbPowerCommand extends AdbCommandBase {
+declare class AdbPowerService {
   recovery(): Promise<string>;
 }
 ```
@@ -89,7 +89,7 @@ adb reboot recovery
 ## Reboot into bootloader
 
 ```ts
-declare class AdbPowerCommand extends AdbCommandBase {
+declare class AdbPowerService {
   bootloader(): Promise<string>;
 }
 ```

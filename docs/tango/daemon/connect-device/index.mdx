@@ -1,0 +1,126 @@
+---
+sidebar_position: 5
+---
+
+# Handshake and authenticate
+
+Once a connection and a credential store is ready, use `adbDaemonAuthenticate` function to initiate the handshake and authenticate with the device.
+
+```ts
+type AdbDaemonConnection = ReadableWritablePair<
+  AdbPacketData,
+  Consumable<AdbPacketInit>
+>;
+
+interface AdbDaemonAuthenticateOptions {
+  /**
+   * The serial number of the device to connect to.
+   */
+  serial: string;
+
+  /**
+   * The ADB daemon connection to use for communication.
+   */
+  connection: AdbDaemonConnection;
+
+  /**
+   * The list of features to send to the device during handshake.
+   * @default AdbDeviceFeatures
+   */
+  features?: readonly AdbFeature[];
+
+  /**
+   * The number of bytes the device can send before receiving an ack packet.
+   * Setting this to 0 or a negative number will disable Delayed Ack.
+   * @default ADB_DAEMON_DEFAULT_INITIAL_PAYLOAD_SIZE
+   */
+  initialDelayedAckBytes?: number;
+
+  /**
+   * Whether to preserve the connection when the transport is closed.
+   * @default false
+   */
+  preserveConnection?: boolean;
+
+  /**
+   * Time limit for reading from the connection, in milliseconds.
+   * @default undefined
+   */
+  readTimeLimit?: number;
+} & (
+  | AdbDaemonDefaultAuthProcessorInit // Shortcut to use default authentication processor with credential manager
+  | { processor: AdbDaemonAuthProcessor } // Use a custom authentication processor
+);
+
+/**
+ * Authenticates an `AdbDaemonConnection` using an `AdbDaemonAuthProcessor`.
+ */
+declare function adbDaemonAuthenticate(
+  options: AdbDaemonAuthenticateOptions
+): Promise<AdbDaemonTransport>;
+```
+
+## Common Options
+
+These options are shared across all authentication approaches.
+
+### `serial`
+
+The `serial` field is not used by Tango, it helps you to identify the device associated with the transport. You can use any string to represent the device.
+
+### `connection`
+
+A pair of `ReadableStream<AdbPacketData>` and `WritableStream<Consumable<AdbPacketInit>>` is used to send and receive ADB packets. You can use any stream implementation that conforms to the interface.
+
+### `features`
+
+An optional list of `AdbFeature` to send to the device in handshake. ADB Features are flags that can be used to enable or disable certain features in the ADB protocol. The default value contains all features supported by Tango.
+
+### `initialDelayedAckBytes`
+
+On Android 14 and newer, the Delayed Acknowledgement feature is added to improve performance, especially for high-latency connections like ADB over Wi-Fi. For more details on how this feature works internally, see [Delayed Acknowledgment in ADB](../../../internal/delayed-ack.mdx).
+
+This optional field specifies The number of bytes the device can send before receiving an ack packet.
+
+Setting this parameter to 0 or a negative number will disable Delayed Ack.
+
+### `preserveConnection`
+
+When set to `true`, the transport will not close the `connection` when the `close` method is called.
+
+This is useful when you want to reconnect to the device later without re-authenticating.
+
+The default value is `false`.
+
+:::info
+
+If the authentication process fails, the connection will always be kept open, regardless of this option.
+
+:::
+
+### `readTimeLimit`
+
+When set, the transport will throw an error when one of the socket readable stalls for this amount of milliseconds.
+
+This option is helpful to detect bugs in the client code that causes child processes to hang or future commands not executed.
+
+When set to `undefined`, the transport will not enforce a time limit.
+
+The default value is `undefined`.
+
+## Authentication Approaches
+
+The `adbDaemonAuthenticate` function requires exactly one of two authentication approaches, specified through mutually exclusive options:
+
+1. **Default Authentication Processor** - Pass `credentialManager` as part of `AdbDaemonDefaultAuthProcessorInit`, which creates a default authentication processor using the provided credential manager. This is the standard authentication flow for most use cases.
+
+2. **Custom Authentication Processor** - Pass a custom `processor` option with your own implementation of `AdbDaemonAuthProcessor`. This allows for completely custom authentication logic.
+
+:::note[Next Step]
+
+Choose your authentication approach:
+
+- For standard authentication with credential manager, see [Default Authentication Processor](./default-processor.mdx)
+- For custom authentication logic, see [Custom Authentication Processor](./custom-processor.mdx)
+
+:::

@@ -31,7 +31,7 @@ declare class AdbSync {
 |                                           | Android 10 and below | Android 11 and above |
 | ----------------------------------------- | -------------------- | -------------------- |
 | Adb feature name                          | None                 | `ls_v2`              |
-| Sync command                              | `LIST`               | `LST2`               |
+| Sync command                              | `LIST`               | `LIS2`               |
 | Size larger than 4GB                      | No                   | Yes                  |
 | Returns `uid`, `gid`, `atime` and `ctime` | No                   | Yes                  |
 
@@ -44,7 +44,7 @@ For a large directory with hundreds of files, `readdir` may take tens of seconds
 ### Use `opendir`
 
 ```ts transpile
-for await (const entry of sync.opendir('/sdcard')) {
+for await (const entry of sync.opendir("/sdcard")) {
   console.log(entry.name);
 }
 ```
@@ -63,3 +63,56 @@ for (const entry of entries) {
   console.log(entry.name);
 }
 ```
+
+## Internal API
+
+:::info
+
+**Note:** This is an internal API that is usually not needed directly. Most users should use the public API (`adb.sync.opendir` or `adb.sync.readdir`) instead.
+
+:::
+
+The `opendir` function uses `AdbSync.OpenDir.opendir()` internally, which operates on a `SocketPool`:
+
+```ts
+import type { SocketPool } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const pool: SocketPool;
+declare const path: string;
+
+// highlight-start
+for await (const entry of AdbSync.OpenDir.opendir(pool, path, {
+  version: 2, // or 1 for legacy protocol
+})) {
+  console.log(entry.name);
+}
+// highlight-end
+```
+
+### Protocol versions
+
+**Version 1 (legacy):**
+
+- Uses `LIST` request
+- Returns `DENT` responses
+- Limited to 32-bit file sizes
+- No `uid`, `gid`, `atime`, `ctime` fields
+
+**Version 2:**
+
+- Uses `LIS2` request
+- Returns `DNT2` responses
+- Supports 64-bit file sizes
+- Includes `uid`, `gid`, `atime`, `ctime` fields
+- Can return error codes for individual entries (skipped automatically)
+
+### How it works
+
+1. Acquires a socket from the pool
+2. Sends a `LIST` or `LIS2` request with the directory path
+3. Streams `DENT` or `DNT2` responses for each entry
+4. Receives `DONE` response when complete
+5. Automatically releases the socket back to the pool
+
+The socket is automatically released after the stream completes or errors. If a non-sync error occurs (like a network issue), the socket is discarded to prevent connection corruption.

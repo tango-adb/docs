@@ -1,0 +1,299 @@
+---
+sidebar_position: 3
+---
+
+# Connect wireless devices
+
+Tango ADB Server provides built-in support for connecting to wireless devices using two modes:
+
+1. **TCP/IP mode** (traditional): Enable ADB over TCP/IP on a device already connected via USB, then connect wirelessly
+2. **Wireless debugging mode** (Android 11+): Pair and connect devices wirelessly using a pairing code
+
+Both modes are available through the `client.wireless` namespace, which requires an ADB server connection.
+
+:::note
+
+For device-side setup instructions (enabling TCP/IP mode on the device), see [Enable ADB over Wi-Fi](../../tango/daemon/tcp/enable.mdx).
+
+:::
+
+```ts
+import { AdbServerClient } from "@yume-chan/adb";
+declare const client: AdbServerClient;
+// Connect to a wireless device
+await client.wireless.connect("192.168.1.100:5555");
+// Pair with a wireless debugging device (Android 11+)
+await client.wireless.pair("192.168.1.100:37429", "ABCDEF01234567");
+```
+
+## Connect
+
+The `connect` method connects to a wireless device at the specified address.
+
+```ts
+declare class AdbServerClient {
+  wireless: {
+    connect(address: string): Promise<void>;
+  };
+}
+```
+
+### Parameters
+
+- `address`: The IP address and port of the device in the format `<ip>:<port>`
+
+### Return value
+
+Returns a `Promise` that resolves when the connection is successful.
+
+### Errors
+
+The method may throw the following errors:
+
+- `AlreadyConnectedError`: Already connected to this address
+- `UnauthorizedError`: Failed to connect or authenticate to the device
+- `NetworkError`: Other network-related errors
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb connect <address>
+```
+
+:::
+
+### Example
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+declare const client: AdbServerClient;
+try {
+  await client.wireless.connect("192.168.1.100:5555");
+  console.log("Connected successfully");
+} catch (e) {
+  if (e instanceof AdbServerClient.AlreadyConnectedError) {
+    console.log("Already connected to this device");
+  } else if (e instanceof AdbServerClient.UnauthorizedError) {
+    console.log("Connection unauthorized");
+  } else if (e instanceof AdbServerClient.NetworkError) {
+    console.log("Network error");
+  } else {
+    throw e;
+  }
+}
+```
+
+## Pair
+
+The `pair` method pairs with a wireless debugging device using a pairing code. This is required for Android 11 and newer devices that use the wireless debugging feature.
+
+```ts
+declare class AdbServerClient {
+  wireless: {
+    pair(address: string, password: string): Promise<void>;
+  };
+}
+```
+
+### Parameters
+
+- `address`: The IP address and port for pairing in the format `<ip>:<port>`
+- `password`: The pairing code displayed on the device
+
+### Return value
+
+Returns a `Promise` that resolves when the pairing is successful.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb pair <address> <password>
+```
+
+:::
+
+### Example
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+declare const client: AdbServerClient;
+// Get the pairing address and code from the device's Wireless Debugging settings
+// (Settings > Developer options > Wireless debugging > Pair device with pairing code)
+const pairingAddress = "192.168.1.100:37429"; // Port shown on pairing screen
+const pairingCode = "ABCDEF01234567";
+
+// Pair with the device first
+await client.wireless.pair(pairingAddress, pairingCode);
+
+// Get the connection address from the main Wireless Debugging screen
+// (Settings > Developer options > Wireless debugging)
+const connectAddress = "192.168.1.100:43215"; // Different port shown on main screen
+
+// Then connect to the device
+await client.wireless.connect(connectAddress);
+```
+
+## Disconnect
+
+The `disconnect` method disconnects from a wireless device.
+
+```ts
+declare class AdbServerClient {
+  wireless: {
+    disconnect(address: string): Promise<void>;
+  };
+}
+```
+
+### Parameters
+
+- `address`: The IP address and port of the device to disconnect
+
+### Return value
+
+Returns a `Promise` that resolves when the disconnection is complete.
+
+:::info[Equivalent ADB Command]
+
+```sh
+adb disconnect <address>
+```
+
+:::
+
+### Example
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+declare const client: AdbServerClient;
+await client.wireless.disconnect("192.168.1.100:5555");
+```
+
+## Usage Patterns
+
+### TCP/IP Mode (Traditional)
+
+For devices connected via USB, you can switch to TCP/IP mode and then connect wirelessly:
+
+1. Connect the device via USB
+2. Enable TCP/IP mode on the device:
+   - **Rooted devices**: Set the `service.adb.tcp.port` property on the device
+   - **Non-rooted devices**: Use the `adb.tcpip.setPort()` method (requires USB connection)
+3. Get the device's IP address using `adb.subprocess.shellProtocol`
+4. Disconnect the USB cable
+5. Connect wirelessly using `client.wireless.connect()` with the IP address
+
+For device-side setup instructions, see [Enable ADB over Wi-Fi](../../tango/daemon/tcp/enable.mdx#tcp-ip-mode).
+
+```ts transpile
+import type { Adb, AdbServerClient } from "@yume-chan/adb";
+declare const client: AdbServerClient;
+declare const usbDevice: AdbServerClient.Device;
+// Create a connection to the USB device
+const adb = await client.createAdb(usbDevice);
+// Enable TCP/IP mode on port 5555
+await adb.tcpip.setPort(5555);
+
+// Get the device's IP address
+const process = await adb.subprocess.shellProtocol!.spawn("ip addr show wlan0");
+const { stdout } = await process.wait();
+const output = await new Response(
+  stdout.pipeThrough(new TextDecoderStream()),
+).text();
+
+// Parse the IP address from the output (format may vary by device)
+const ipMatch = output.match(/inet (\d+\.\d+\.\d+\.\d+)/);
+const ipAddress = ipMatch?.[1];
+if (!ipAddress) {
+  throw new Error("Could not find IP address");
+}
+
+// Now connect wirelessly
+await client.wireless.connect(`${ipAddress}:5555`);
+```
+
+For more information, see the [`tcpip` API documentation](../../api/adb/tcpip.mdx) and [Shell protocol documentation](../../api/adb/subprocess/shell-protocol.mdx).
+
+:::note
+
+Server Transport provides a much better experience for TCP/IP mode compared to Daemon Transport, which only supports TCP/IP mode on Node.js and requires manual socket implementation. See [Create connection](../../tango/daemon/tcp/create-connection.mdx) for daemon transport details.
+
+:::
+
+### Wireless Debugging Mode (Android 11+)
+
+For Android 11 and newer devices, wireless debugging can be enabled directly without USB connection:
+
+1. Enable "Wireless debugging" in Developer options on the device
+2. Tap on "Pair device with pairing code" to get the pairing address and code
+3. Pair using `client.wireless.pair()`
+4. Connect using `client.wireless.connect()`
+
+For more information about Wireless Debugging technical details, see [Enable ADB over Wi-Fi](../../tango/daemon/tcp/enable.mdx#wireless-debugging-mode-android-11).
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+declare const client: AdbServerClient;
+// Get these from the device's wireless debugging settings
+// Pairing address: Settings > Developer options > Wireless debugging > Pair device with pairing code
+const pairingAddress = "192.168.1.100:37429";
+const pairingCode = "ABCDEF01234567";
+
+// Connection address: Settings > Developer options > Wireless debugging (main screen)
+// Note: The connection port is different from the pairing port
+const connectAddress = "192.168.1.100:43215";
+
+// Pair with the device
+await client.wireless.pair(pairingAddress, pairingCode);
+
+// Connect to the device
+await client.wireless.connect(connectAddress);
+
+// Now you can create an ADB connection
+const devices = await client.getDevices();
+const device = devices.find((d) => d.serial === connectAddress);
+if (device) {
+  const adb = await client.createAdb(device);
+  // Use the adb connection...
+}
+```
+
+:::note
+
+Wireless Debugging mode requires pairing and TLS support, which is complex to implement. Server Transport provides built-in support for this mode, while Daemon Transport does not support it.
+
+:::
+
+## Error Handling
+
+Different error types indicate different failure scenarios:
+
+```ts transpile
+import type { AdbServerClient } from "@yume-chan/adb";
+declare const client: AdbServerClient;
+try {
+  await client.wireless.connect("192.168.1.100:5555");
+} catch (e) {
+  if (e instanceof AdbServerClient.AlreadyConnectedError) {
+    // Device is already connected, can proceed normally
+    console.log("Already connected");
+  } else if (e instanceof AdbServerClient.UnauthorizedError) {
+    // Check if device needs pairing or authorization
+    console.log("Unauthorized - may need to pair or authorize on device");
+  } else if (e instanceof AdbServerClient.NetworkError) {
+    // Network unreachable or other network error
+    console.log("Network error - check IP address and network connectivity");
+  } else {
+    // Unexpected error
+    throw e;
+  }
+}
+```
+
+## Notes
+
+- Wireless connections may be less stable than USB connections
+- Make sure the device and computer are on the same network
+- The device's IP address may change if it reconnects to the network
+- For wireless debugging mode, the pairing port and connection port may be different
+- Pairing is only required once per device; subsequent connections can use `connect` directly
