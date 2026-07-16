@@ -271,6 +271,28 @@ await writer.close();
 // highlight-end
 ```
 
+If you pipe a `ReadableStream` to `stdin`, you can close `stdin` by closing the `ReadableStream`:
+
+```ts transpile
+import type { Adb, AdbShellProtocolProcess } from "@yume-chan/adb";
+import { encodeUtf8 } from "@yume-chan/struct";
+import { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const process: AdbShellProtocolProcess =
+  await adb.subprocess.shellProtocol!.spawn("cat");
+
+await new ReadableStream<Uint8Array>({
+  start(controller) {
+    controller.enqueue(encodeUtf8("Hello World!"));
+    // highlight-start
+    controller.close();
+    // highlight-end
+  },
+}).pipeTo(process.stdin);
+```
+
 When using `spawn.wait`, `stdin` can be closed by closing the `ReadableStream`:
 
 {/*
@@ -302,7 +324,7 @@ const output: Uint8Array = await adb.subprocess
 
 See documentation page [Shell protocol](../api/adb/subprocess/shell-protocol.mdx) for more details about closing stdin and shell protocol usage.
 
-### 💥🔄 Reorganize sync API with namespace structure
+### 💥🔄 Sync API no longer needs manual socket management
 
 The sync API has been completely reorganized with a new namespace structure and automatic socket pooling. The public API is now simpler and no longer requires manual socket management.
 
@@ -335,7 +357,9 @@ import { AdbSync } from "@yume-chan/adb";
 
 declare const adb: Adb;
 
+// highlight-start
 const sync: AdbSync.Service = await adb.sync();
+// highlight-end
 try {
   await sync.write({
     filename,
@@ -489,7 +513,23 @@ try {
 // highlight-end
 ```
 
-The pool also provides a `withSocket()` helper for automatic resource management:
+Or with Explicit Resource Management feature:
+
+```ts
+import type { Adb } from "@yume-chan/adb";
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+{
+  using socket = await adb.sync.acquireSocket();
+  // Use socket directly for custom operations
+}
+
+// Socket is automatically released after the block
+```
+
+Or with the `withSocket()` helper function:
 
 ```ts
 import type { Adb } from "@yume-chan/adb";
