@@ -1,2 +1,7 @@
-patchedDependencies:
-  mermaid: patches/mermaid.patch
+allowBuilds:
+  core-js: false
+  core-js-pure: false
+
+overrides:
+  "@docusaurus/theme-mermaid>mermaid": 11.16.0
+  "@docusaurus/theme-search-algolia": "-"
