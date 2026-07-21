@@ -6,12 +6,6 @@ sidebar_position: 2
 
 WebCodecs API decodes video frames into `VideoFrame` objects. There are multiple methods to render those `VideoFrame` objects onto the page. This package provides four concrete `VideoFrameRenderer` implementations plus one abstract base class:
 
-# TL;DR
-
-`WebCodecsVideoDecoder` will automatically create an `AutoCanvasRenderer` if the `renderer` option is not specified. This automatically selects the best available renderer: hardware-accelerated `WebGLVideoFrameRenderer` when available, falling back to software-based `BitmapVideoFrameRenderer` otherwise.
-
-This page covers advanced usage scenarios. Most users don't need to manually configure renderers as the default behavior provides optimal performance in most cases.
-
 ## Overview
 
 :::info
@@ -20,11 +14,61 @@ These renderers are not tied to our `WebCodecsVideoDecoder`, they can also be us
 
 :::
 
-- `InsertableStreamVideoFrameRenderer`: Renders to a `<video>` element using [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). (Concrete implementation)
-- `WebGLVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using WebGL. It only works with hardware accelerated WebGL, because without hardware acceleration, the performance is even worse than the bitmap renderer below. (Concrete implementation)
-- `BitmapVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using bitmap renderer. (Concrete implementation)
-- `AutoCanvasRenderer`: Convenience class that automatically selects the best available canvas-based renderer based on hardware support (WebGL if available, otherwise Bitmap). (Concrete implementation)
+```mermaid
+flowchart TD
+    VFR[/"VideoFrameRenderer<br/>(interface)"/]
+
+    IFR_IN[/"&lt;video&gt; element"/]
+    IFRC["new InsertableStreamVideoFrameRenderer()"]
+    IFR["InsertableStreamVideoFrameRenderer<br/>(hardware)"]
+
+    subgraph CVFR ["CanvasVideoFrameRenderer (abstract)"]
+        C1["canvas<br/>writable<br/>redraw()<br/>snapshot()"]
+    end
+
+    CANVAS[/"&lt;canvas&gt;"/]
+    OSC[/"OffscreenCanvas"/]
+    BFRC["new BitmapVideoFrameRenderer()"]
+    BFR["BitmapVideoFrameRenderer<br/>(software)"]
+
+    WFRC["new WebGLVideoFrameRenderer()"]
+    WFR["WebGLVideoFrameRenderer<br/>(hardware)"]
+
+    ACR_IN[/"createCanvas()"/]
+    ACR["AutoCanvasRenderer<br/>(auto-selects)"]
+
+    IFR -.->|"Implements"| VFR
+    CVFR -.->|"Implements"| VFR
+    BFR -.->|"Extends"| CVFR
+    WFR -.->|"Extends"| CVFR
+    ACR -.->|"Implements"| VFR
+
+    IFR_IN --> IFRC --> IFR
+    CANVAS & OSC --> BFRC --> BFR
+    CANVAS & OSC --> WFRC --> WFR
+    ACR_IN --> ACR
+
+    classDef link text-decoration: underline;
+    class ACR,BFR,WFR,IFR,CVFR link;
+
+    click CVFR "#canvasvideoframerenderer"
+    click BFR "#bitmapvideoframerenderer"
+    click WFR "#webglvideoframerenderer"
+    click IFR "#insertablestreamvideoframerenderer"
+    click ACR "#autocanvasrenderer"
+```
+
+:::note
+
+Click underlined nodes to jump to their documentation sections below.
+
+:::
+
+- `InsertableStreamVideoFrameRenderer`: Renders to a `<video>` element using [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API).
 - `CanvasVideoFrameRenderer`: Abstract base class for canvas-based renderers that handles common functionality like canvas resizing, display size updates using ResizeObserver, frame redrawing, and snapshots. It supports three canvas sizing modes: `"video"` (matches video resolution), `"display"` (matches display size), and `"external"` (uses existing canvas size). (Abstract base class)
+    - `WebGLVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using WebGL. It only works with hardware accelerated WebGL, because without hardware acceleration, the performance is even worse than the bitmap renderer below.
+    - `BitmapVideoFrameRenderer`: Renders to a `<canvas>` or `OffscreenCanvas` using bitmap renderer.
+- `AutoCanvasRenderer`: Convenience class that automatically selects the best available canvas-based renderer based on hardware support (WebGL if available, otherwise Bitmap). It handles WebGL context loss by automatically falling back to `BitmapVideoFrameRenderer`.
 
 :::info
 
@@ -40,7 +84,8 @@ These renderers are not tied to our `WebCodecsVideoDecoder`, they can also be us
 
 ```ts
 export interface VideoFrameRenderer {
-    readonly type: "software" | "hardware";
+    readonly type: ScrcpyVideoDecoder.RendererType;
+    readonly onTypeChanged?: Event<ScrcpyVideoDecoder.RendererType>;
 
     readonly writable: WritableStream<VideoFrame>;
 
@@ -53,9 +98,34 @@ export interface VideoFrameRenderer {
 ### Characteristics
 
 - `type`: Indicates the rendering method - `"software"` for software-based rendering (CPU intensive) or `"hardware"` for hardware-accelerated rendering (GPU assisted)
+- `onTypeChanged?`: Optional event that fires when the rendering type changes (e.g., when `AutoCanvasRenderer` falls back from hardware to software due to context loss)
 - `writable`: A `WritableStream<VideoFrame>` that accepts video frames for rendering
 - `snapshot?`: Optional method to capture a snapshot of the current frame as a Blob (supported by canvas-based renderers)
 - `dispose?`: Optional method to clean up resources when the renderer is no longer needed
+
+### `onTypeChanged` event
+
+The `onTypeChanged` event is defined on the `VideoFrameRenderer` interface, but it is only implemented by renderers whose type can change at runtime. Currently, only `AutoCanvasRenderer` implements this event, because it is the only renderer that can switch between hardware and software rendering (e.g., when WebGL context is lost and cannot be restored).
+
+Renderers with a fixed type (`BitmapVideoFrameRenderer`, `WebGLVideoFrameRenderer`, `InsertableStreamVideoFrameRenderer`) do not fire this event.
+
+```ts
+import type { VideoFrameRenderer } from "@yume-chan/scrcpy-decoder-webcodecs";
+
+declare const renderer: VideoFrameRenderer;
+
+// `onTypeChanged` is optional on the interface
+if (renderer.onTypeChanged) {
+    renderer.onTypeChanged((type) => {
+        console.log(`Renderer type changed to: ${type}`);
+        // For AutoCanvasRenderer, the canvas element might have changed
+        // when the renderer switches between WebGL and Bitmap
+        if (renderer.canvas instanceof HTMLCanvasElement) {
+            document.body.appendChild(renderer.canvas);
+        }
+    });
+}
+```
 
 ## CanvasVideoFrameRenderer
 
@@ -67,7 +137,7 @@ The `CanvasVideoFrameRenderer` is an abstract base class that provides common fu
 export abstract class CanvasVideoFrameRenderer<
     TOptions extends CanvasVideoFrameRenderer.Options = CanvasVideoFrameRenderer.Options,
 > implements VideoFrameRenderer {
-    abstract get type(): "software" | "hardware";
+    abstract get type(): ScrcpyVideoDecoder.RendererType;
 
     /**
      * The canvas element used for rendering.
@@ -111,7 +181,7 @@ export abstract class CanvasVideoFrameRenderer<
  }
  ```
 
- ### Understanding the canvasSize option
+### `canvasSize` option
 
 The `canvasSize` option in `CanvasVideoFrameRenderer` controls how the canvas dimensions are managed and significantly affects performance and visual quality:
 
@@ -136,12 +206,12 @@ The `"display"` option is generally the best choice when running in the main thr
 `BitmapVideoFrameRenderer` is a concrete implementation of `CanvasVideoFrameRenderer` that uses the ImageBitmap rendering context for software-based rendering. It creates an `ImageBitmap` from each incoming `VideoFrame` and transfers it to the canvas using `transferFromImageBitmap`.
 
 #### Definition
-
 ```ts
 export class BitmapVideoFrameRenderer extends CanvasVideoFrameRenderer {
     override get type(): "software";
     constructor(options?: CanvasVideoFrameRenderer.Options);
 }
+
 ```
 
 #### Characteristics
@@ -152,7 +222,6 @@ export class BitmapVideoFrameRenderer extends CanvasVideoFrameRenderer {
 - Better performance than 2D canvas rendering
 
 #### Example
-
 ```ts
 // 1. Create canvas automatically
 const bitmapRenderer1 = new BitmapVideoFrameRenderer();
@@ -174,6 +243,7 @@ const bitmapRenderer2 = new BitmapVideoFrameRenderer({ canvas: canvasElement });
 // 3. Use an external OffscreenCanvas
 const offscreenCanvas = new OffscreenCanvas(1920, 1080);
 const bitmapRenderer3 = new BitmapVideoFrameRenderer({ canvas: offscreenCanvas });
+
 ```
 
 ### WebGLVideoFrameRenderer
@@ -181,11 +251,11 @@ const bitmapRenderer3 = new BitmapVideoFrameRenderer({ canvas: offscreenCanvas }
 `WebGLVideoFrameRenderer` is a hardware-accelerated implementation that uses WebGL shaders for rendering video frames. It provides superior performance on supported devices but requires hardware acceleration.
 
 #### Definition
-
 ```ts
 export class WebGLVideoFrameRenderer extends CanvasVideoFrameRenderer<WebGLVideoFrameRenderer.Options> {
     static get isSupported(): boolean;
     override get type(): "hardware";
+    get onContextLost(): Event<void>;
     constructor(options?: WebGLVideoFrameRenderer.Options);
     snapshot(options?: ImageEncodeOptions): Promise<Blob | undefined>;
     dispose(): undefined;
@@ -194,13 +264,26 @@ export class WebGLVideoFrameRenderer extends CanvasVideoFrameRenderer<WebGLVideo
 export namespace WebGLVideoFrameRenderer {
     export interface Options extends CanvasVideoFrameRenderer.Options {
         /**
-         * Whether to allow capturing the canvas content using APIs like `readPixels` and `toDataURL`.
+         * Whether to allow capturing the canvas content using APIs
+         * like `readPixels` and `toDataURL`.
          *
          * Enabling this option may reduce performance.
          */
         enableCapture?: boolean;
+
+        /**
+         * The timeout in milliseconds to wait for context restoration
+         * before firing `onContextLost`.
+         *
+         * When set to 0, also disables automatic context restoration,
+         * `onContextLost` will be fired immediately when the context is lost.
+         *
+         * Default is 3000.
+         */
+        contextRestoreTimeout?: number;
     }
 }
+
 ```
 
 #### Characteristics
@@ -211,9 +294,32 @@ export namespace WebGLVideoFrameRenderer {
 - Implements bicubic filtering for better image quality when scaling
 - Supports optional canvas capture with the `enableCapture` option (may reduce performance)
 - Handles WebGL context loss and restoration automatically
+- Fires `onContextLost` when the context cannot be restored within the timeout period (default: 3000ms)
+- The `contextRestoreTimeout` option controls how long to wait for context restoration before giving up (set to `0` to fire `onContextLost` immediately)
+
+#### Context loss handling
+```mermaid
+flowchart TD
+    A[WebGL context lost] --> B{contextRestoreTimeout === 0?}
+    B -->|Yes| C[Fire onContextLost immediately]
+    C --> D[Dispose renderer]
+    B -->|No| E[Prevent default context loss]
+    E --> F[Start timeout timer]
+    F --> G{Context restored before timeout?}
+    G -->|Yes| H[Cancel timeout]
+    H --> I[Re-initialize WebGL]
+    I --> J[Redraw last frame]
+    G -->|No| K[Timeout expired]
+    K --> L[Fire onContextLost]
+    L --> M[Dispose renderer]
+
+```
+
+When the WebGL context is lost, the renderer first checks if `contextRestoreTimeout` is set to `0`. If so, it fires `onContextLost` immediately and disposes itself, giving the caller full control over recovery.
+
+Otherwise, it prevents the browser's default context loss behavior and starts a timer. If the context is restored before the timer expires, the renderer re-initializes its WebGL state and redraws the last frame automatically. If the timeout expires without restoration, `onContextLost` is fired and the renderer is disposed.
 
 #### Example
-
 ```ts
 // 1. Check compatibility before creating renderer
 if (WebGLVideoFrameRenderer.isSupported) {
@@ -250,25 +356,36 @@ if (WebGLVideoFrameRenderer.isSupported) {
 } else {
     console.warn("WebGL is not supported, consider using BitmapVideoFrameRenderer instead");
 }
+
 ```
 
-### AutoCanvasRenderer
+## AutoCanvasRenderer
 
-`AutoCanvasRenderer` is a convenience class that automatically selects the best available canvas-based renderer based on hardware support. It will use `WebGLVideoFrameRenderer` if WebGL hardware acceleration is available, otherwise it falls back to `BitmapVideoFrameRenderer`.
+`AutoCanvasRenderer` is a convenience class that automatically selects the best available canvas-based renderer based on hardware support. It will use `WebGLVideoFrameRenderer` if WebGL hardware acceleration is available, otherwise it falls back to `BitmapVideoFrameRenderer`. When WebGL context is lost and cannot be restored, it automatically falls back to `BitmapVideoFrameRenderer` and re-renders the last frame.
 
 #### Definition
-
 ```ts
 export class AutoCanvasRenderer implements VideoFrameRenderer {
-    get type(): "software" | "hardware";
+    get type(): ScrcpyVideoDecoder.RendererType;
+    get onTypeChanged(): Event<ScrcpyVideoDecoder.RendererType>;
     get canvas(): HTMLCanvasElement | OffscreenCanvas;
     get writable(): WritableStream<VideoFrame>;
 
-    constructor(options?: WebGLVideoFrameRenderer.Options);
+    constructor(options?: AutoCanvasRenderer.Options);
 
     snapshot(options?: ImageEncodeOptions): Promise<Blob | undefined>;
     dispose(): undefined;
 }
+
+export namespace AutoCanvasRenderer {
+    export interface Options extends Omit<
+        WebGLVideoFrameRenderer.Options,
+        "canvas"
+    > {
+        createCanvas?: () => HTMLCanvasElement | OffscreenCanvas;
+    }
+}
+
 ```
 
 #### Characteristics
@@ -276,31 +393,83 @@ export class AutoCanvasRenderer implements VideoFrameRenderer {
 - Automatically detects hardware support and chooses the optimal renderer
 - Uses hardware-accelerated `WebGLVideoFrameRenderer` when available
 - Falls back to software-based `BitmapVideoFrameRenderer` when WebGL is not supported
-- Provides a unified interface regardless of the underlying renderer
-- Inherits all options from `WebGLVideoFrameRenderer` (since it may use it internally)
+- Automatically falls back from WebGL to Bitmap when WebGL context is lost and cannot be restored within the timeout period
+- Fires `onTypeChanged` when the renderer type changes (e.g., fallback from hardware to software)
+- The `canvas` property might change when the renderer switches between WebGL and Bitmap. Specify a `createCanvas` option, or listen to the `onTypeChanged` event to handle the canvas change
+- Inherits all options from `WebGLVideoFrameRenderer` (except `canvas`, which is managed internally)
+
+#### How it works
+
+##### Initialization
+```mermaid
+flowchart TD
+    A["new AutoCanvasRenderer(options)"] --> B["createCanvas()"]
+    B --> C{WebGL supported?}
+    C -->|Yes| D["Create WebGLVideoFrameRenderer"]
+    D --> E["Register onContextLost handler"]
+    C -->|No| F["Create BitmapVideoFrameRenderer"]
+    E --> G["Get writer from inner renderer"]
+    F --> G
+    G --> H["Fire onTypeChanged"]
+
+```
+
+On construction, `AutoCanvasRenderer` creates a canvas using the `createCanvas` factory (or a default one), then checks if `WebGLVideoFrameRenderer.isSupported` is `true`. If so, it creates a `WebGLVideoFrameRenderer` with that canvas and registers a `onContextLost` handler. Otherwise, it creates a `BitmapVideoFrameRenderer` directly.
+
+##### Context loss fallback
+```mermaid
+flowchart TD
+    A["WebGL context lost"] --> B["onContextLost fires"]
+    B --> C["createCanvas()"]
+    C --> D["Create BitmapVideoFrameRenderer"]
+    D --> E["Re-render last frame"]
+    E --> F["Fire onTypeChanged"]
+
+```
+
+When WebGL context is lost and cannot be restored (see [Context loss handling](#context-loss-handling)), the `onContextLost` handler creates a new `BitmapVideoFrameRenderer` with a fresh canvas and re-renders the last frame on it.
 
 #### Example
-
 ```ts
-// Creates the best available renderer automatically
+// 1. Basic usage - creates the best available renderer automatically
 const autoRenderer = new AutoCanvasRenderer();
 
 // Check which renderer is being used
 console.log(`Renderer type: ${autoRenderer.type}`); // "hardware" or "software"
 
-// Append the canvas to the DOM
-document.body.appendChild(autoRenderer.canvas);
+// Listen for renderer type changes (e.g., when WebGL context is lost)
+// The event will also fire when a new event listener is added, to notify the current renderer type
+autoRenderer.onTypeChanged((type) => {
+    console.log(`Renderer type changed to: ${type}`);
+    // The canvas might have changed, re-append it to the DOM
+    document.body.appendChild(autoRenderer.canvas);
+});
 
-// The renderer will be either WebGL (hardware) or Bitmap (software) based on system capabilities
 ```
 
+### `createCanvas` option
+
+The `createCanvas` option in `AutoCanvasRenderer.Options` allows specifying a custom factory function for creating the canvas element. If not provided, a default canvas is created using `createCanvas()` from `@yume-chan/scrcpy-decoder-shared`.
+
+The factory function **must create and return a new `<canvas>` element each time it is called**. This is because `AutoCanvasRenderer` calls the factory each time it creates or replaces the inner renderer - both on initial construction and when falling back from WebGL to Bitmap after context loss. A different rendering context (WebGL or ImageBitmap) will be created on the canvas each time, so reusing the same element would cause conflicts.
+```ts
+const autoRenderer = new AutoCanvasRenderer({
+    createCanvas: () => {
+        const canvas = document.createElement("canvas");
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        document.body.appendChild(autoRenderer.canvas);
+        return canvas;
+    },
+});
+
+```
 
 ## InsertableStreamVideoFrameRenderer
 
 `InsertableStreamVideoFrameRenderer` renders video frames to a `<video>` element using the [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). It uses a `MediaStreamTrackGenerator` to create a media stream that feeds video frames to the video element.
 
 ### Definition
-
 ```ts
 export class InsertableStreamVideoFrameRenderer implements VideoFrameRenderer {
     static get isSupported(): boolean;
@@ -326,6 +495,7 @@ export namespace InsertableStreamVideoFrameRenderer {
         updateSize?: boolean;
     }
 }
+
 ```
 
 ### Characteristics
@@ -343,7 +513,6 @@ export namespace InsertableStreamVideoFrameRenderer {
 - Supports dynamic resizing of the video element based on frame dimensions
 
 ### Example
-
 ```ts
 // 1. Create video element automatically
 const streamRenderer1 = new InsertableStreamVideoFrameRenderer();
@@ -365,6 +534,7 @@ if (InsertableStreamVideoFrameRenderer.isSupported) {
 } else {
     console.warn("Insertable streams not supported, consider using WebGL or Bitmap renderers");
 }
+
 ```
 
 ### Quirks
