@@ -36,6 +36,6 @@ The `adb detach` command only works when the server is using `libusb`.
 
 ### `delayed_ack`
 
-Delayed Ack(knowledgement) is a new feature added in Android 14 to improve performance, especially for high-latency connections like ADB over Wi-Fi.
+Delayed Ack(-nowledgement), a.k.a [Burst Mode](https://developer.android.com/tools/adb?utm_source=android-studio-app&utm_medium=app#burstMode) is a new feature added in Android 14 to improve performance, especially for high-latency connections like ADB over Wi-Fi.
 
 It works on the low-level ADB protocol. Since the connection is managed by Google ADB Server, it's not controlled by Tango. We can't enable it if the server doesn't support it.
