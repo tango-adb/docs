@@ -2,16 +2,16 @@
 sidebar_position: 1
 ---
 
-# TinyH264 decoder
+# H264BSD decoder
 
 import Version from "../version-span";
 
-Decode and render H.264 streams in Web browsers using TinyH264, the (now deprecated and removed) Android H.264 software decoder.
+Decode and render H.264 streams in Web browsers using H264BSD, a WebAssembly build of the Android H264BSD software decoder.
 
-It's slow, and only supports H.264 main profile at level 4, but works on most browsers.
+It's slow, and only supports H.264 Baseline profile at level 4, but works on most browsers.
 
 ```sh npm2yarn
-npm install @yume-chan/scrcpy-decoder-tinyh264
+npm install @yume-chan/scrcpy-decoder-h264bsd
 ```
 
 :::warning
@@ -26,11 +26,11 @@ import { defineConfig } from "vite";
 export default defineConfig({
   optimizeDeps: {
     exclude: [
-      "@yume-chan/scrcpy-decoder-tinyh264",
+      "@yume-chan/scrcpy-decoder-h264bsd",
     ],
     include: [
-      "@yume-chan/scrcpy-decoder-tinyh264 > yuv-buffer",
-      "@yume-chan/scrcpy-decoder-tinyh264 > yuv-canvas",
+      "@yume-chan/scrcpy-decoder-h264bsd > yuv-buffer",
+      "@yume-chan/scrcpy-decoder-h264bsd > yuv-canvas",
     ],
   },
 });
@@ -44,25 +44,25 @@ There are two aspects of performance:
 
 ### Decoding
 
-[`tinyh264`](https://npmjs.org/package/tinyh264) package is used for decoding, which compiles the C code into WebAssembly, and runs it in a Web Worker. This way, the main thread is not blocked by the decoding process.
+[`@yume-chan/h264bsd`](https://www.npmjs.com/package/@yume-chan/h264bsd) package is used for decoding, which compiles the C code into WebAssembly, and runs it in a Web Worker. This way, the main thread is not blocked by the decoding process.
 
 Because H.264 is a complex codec, decoding it is CPU-intensive. It might not be able to keep up with the video frame rate on low-end devices.
 
 ### Rendering
 
-TinyH264 decoder outputs buffers containing pixel colors in YUV color space, which needs to be converted to RGB for rendering.
+H264BSD decoder outputs buffers containing pixel colors in YUV color space, which needs to be converted to RGB for rendering.
 
 [`yuv-canvas`](https://www.npmjs.com/package/yuv-canvas) package is used to do the conversion and rendering. When supported, it uses a WebGL shader to accelerate the conversion, so it's very fast. But on unsupported devices, it falls back to a software implementation, which is super slow.
 
 ## Limit profile/level
 
-Because it only supports H.264 Baseline level 4 codec, but many newer devices default to higher profiles/levels, you must limit it using <Version until="v2.0">`codecOptions` option</Version><Version since="v2.0">`videoCodecOptions` option</Version>:
+Because it only supports H.264 Baseline profile at level 4, but many newer devices default to higher profiles/levels, you must limit it using <Version until="v2.0">`codecOptions` option</Version><Version since="v2.0">`videoCodecOptions` option</Version>:
 
 ```ts transpile
 import { ScrcpyOptions1_24, ScrcpyCodecOptions } from "@yume-chan/scrcpy";
-import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
 
-const H264Capabilities = TinyH264Decoder.capabilities.h264;
+const H264Capabilities = H264BsdDecoder.capabilities.h264;
 
 const options = new ScrcpyOptions1_24({
   // other options...
@@ -73,13 +73,13 @@ const options = new ScrcpyOptions1_24({
 });
 ```
 
-However, it will fail on some very old devices that doesn't even support Baseline level 4 codec. If that happens, You can retry starting the server without the <Version until="v2.0">`codecOptions` option</Version><Version since="v2.0">`videoCodecOptions` option</Version>.
+However, it will fail on some very old devices that doesn't even support Baseline level 4 codec. If that happens, you can retry starting the server without the <Version until="v2.0">`codecOptions` option</Version><Version since="v2.0">`videoCodecOptions` option</Version>.
 
 ```ts transpile
 import { ScrcpyOptions1_24, ScrcpyCodecOptions } from "@yume-chan/scrcpy";
-import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
 
-const H264Capabilities = TinyH264Decoder.capabilities.h264;
+const H264Capabilities = H264BsdDecoder.capabilities.h264;
 
 try {
   await startServer(
@@ -103,7 +103,34 @@ try {
 ## Create a decoder
 
 ```ts
-export declare namespace TinyH264Decoder {
+export declare class H264BsdDecoder implements ScrcpyVideoDecoder {
+  static readonly capabilities: Record<string, ScrcpyVideoDecoderCapability>;
+
+  constructor(options?: H264BsdDecoder.Options);
+
+  get type(): "software";
+  get canvas(): HTMLCanvasElement | OffscreenCanvas;
+  get rendererType(): "software" | "hardware";
+  get paused(): boolean;
+  get writable(): WritableStream<ScrcpyMediaStreamPacket>;
+  get width(): number;
+  get height(): number;
+  get sizeChanged(): Event<{ width: number; height: number }>;
+
+  get decoderResetCount(): number;
+  get framesDecoded(): number;
+  get framesSkippedDecoding(): number;
+  get framesRendered(): number;
+  get framesDisplayed(): number;
+  get framesSkippedRendering(): number;
+
+  pause(): void;
+  resume(): void;
+  trackDocumentVisibility(document: Document): () => void;
+  dispose(): Promise<void>;
+}
+
+export declare namespace H264BsdDecoder {
   interface Options {
     /**
      * Optional render target canvas element or offscreen canvas.
@@ -111,33 +138,23 @@ export declare namespace TinyH264Decoder {
      * or a `OffscreenCanvas` will be created.
      */
     canvas?: HTMLCanvasElement | OffscreenCanvas | undefined;
+
+    /**
+     * Whether to create a Web Worker to run the decoder.
+     *
+     * - `"auto"`: Create a Web Worker if currently running in the main thread.
+     * - `true`: Always create a Web Worker. If already running in a Web Worker,
+     *   `canvas` must be an `OffscreenCanvas`, which will be transferred to the new Worker.
+     * - `false`: Never create a Web Worker.
+     *
+     * Defaults to `"auto"`.
+     */
+    worker?: "auto" | boolean;
   }
-}
-
-export declare class TinyH264Decoder implements ScrcpyVideoDecoder {
-  static readonly capabilities: Record<string, ScrcpyVideoDecoderCapability>;
-
-  get renderer(): HTMLCanvasElement | OffscreenCanvas;
-  get sizeChanged(): import("@yume-chan/event").AddEventListener<
-    {
-      width: number;
-      height: number;
-    },
-    unknown
-  >;
-
-  get framesRendered(): number;
-  get framesSkipped(): number;
-
-  get writable(): WritableStream<ScrcpyMediaStreamPacket>;
-
-  constructor(options?: TinyH264Decoder.Options);
-
-  dispose(): void;
 }
 ```
 
-TinyH264 decoder can render to an HTML `<canvas>` element, or an `OffscreenCanvas` object.
+H264BSD decoder can render to an HTML `<canvas>` element, or an `OffscreenCanvas` object. The render target can be accessed via the `canvas` property.
 
 ### Using an existing canvas
 
@@ -145,7 +162,7 @@ When using MVVM frameworks like React.js, it might be simpler to attach the deco
 
 ```ts transpile
 import React from "react";
-import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
 import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
 
 export function Renderer(props: {
@@ -154,10 +171,12 @@ export function Renderer(props: {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
   React.useEffect(() => {
-    const decoder = new TinyH264Decoder({ canvas: canvasRef.current });
+    const decoder = new H264BsdDecoder({ canvas: canvasRef.current });
     void props.videoStream.pipeTo(decoder.writable).catch(() => {});
 
-    return () => decoder.dispose();
+    return () => {
+      void decoder.dispose();
+    };
   }, [props.videoStream]);
 
   return (
@@ -170,31 +189,85 @@ export function Renderer(props: {
 
 ### Create a new canvas
 
-If the `canvas` option is not provided, it automatically creates an `<canvas>` element if there is DOM API, or an `OffscreenCanvas` otherwise. The created renderer target can be retrieved from the `renderer` property.
+If the `canvas` option is not provided, it automatically creates a `<canvas>` element if there is DOM API, or an `OffscreenCanvas` otherwise. The created render target can be retrieved from the `canvas` property.
 
 ```ts transpile
-import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
 
-const decoder = new TinyH264Decoder();
-document.body.appendChild(decoder.renderer as HTMLCanvasElement);
+const decoder = new H264BsdDecoder();
+document.body.appendChild(decoder.canvas as HTMLCanvasElement);
 
 videoPacketStream // from previous step
   .pipeTo(decoder.writable)
   .catch(() => {});
 ```
 
-The newly created `renderer` needs to be inserted into the page to display the video.
+The newly created `canvas` needs to be inserted into the page to display the video.
+
+### Web Worker
+
+The `worker` option controls whether decoding runs in a Web Worker. It accepts `"auto"` (default), `true`, or `false`. The actual behavior depends on both the option value and the thread the decoder is constructed on:
+
+| `worker` | Current thread | Behavior |
+| -------- | -------------- | -------- |
+| `"auto"` | Main thread | Spawns a Web Worker; decoding and rendering run off the main thread. The `canvas` is transferred to the worker (an `HTMLCanvasElement` becomes an `OffscreenCanvas` via `transferControlToOffscreen`) and can no longer be drawn to from the main thread. |
+| `"auto"` | Web Worker | Runs on the current thread. No worker is created. |
+| `true` | Main thread | Same as `"auto"` on the main thread: spawns a Web Worker and transfers the `canvas`. |
+| `true` | Web Worker | Spawns a nested Web Worker. `canvas` must be an `OffscreenCanvas`; it is transferred to the new worker (throws otherwise). |
+| `false` | Main thread | Runs on the current main thread; decoding blocks the main thread. No worker is created. |
+| `false` | Web Worker | Runs on the current thread. No worker is created. |
+
+The default `"auto"` is recommended for most cases, as it keeps the main thread responsive while working out of the box on both the main thread and inside Web Workers.
+
+```ts transpile
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
+
+const decoder = new H264BsdDecoder({
+  worker: false,
+});
+```
 
 ## Handle size changes
 
 When the device orientation changes, Scrcpy server will recreate a new video encoder with the new size. The decoder will parse the new video configuration, and update the canvas size automatically.
 
-However, the video size is also useful for other purposes, like [injecting touch events](../control/touch.mdx). The `sizeChanged` event will be emitted when the video size changes:
+However, the video size is also useful for other purposes, like [injecting touch events](../control/touch.mdx). The current size is available from the `width` and `height` properties, and the `sizeChanged` event will be emitted when the video size changes:
 
 ```ts transpile
 decoder.sizeChanged(({ width, height }) => {
   console.log(width, height);
 });
+```
+
+## Pause decoding
+
+The decoder can be paused and resumed to temporarily stop processing video frames without tearing down the connection. This is useful when the rendering canvas is invisible or the user switches away from the page, saving system resources and battery.
+
+While paused, incoming video packets are queued internally and processed on resume, focusing on keyframes to restore the most recent frame efficiently.
+
+### `pause()`
+
+Pause the decoder. After calling `pause`, the decoder can only be resumed by calling `resume`. `pause` takes priority over `trackDocumentVisibility`:
+
+```ts transpile
+decoder.pause();
+```
+
+### `resume()`
+
+Resume the decoder if it was paused. Any pending video packets accumulated while paused will be processed:
+
+```ts transpile
+decoder.resume();
+```
+
+### `trackDocumentVisibility()`
+
+Automatically pause the decoder when the document becomes hidden and resume it when visible again. This won't resume a decoder that was explicitly paused with `pause()`. Returns an unsubscribe function that removes the listener and performs a final resume:
+
+```ts transpile
+const unsubscribe = decoder.trackDocumentVisibility(document);
+// Call unsubscribe() to stop tracking
 ```
 
 ## Rendering metrics
@@ -203,10 +276,24 @@ The decoder will try to render every frame when it arrives, to minimize latency.
 
 However, when the video frame rate is higher than the display refresh rate, or when the hardware can't keep up, some frames will be dropped.
 
-The `framesRendered` and `framesSkipped` fields provides accumulated rendering metrics:
+The following properties provide accumulated metrics:
+
+- `framesDecoded`: Number of frames successfully decoded.
+- `framesSkippedDecoding`: Number of frames skipped by the decoder, typically when a new keyframe arrives and queued frames are discarded. Limits maximum latency to one keyframe interval.
+- `framesRendered`: Number of frames drawn on the renderer.
+- `framesDisplayed`: Number of frames visible to the user. Multiple frames may be rendered during one vertical sync interval, but only the last is shown. Might be `0` if the renderer is in a nested Web Worker on Chrome due to a [Chrome bug](https://issues.chromium.org/issues/41483010).
+- `framesSkippedRendering`: Number of frames not drawn because the renderer can't keep up.
+- `decoderResetCount`: Number of times the decoder was reset to catch up with new keyframes.
 
 ```ts transpile
 setInterval(() => {
-  console.log(decoder.framesRendered, decoder.framesSkipped);
+  console.log(
+    decoder.framesDecoded,
+    decoder.framesSkippedDecoding,
+    decoder.framesRendered,
+    decoder.framesDisplayed,
+    decoder.framesSkippedRendering,
+    decoder.decoderResetCount,
+  );
 }, 1000);
 ```

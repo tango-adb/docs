@@ -65,11 +65,11 @@ const isSupported = WebCodecsVideoDecoder.isSupported;
 
 ### Example
 
-Here's an example of how to check for WebCodecs support before creating a decoder. If WebCodecs is not supported, you can fall back to the TinyH264 decoder which works on most browsers but is slower and only supports H.264:
+Here's an example of how to check for WebCodecs support before creating a decoder. If WebCodecs is not supported, you can fall back to the H264BSD decoder which works on most browsers but is slower and only supports H.264:
 
 ```ts transpile
 import { WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
-import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
 
 if (WebCodecsVideoDecoder.isSupported) {
     console.log("WebCodecs is supported, creating decoder...");
@@ -79,9 +79,9 @@ if (WebCodecsVideoDecoder.isSupported) {
         renderer: renderer,
     });
 } else {
-    console.log("WebCodecs is not supported, falling back to TinyH264 decoder");
-    // Create the TinyH264 fallback decoder (see [TinyH264 decoder](../tiny-h264.mdx) for more information)
-    const decoder = new TinyH264Decoder();
+    console.log("WebCodecs is not supported, falling back to H264BSD decoder");
+    // Create the H264BSD fallback decoder (see [H264BSD decoder](../tiny-h264.mdx) for more information)
+    const decoder = new H264BsdDecoder();
 }
 ```
 
@@ -109,7 +109,7 @@ Note that this property can generally be ignored because WebCodecs support most 
 
 ```ts
 import { ScrcpyVideoCodecId } from "@yume-chan/scrcpy";
-import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-shared";
 import type { VideoFrameRenderer } from "@yume-chan/scrcpy-decoder-webcodecs";
 
 export class WebCodecsVideoDecoder implements ScrcpyVideoDecoder {

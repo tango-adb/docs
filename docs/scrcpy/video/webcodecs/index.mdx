@@ -16,7 +16,7 @@ npm install @yume-chan/scrcpy-decoder-webcodecs
 
 ## Overview
 
-The WebCodecs decoder is more powerful and flexible than TinyH264 decoder, but also slightly more difficult to use. Here's a flowchart showing the overall steps to create and use WebCodecs decoders:
+The WebCodecs decoder is more powerful and flexible than H264BSD decoder, but also slightly more difficult to use. Here's a flowchart showing the overall steps to create and use WebCodecs decoders:
 
 ```mermaid
 flowchart TD
@@ -100,7 +100,7 @@ class WebCodecsVideoDecoder {
 }
 ```
 
-If WebCodecs API is not supported, you can fallback to the [TinyH264 decoder](../tiny-h264.mdx), but be aware only H.264 main profile level 4 is supported, and the performance is much worse.
+If WebCodecs API is not supported, you can fallback to the [H264BSD decoder](../tiny-h264.mdx), but be aware only H.264 Baseline profile level 4 is supported, and the performance is much worse.
 
 ## Check codec support
 
