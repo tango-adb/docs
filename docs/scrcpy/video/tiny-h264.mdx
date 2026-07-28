@@ -45,7 +45,7 @@ There are two aspects of performance:
 
 [`@yume-chan/h264bsd`](https://www.npmjs.com/package/@yume-chan/h264bsd) package is used for decoding, which compiles the C code into WebAssembly, and runs it in a Web Worker. This way, the main thread is not blocked by the decoding process.
 
-Because H.264 is a complex codec, decoding it is CPU-intensive. It might not be able to keep up with the video frame rate on low-end devices.
+H.264 is an old codec and the decoding algorithm is relatively simple, so the performance is acceptable on most devices. But on low-end devices, it may still be too slow to decode high-resolution video at high frame rates. You can reduce the resolution and/or frame rate to improve performance.
 
 ### Rendering
 

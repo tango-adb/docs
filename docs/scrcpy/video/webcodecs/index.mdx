@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Decoder
+# WebCodecs decoder
 
 import CanIUse from "../../../can-i-use";
 
@@ -74,9 +74,7 @@ WebCodecs API requires a [Secure Context](https://developer.mozilla.org/en-US/do
 
 :::
 
-Because WebCodecs API is still relatively new, you should check if it is supported before using it.
-
-`WebCodecsVideoDecoder.isSupported` property returns whether the browser supports basic WebCodecs API:
+WebCodecs API is pretty well supported in modern browsers, but you should still check whether the browser supports it before using it. The `WebCodecsVideoDecoder.isSupported` property returns whether the browser supports basic WebCodecs API:
 
 ```ts
 export declare class WebCodecsVideoDecoder {
@@ -106,9 +104,14 @@ If WebCodecs API is not supported, you can fallback to the [H264BSD decoder](../
 
 Scrcpy v2.0 added the [`videoCodec`](../../options/v2.0/video-codec.mdx) option, to specify the video codec to use by the server. H.265 and AV1 codecs can provide better video quality at the same bitrate compared to H.264.
 
-WebCodecs spec supports H.264, H.265 and AV1, but runtime support requires a joint effort from browsers, operating systems, graphics cards and drivers. H.264 should be supported by all browsers that support WebCodecs API, but support for other newer codecs may vary.
+WebCodecs spec itself supports many codecs, including H.264, H.265 and AV1, but runtime support requires a joint effort from browsers, operating systems, graphics cards and drivers.
 
-[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) static method can be used to check if a given codec is supported. It takes a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1.
+- H.264: Supported by most browsers and operating systems. Except Chrome on older Android devices (like 10.0).
+- H.265 and AV1: Usually only hardware-accelerated decoding is supported, which requires compatible graphics cards and drivers. Software decoding is not supported in most browsers.
+
+[`VideoDecoder.isConfigSupported`](https://developer.mozilla.org/en-US/docs/Web/API/VideoDecoder/isConfigSupported_static) static method can be used to check if a given codec is supported. It takes a codec parameter string, for example `"hev1.1.60.L153.B0.0.0.0.0.0"` for H.265 and `"av01.0.05M.08"` for AV1. Codec parameter string includes codec configurations like profile, level and/or color information. You should generate the codec parameter string based on your actual codec configuration, but some browsers like Chrome uses FFMpeg internally and does not care about the embedded configuration at all.
+
+When `ScrcpyWebCodecsDecoder` initialize the underlying `VideoDecoder`, it will automatically generate the correct codec parameter string by parsing the video stream's configuration data.
 
 ```ts transpile
 const result = await VideoDecoder.isConfigSupported({
