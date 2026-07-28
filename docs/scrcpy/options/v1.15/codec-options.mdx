@@ -29,56 +29,80 @@ For detailed information about codec options, refer to the [Android MediaFormat 
 export class ScrcpyCodecOptions implements ScrcpyOptionValue {
     static Empty: ScrcpyCodecOptions;
 
+    get values(): ReadonlyMap<string, CodecOption>;
+
     setInt(key: string, value: number): this;
     setFloat(key: string, value: number): this;
-    setLong(key: string, value: bigint): this;
+    setLong(key: string, value: number | bigint): this;
     setString(key: string, value: string): this;
     delete(key: string): boolean;
     clear(): void;
-    setPriority(priority: number): this;
+    setPriority(priority: number | undefined): this;
     toOptionValue(): string | undefined;
 }
 ```
 
+### values
+
+```ts
+get values(): ReadonlyMap<string, CodecOption>
+```
+
+Returns a read-only view of the underlying codec option entries.
+
 ### setInt
 
-`setInt(key: string, value: number): this`
+```ts
+setInt(key: string, value: number): this
+```
 
-Sets an integer parameter for the codec configuration.
+Sets an integer parameter for the codec configuration. Values outside the valid `int32` range (`-2147483648` to `2147483647`) will throw an error.
 
 ### setFloat
 
-`setFloat(key: string, value: number): this`
+```ts
+setFloat(key: string, value: number): this
+```
 
 Sets a floating-point parameter for the codec configuration.
 
 ### setLong
 
-`setLong(key: string, value: bigint): this`
+```ts
+setLong(key: string, value: number | bigint): this
+```
 
-Sets a long integer parameter for the codec configuration.
+Sets a long integer parameter for the codec configuration. Accepts both `number` and `bigint` — `number` values are converted via `Math.floor`. Intended for values that may exceed the `int32` range used by `setInt`.
 
 ### setString
 
-`setString(key: string, value: string): this`
+```ts
+setString(key: string, value: string): this
+```
 
 Sets a string parameter for the codec configuration.
 
 ### delete
 
-`delete(key: string): boolean`
+```ts
+delete(key: string): boolean
+```
 
 Removes a parameter from the codec configuration.
 
 ### clear
 
-`clear(): void`
+```ts
+clear(): void
+```
 
 Removes all parameters from the codec configuration.
 
 ### setPriority
 
-`setPriority(priority: number): this`
+```ts
+setPriority(priority: number | undefined): this
+```
 
 A key describing the desired codec priority. The associated value is an integer. Higher value means lower priority.
 
@@ -87,13 +111,17 @@ Currently, only two levels are supported:
 - 0: realtime priority - meaning that the codec shall support the given performance configuration (e.g. framerate) at realtime. This should only be used by media playback, capture, and possibly by realtime communication scenarios if best effort performance is not suitable.
 - 1: non-realtime priority (best effort).
 
+Pass `undefined` to remove a previously set priority option.
+
 This is a hint used at codec configuration and resource planning - to understand the realtime requirements of the application; however, due to the nature of media components, performance is not guaranteed.
 
 See [KEY_PRIORITY](https://developer.android.com/reference/android/media/MediaFormat#KEY_PRIORITY) in MediaFormat documentation.
 
 ### toOptionValue
 
-`toOptionValue(): string | undefined`
+```ts
+toOptionValue(): string | undefined
+```
 
 Serializes the codec options to a string format for scrcpy.
 
@@ -101,32 +129,39 @@ Serializes the codec options to a string format for scrcpy.
 
 ```ts
 export class ScrcpyVideoCodecOptions extends ScrcpyCodecOptions {
-    setAllowFrameDrop(value: boolean): this;
-    setIntraRefreshPeriod(value: number): this;
+    setAllowFrameDrop(value: boolean | undefined): this;
+    setIntraRefreshPeriod(value: number | undefined): this;
+    setIFrameInterval(value: undefined): this;
     setIFrameInterval(value: number, type?: "int" | "float"): this;
-    setLatency(value: number): this;
-    setLevel(value: number): this;
-    setMaxBFrames(value: number): this;
-    setMaxFpsToEncoder(value: number): this;
-    setProfile(value: number): this;
-    setRepeatPreviousFrameAfter(value: bigint): this;
+    setLatency(value: number | undefined): this;
+    setLevel(value: number | undefined): this;
+    setMaxBFrames(value: number | undefined): this;
+    setMaxFpsToEncoder(value: number | undefined): this;
+    setProfile(value: number | undefined): this;
+    setRepeatPreviousFrameAfter(value: bigint | undefined): this;
 }
 ```
 
 ### setAllowFrameDrop
 
-`setAllowFrameDrop(value: boolean): this`
+```ts
+setAllowFrameDrop(value: boolean | undefined): this
+```
 
 A key for applications to opt out of allowing a Surface to discard undisplayed/unconsumed frames as means to catch up after falling behind. This value is an integer.
 The value 0 indicates the surface is not allowed to drop frames.
 The value 1 indicates the surface is allowed to drop frames.
+
+Pass `undefined` to remove a previously set allow-frame-drop option.
 
 See [KEY_ALLOW_FRAME_DROP](https://developer.android.com/reference/android/media/MediaFormat#KEY_ALLOW_FRAME_DROP) in MediaFormat documentation.
 [MediaCodec](https://developer.android.com/reference/android/media/MediaCodec) describes the semantics.
 
 ### setIntraRefreshPeriod
 
-`setIntraRefreshPeriod(value: number): this`
+```ts
+setIntraRefreshPeriod(value: number | undefined): this
+```
 
 An optional key describing the period of intra refresh in frames.
 This is an optional parameter that applies only to video encoders.
@@ -139,11 +174,16 @@ low-delay and good error-resilience.
 This key is ignored if the video encoder does not support the intra refresh feature.
 The associated value is an integer.
 
+Pass `undefined` to remove a previously set intra-refresh-period option.
+
 See [KEY_INTRA_REFRESH_PERIOD](https://developer.android.com/reference/android/media/MediaFormat#KEY_INTRA_REFRESH_PERIOD) in MediaFormat documentation.
 
 ### setIFrameInterval
 
-`setIFrameInterval(value: number, type?: "int" | "float"): this`
+```ts
+setIFrameInterval(value: undefined): this
+setIFrameInterval(value: number, type?: "int" | "float"): this
+```
 
 A key describing the frequency of key frames expressed in seconds between key frames.
 
@@ -153,11 +193,15 @@ A zero value means a stream containing all key frames is requested.
 
 The associated value is an integer (or float since `Build.VERSION_CODES.N_MR1`).
 
+Pass `undefined` to remove a previously set i-frame-interval option. When `type` is `"float"` (default is `"int"`), the value is stored as a float.
+
 See [KEY_I_FRAME_INTERVAL](https://developer.android.com/reference/android/media/MediaFormat#KEY_I_FRAME_INTERVAL) in MediaFormat documentation.
 
 ### setLatency
 
-`setLatency(value: number): this`
+```ts
+setLatency(value: number | undefined): this
+```
 
 An optional key describing the desired encoder latency in frames.
 This is an optional parameter that applies only to video encoders.
@@ -170,11 +214,15 @@ and the actual value used by the encoder.
 If the key is not specified, the default latency will be implementation specific.
 The associated value is an integer.
 
+Pass `undefined` to remove a previously set latency option.
+
 See [KEY_LATENCY](https://developer.android.com/reference/android/media/MediaFormat#KEY_LATENCY) in MediaFormat documentation.
 
 ### setLevel
 
-`setLevel(value: number): this`
+```ts
+setLevel(value: number | undefined): this
+```
 
 A key describing the desired profile to be used by an encoder.
 
@@ -186,11 +234,15 @@ and is only supported for codecs that specify a level.
 This key is ignored if the [setProfile](#setprofile) is not specified.
 Otherwise, the value should be a level compatible with the configured encoding parameters.
 
+Pass `undefined` to remove a previously set level option.
+
 See [KEY_LEVEL](https://developer.android.com/reference/android/media/MediaFormat#KEY_LEVEL) in MediaFormat documentation.
 
 ### setMaxBFrames
 
-`setMaxBFrames(value: number): this`
+```ts
+setMaxBFrames(value: number | undefined): this
+```
 
 A key describing the maximum number of B frames between I or P frames,
 to be used by a video encoder.
@@ -198,21 +250,29 @@ The associated value is an integer.
 The default value is 0, which means that no B frames are allowed.
 Note that non-zero value does not guarantee B frames; it's up to the encoder to decide.
 
+Pass `undefined` to remove a previously set max-bframes option.
+
 See [KEY_MAX_B_FRAMES](https://developer.android.com/reference/android/media/MediaFormat#KEY_MAX_B_FRAMES) in MediaFormat documentation.
 
 ### setMaxFpsToEncoder
 
-`setMaxFpsToEncoder(value: number): this`
+```ts
+setMaxFpsToEncoder(value: number | undefined): this
+```
 
 Instruct the video encoder in "surface-input" mode to drop excessive frames from the source,
 so that the input frame rate to the encoder does not exceed the specified fps.
 The associated value is a float, representing the max frame rate to feed the encoder at.
 
+Pass `undefined` to remove a previously set max-fps-to-encoder option.
+
 See [KEY_MAX_FPS_TO_ENCODER](https://developer.android.com/reference/android/media/MediaFormat#KEY_MAX_FPS_TO_ENCODER) in MediaFormat documentation.
 
 ### setProfile
 
-`setProfile(value: number): this`
+```ts
+setProfile(value: number | undefined): this
+```
 
 A key describing the desired profile to be used by an encoder.
 
@@ -231,16 +291,22 @@ For more information, see the *Encoder Profiles* section of the
 [MediaCodec](https://developer.android.com/reference/android/media/MediaCodec)
 API reference.
 
+Pass `undefined` to remove a previously set profile option.
+
 See [KEY_PROFILE](https://developer.android.com/reference/android/media/MediaFormat#KEY_PROFILE) in MediaFormat documentation.
 
 ### setRepeatPreviousFrameAfter
 
-`setRepeatPreviousFrameAfter(value: bigint): this`
+```ts
+setRepeatPreviousFrameAfter(value: bigint | undefined): this
+```
 
 Applies only when configuring a video encoder in "surface-input" mode.
 The associated value is a long and gives the time in microseconds
 after which the frame previously submitted to the encoder will be repeated (once)
 if no new frame became available since.
+
+Pass `undefined` to remove a previously set repeat-previous-frame-after option.
 
 See [KEY_REPEAT_PREVIOUS_FRAME_AFTER](https://developer.android.com/reference/android/media/MediaFormat#KEY_REPEAT_PREVIOUS_FRAME_AFTER) in MediaFormat documentation.
 

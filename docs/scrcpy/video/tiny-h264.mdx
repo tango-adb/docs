@@ -65,10 +65,9 @@ const H264Capabilities = H264BsdDecoder.capabilities.h264;
 
 const options = new ScrcpyOptions1_24({
   // other options...
-  codecOptions: new ScrcpyCodecOptions({
-    profile: H264Capabilities.maxProfile,
-    level: H264Capabilities.maxLevel,
-  }),
+  codecOptions: new ScrcpyCodecOptions()
+    .setProfile(H264Capabilities.maxProfile)
+    .setLevel(H264Capabilities.maxLevel),
 });
 ```
 
@@ -84,10 +83,9 @@ try {
   await startServer(
     new ScrcpyOptions1_24({
       // other options...
-      codecOptions: new ScrcpyCodecOptions({
-        profile: H264Capabilities.maxProfile,
-        level: H264Capabilities.maxLevel,
-      }),
+      codecOptions: new ScrcpyCodecOptions()
+        .setProfile(H264Capabilities.maxProfile)
+        .setLevel(H264Capabilities.maxLevel),
     })
   );
 } catch (e) {
