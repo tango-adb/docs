@@ -1,66 +1,72 @@
 ---
-
 ---
 
 import Version from "../version-span";
 
 # Handle video stream
 
-The video socket from Scrcpy server contains the encoded video frames. Normally, it contains a leading metadata, and multiple configuration and data (video frame) packets, but the exact format depends on the Scrcpy server version and the specified option values.
-
-
-```mermaid
-stateDiagram-v2
-    direction LR
-
-    [*] --> Metadata
-    Metadata --> Configuration
-
-    Configuration --> Data
-    Data --> Data
-    Data --> Configuration: Restart encoder
-
-    Data --> [*]
-```
-
+The video socket from Scrcpy server contains the encoded video frames. Normally, it contains a leading metadata, and multiple configuration, session, and data (video frame) packets, but the exact format depends on the Scrcpy server version and the specified option values.
 
 ## Format
 
-This table show how versions and options affect the video stream format.
+### Metadata
 
-- ✅ means the field is always present
-- ⛔ means the field is not present
-- An option name means the field is present if the option is `true`
+Metadata is sent at the start of the video stream. The availability of each field depends on the Scrcpy server version and the specified option values.
 
-| Value                                                 | v1.15 ~ v1.21   | 1.22             | v1.23 ~ v1.25    | v2.0 and later                      |
-| ----------------------------------------------------- | --------------- | ---------------- | ---------------- | ----------------------------------- |
-| Metadata                                              | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta` or `sendCodecMeta` |
-| <span style={{marginRight:'2em'}}/>Device name        | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendDeviceMeta`                    |
-| <span style={{marginRight:'2em'}}/>Initial video size | ✅              | `sendDeviceMeta` | `sendDeviceMeta` | `sendCodecMeta`                     |
-| <span style={{marginRight:'2em'}}/>Video codec        | ⛔              | ⛔               | ⛔               | `sendCodecMeta`                     |
-| Configuration                                         | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                     |
-| Data Packet Header                                    | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                     |
-| <span style={{marginRight:'2em'}}/> PTS               | `sendFrameMeta` | `sendFrameMeta`  | `sendFrameMeta`  | `sendFrameMeta`                     |
-| <span style={{marginRight:'2em'}}/> Keyframe Mark     | ⛔              | ⛔               | `sendFrameMeta`  | `sendFrameMeta`                     |
+```mermaid
+flowchart LR
+    Start@{ shape: sm-circ, label: "Start" } --> DN[Device name]
 
+    DN -- <1.22 --> VS[Initial video size]
+    DN -- >=1.22 --> CI[Codec ID]
 
-## Raw mode
+    CI -- >=2.0 <4.0 --> VS --> Stop@{ shape: framed-circle, label: "stop" }
+    CI -- <2.0 || >=4.0 --> Stop
+```
 
-As the above table shows, since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0">, and `sendCodecMeta` option is also `false`</Version>, all fields will be omitted.
+| Element | Size | Type | Description | Related Option |
+| ------ | ---- | ---- | ----------- | ------ |
+| Device name | 64 bytes | Null-terminated string | The device's model name | <Version since="v1.22">[`sendDeviceMeta`](../options/v1.22/send-device-meta.mdx)</Version> |
+| Codec ID | 4 bytes | Enum | The codec ID | <Version since="v2.0" until="v3.3.4">[`sendCodecMeta`](../options/v2.0/send-codec-meta.mdx)</Version><br/><Version since="v4.0">[`sendStreamMeta`](../options/v4.0/send-stream-meta.mdx)</Version> |
+| Initial video size | 4 bytes | 2 bytes width<br/>2 bytes height | Width and height of the video | <Version since="v1.22" until="v1.25">[`sendDeviceMeta`](../options/v1.22/send-device-meta.mdx)</Version><br/><Version since="v2.0">[`sendCodecMeta`](../options/v2.0/send-codec-meta.mdx)</Version> |
 
-This is called the raw mode. In this mode, the video socket only contains codec-specific, encoded video data.
+### Packets
+
+Various packets are sent after the metadata. The packet format depends on the Scrcpy server version and the specified option values.
+
+```mermaid
+flowchart LR
+    Start@{ shape: sm-circ, label: "Start" } -- >=4.0 --> SP[Session packet]
+    Start -- <4.0 --> CP[Configuration packet]
+
+    SP --> CP --> DP[Data packet]
+
+    DP --> DP
+    DP -- Encoder restart --> Start
+    DP --> Stop@{ shape: framed-circle, label: "stop" }
+```
+
+| Element | Size | Description | Related Option |
+| ------- | ---- | ----------- | -------------- |
+| Session packet | 12 bytes | Resize reason and new video size | <Version since="v4.0">[`sendStreamMeta`](../options/v4.0/send-stream-meta.mdx)</Version> |
+| Configuration packet | 8 bytes header<br/>Variable data | Codec-specific configuration data | [`sendFrameMeta`](../options/v1.15/send-frame-meta.mdx) |
+| Data packet | 8 bytes header<br/>Variable data | Encoded video frame, with keyframe flag and presentation timestamp | [`sendFrameMeta`](../options/v1.15/send-frame-meta.mdx) |
+
+### Raw mode
+
+As the above table shows, since v1.22, if `sendDeviceMeta` and `sendFrameMeta` options are `false`<Version since="v2.0" until="v3.3.4">, and `sendCodecMeta` option is also `false`</Version><Version since="v4.0">, and `sendStreamMeta` option is also `false`</Version>, all elements will be disabled.
+
+This is also called raw mode. In this mode, the video socket only contains codec-specific, encoded video data.
 
 Raw mode is more difficult to process, because it requires the client to parse the codec-specific format directly.
 
-Tango has partial support for raw mode, all omitted fields will be `undefined`, and [built-in video decoders](#decode-and-render-in-browsers) don't work with raw mode video streams.
+Tango has partial support for raw mode, all omitted fields will be `undefined`, and [built-in video decoders](#decode-and-render-in-browsers) don't work with raw video streams.
 
-Advanced decoders, like ffmpeg, can decode raw video streams. If you only need to pipe the video stream to ffmpeg, raw mode can save some processing time.
+Advanced decoders, like ffmpeg, can decode raw video streams. If you only need to pipe the video stream to ffmpeg, raw mode can save some bandwidth and processing time.
 
+## Metadata
 
-## Video stream metadata
-
-If the server [version and options requirements](#format) are met, the server will first send some metadata about the device and the video stream:
-
+No matter which version of Scrcpy server and options are used, Tango parses the video stream metadata into a `ScrcpyVideoStreamMetadata` object:
 
 ```ts
 interface ScrcpyVideoStreamMetadata {
@@ -75,18 +81,23 @@ interface ScrcpyVideoStreamMetadata {
 - `width`/`height`: Size of the first video frame.
 - `codec`: The codec of the video stream.
 
+As displayed in above diagrams, each field except `codec` might be `undefined` if the server version or options don't include them. The `codec` field will fallback to the <Version until="v1.25">default codec `ScrcpyVideoCodecId.H264`</Version><Version since="v2.0">value of the `videoCodec` option</Version>.
 
 ### Size changes
 
-The metadata will only be sent once. When device screen size changes (for example, when device orientation changes, or a foldable device unfolds), the server will restart the video encoder, but it won't send a new metadata with the new size.
+The metadata is only sent once.
 
-To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-in-browsers) have a [`sizeChanged`](./decoder/handle-size.mdx) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) also contains [size information](#video-size).
+<Version until="v3.3.4">When device screen size changes (for example, when device orientation changes, or a foldable device unfolds), the server restarts the video encoder, but does NOT send another metadata with the new size. To track video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-in-browsers) have a [`sizeChanged`](./decoder/handle-size.mdx) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) also contains [size information](#video-size).</Version>
 
+<br/><br/>
+
+<Version since="v4.0">When encoder restarts on screen size changes, the server sends a [session packet](#session-packet) with the new size. Consumers can inspect the packet to get the new video size. `sizeChanged` event on video decoders and `AdbScrcpyClient.videoStream` will also be updated accordingly.</Version>
 
 ### With `@yume-chan/scrcpy`
 
-If you already have a `ReadableStream<Uint8Array>` that reads from the video socket, the `parseVideoStreamMetadata` method from the corresponding `ScrcpyOptionsX_YY` class can be used to parse the metadata. This method will return the metadata, and a new stream that contains the remaining stream.
+If you already have a `ReadableStream<Uint8Array>` that reads from the video socket, `ScrcpyOptionsX_YY.prototype.parseVideoStreamMetadata` method can be used to parse the metadata.
 
+This method returns the parsed metadata, and the remaining stream after the metadata, so you can continue to read the video stream.
 
 ```ts transpile
 import { ScrcpyOptions2_1, ScrcpyVideoStreamPacket } from "@yume-chan/scrcpy";
@@ -102,28 +113,13 @@ const { metadata: videoMetadata, stream: videoStream } =
   await options.parseVideoStreamMetadata(videoSocket);
 ```
 
-
-#### `codec`
-
-If metadata is not present, or doesn't contain codec information, the `codec` field will <Version until="v1.25">always be `ScrcpyVideoCodecId.H264` because it's the only supported codec</Version><Version since="v2.0">be the same as the `videoCodec` option</Version>.
-
-
-#### Raw mode
-
-If the whole metadata is not present, all fields except `codec` will be `undefined`. The `stream` field returned will be the same object as the argument.
-
-
 ### With `@yume-chan/adb-scrcpy`
 
-See [`AdbScrcpyClient.prototype.videoStream` property](#with-yume-chanadb-scrcpy-1) below. It uses `parseVideoStreamMetadata` internally to parse the metadata, and it also parses the video stream into packets.
-
-The [`codec`](#codec) and [raw mode](#raw-mode-1) behavior mentioned above also apply.
-
+See [`AdbScrcpyClient.prototype.videoStream` property](#with-yume-chanadb-scrcpy-1) below. It internally uses [`parseVideoStreamMetadata`](#with-yume-chanscrcpy) to parse the metadata, and [`createMediaStreamTransformer`](#with-yume-chanscrcpy-1) to parse the video stream into packets.
 
 ## Video packets
 
-If the server [version and options requirements](#format) are met, the server will encapsulate each encoded video frame with extra information. Tango parses them into two types of packets:
-
+If the server [version and options requirements](#format) are met, the server will encapsulate each encoded video frame with extra information. Tango parses them into different types of packets:
 
 ```ts
 interface ScrcpyMediaStreamConfigurationPacket {
@@ -138,11 +134,38 @@ interface ScrcpyMediaStreamDataPacket {
   data: Uint8Array;
 }
 
-type ScrcpyMediaStreamPacket =
-  | ScrcpyMediaStreamConfigurationPacket
-  | ScrcpyMediaStreamDataPacket;
+interface ScrcpyVideoStreamSessionPacket {
+  type: "session";
+  isClientResize: boolean;
+  width: number;
+  height: number;
+}
+
+type ScrcpyAudioStreamPacket =
+  ScrcpyMediaStreamConfigurationPacket | ScrcpyMediaStreamDataPacket;
+
+type ScrcpyVideoStreamPacket =
+  ScrcpyAudioStreamPacket | ScrcpyVideoStreamSessionPacket;
 ```
 
+### Session packet
+
+When the video encoder restarts (due to screen rotation, [`resetVideo`](../control/reset-video.mdx) control message, or [`resizeDisplay`](../control/resize-display.mdx) control message with [`flexDisplay`](../options/v4.0/flex-display.mdx)), the server sends a session packet before the new configuration packet.
+
+```ts
+interface ScrcpyVideoStreamSessionPacket {
+  type: "session";
+  isClientResize: boolean;
+  width: number;
+  height: number;
+}
+```
+
+- `isClientResize`: Whether the resize was initiated by the client using [`resizeDisplay`](../control/resize-display.mdx) control message.
+- `width`: The new display width.
+- `height`: The new display height.
+
+`AdbScrcpyClient.videoStream` will also be updated with the new size, and the `sizeChanged` event will be emitted.
 
 ### Configuration packet
 
@@ -151,7 +174,6 @@ When video streaming starts, or when the server re-creates new video encoders du
 The first configuration packet will be send immediately after [metadata](#video-stream-metadata) (or at the beginning of video stream if metadata was disabled), and when each time the screen size or orientation changes.
 
 The format of configuration packets depend on the codec:
-
 
 #### H.264 and H.265
 
@@ -172,13 +194,15 @@ You only need to pipe the whole video stream into them.
 
 :::
 
-
 #### AV1
 
 For AV1, the configuration packet contains the first 3 bytes of `AV1CodecConfigurationRecord` (https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox). The remaining configuration OBUs are in the next data packet.
 
 These 3 bytes are required when [saving the stream to video files](./record.mdx), although they can also be inferred from the configuration OBUs.
 
+#### VP8 and VP9
+
+For VP8 and VP9, the configuration packet contains the codec-specific configuration data needed for decoding.
 
 ### Data packet
 
@@ -188,23 +212,25 @@ Each data packet represents exactly one encoded frame, and if [version and optio
 - `pts`: Presentation timestamp in nanoseconds. When rendering the video in real-time, generally you want to present the decoded frames as they arrive to minimize the latency, but this information can be used to remove processing time deviations when [recording](./record.mdx).
 - `data`: Contains exactly one encoded frame. For H.264 and H.265, in [Annex B format](./record.mdx#avcchevc-vs-annex-b-for-h264h265-codecs).
 
-
 ### With `@yume-chan/scrcpy`
 
-The `createMediaStreamTransformer` method creates a `TransformStream` that parses the video stream into packets.
+The `ScrcpyOptionsX_YY.prototype.createMediaStreamTransformer` method creates a `TransformStream` that parses the video stream into packets.
 
-`parseVideoStreamMetadata` and `createMediaStreamTransformer` are separate methods, because `createMediaStreamTransformer` can also be used to parse the audio stream.
-
+`parseVideoStreamMetadata` and `createMediaStreamTransformer` are separate methods, because `createMediaStreamTransformer` is also used to parse the audio stream.
 
 ```ts transpile
-const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket> =
+const videoPacketStream: ReadableStream<ScrcpyVideoStreamPacket> =
   videoStream.pipeThrough(options.createMediaStreamTransformer());
 
 videoPacketStream
   .pipeTo(
     new WritableStream({
-      write(packet: ScrcpyMediaStreamPacket) {
+      write(packet: ScrcpyVideoStreamPacket) {
         switch (packet.type) {
+          case "session":
+            // Handle session packet
+            console.log(packet.width, packet.height);
+            break;
           case "configuration":
             // Handle configuration packet
             console.log(packet.data);
@@ -215,7 +241,7 @@ videoPacketStream
             break;
         }
       },
-    })
+    }),
   )
   .catch((e) => {
     console.error(e);
@@ -224,25 +250,22 @@ videoPacketStream
 
 Similar to [`options.clipboard`](../start-server.mdx#clipboard-stream), don't `await` the `pipeTo`. The returned `Promise` only resolves when `videoSocket` ends, but waiting here and not handling other streams will block `videoSocket`, causing a deadlock.
 
-
 #### Raw mode
 
 If data packet header is not present, the `keyframe` and `pts` fields will be `undefined`.
 
 The `data` field contains the data in one `read` call, because there is no packet boundaries, it might contain partial or multiple frames.
 
-
 ### With `@yume-chan/adb-scrcpy`
 
 When `video` option is not `false`, `AdbScrcpyClient.videoStream` is a `Promise` that resolves to an `AdbScrcpyVideoStream`.
-
 
 ```ts
 import type { Event } from "@yume-chan/event";
 
 interface AdbScrcpyVideoStream {
   metadata: ScrcpyVideoStreamMetadata;
-  stream: ReadableStream<ScrcpyMediaStreamPacket>;
+  stream: ReadableStream<ScrcpyVideoStreamPacket>;
   width: number;
   height: number;
   sizeChanged: Event<{ width: number; height: number }>;
@@ -251,9 +274,8 @@ interface AdbScrcpyVideoStream {
 
 It uses [`parseVideoStreamMetadata`](#with-yume-chanscrcpy) and [`createMediaStreamTransformer`](#with-yume-chanscrcpy-1) internally, so the return value is a combination of those two methods.
 
-
 ```ts transpile
-import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+import type { ScrcpyVideoStreamPacket } from "@yume-chan/scrcpy";
 import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
 
 declare const client: AdbScrcpyClient;
@@ -265,8 +287,12 @@ if (client.videoStream) {
   videoPacketStream
     .pipeTo(
       new WritableStream({
-        write(packet: ScrcpyMediaStreamPacket) {
+        write(packet: ScrcpyVideoStreamPacket) {
           switch (packet.type) {
+            case "session":
+              // Handle session packet
+              console.log(packet.width, packet.height);
+              break;
             case "configuration":
               // Handle configuration packet
               console.log(packet.data);
@@ -277,7 +303,7 @@ if (client.videoStream) {
               break;
           }
         },
-      })
+      }),
     )
     .catch((e) => {
       console.error(e);
@@ -285,11 +311,9 @@ if (client.videoStream) {
 }
 ```
 
-
 #### Video size
 
 `AdbScrcpyVideoStream` also parses the video stream to get the up-to-date video size.
-
 
 ```ts
 import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
@@ -311,7 +335,6 @@ if (client.videoStream) {
 }
 ```
 
-
 ## Decode and render in browsers
 
 We provide two packages to decode and render the video stream in Web browsers:
@@ -322,7 +345,6 @@ We provide two packages to decode and render the video stream in Web browsers:
 Both decoders implement the common [`ScrcpyVideoDecoder` interface](./decoder/index.mdx) for piping video streams, handling size changes, pausing, and monitoring rendering metrics.
 
 To use them, the `sendFrameMeta` options must be `true` (the default value) to enable [configuration packets](#configuration-packet).
-
 
 ## Decode and render outside browsers
 

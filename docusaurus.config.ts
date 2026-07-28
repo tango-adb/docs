@@ -5,7 +5,7 @@ import { PrismTheme, themes } from "prism-react-renderer";
 import { fileURLToPath } from "url";
 import ts2js from "./scripts/ts2js.js";
 
-function resolve(path) {
+function resolve(path: string) {
     return fileURLToPath(new URL(path, import.meta.url));
 }
 
@@ -216,7 +216,7 @@ const config: Config = {
                     lastVersion: "2.1.0",
                     versions: {
                         "2.1.0": {
-                            label:"2.1.0 ~ 2.5.0"
+                            label: "2.6.2"
                         },
                         current: {
                             label: "next",
@@ -227,9 +227,9 @@ const config: Config = {
                 theme: {
                     customCss: resolve("./src/css/custom.css"),
                 },
-                gtag: {
-                    trackingID: "GTM-WLPBQBK4",
-                },
+                // gtag: {
+                //     trackingID: "GTM-WLPBQBK4",
+                // },
                 sitemap: {
                     lastmod: "datetime",
                     changefreq: "daily",

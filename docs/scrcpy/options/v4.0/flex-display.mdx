@@ -1,0 +1,40 @@
+---
+sidebar_position: 60
+---
+
+import Version from "../../version-span";
+
+# flexDisplay
+
+:::info
+
+Added in Scrcpy 4.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Enables flexible display mode for video streaming.
+
+When enabled, a virtual display can be resized dynamically along with the client window. To resize the display programmatically, use the [`resizeDisplay`](../../control/resize-display.mdx) control message.
+
+## Related options
+
+- [`newDisplay`](../v3.0/new-display.mdx): Creates a new virtual display for video streaming
+- [`keepActive`](./keep-active.mdx): Keeps the device active while connected
+
+## Related control messages
+
+- [`resizeDisplay`](../../control/resize-display.mdx): Resize the virtual display at runtime
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions4_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_0({
+    newDisplay: "/192", // Create a virtual display with 192 dpi
+    flexDisplay: true, // Enable flexible display mode
+});
+```

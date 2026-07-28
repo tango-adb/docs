@@ -1,0 +1,40 @@
+---
+sidebar_position: 59
+---
+
+import Version from "../../version-span";
+
+# cameraTorch
+
+:::info
+
+Added in Scrcpy 4.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Controls whether the camera flashlight (torch) is enabled when using camera video source.
+
+This option only affects the initial value. To change the torch state at runtime, use the [`cameraSetTorch`](../../control/camera.mdx) control message.
+
+## Related options
+
+- [`cameraZoom`](./camera-zoom.mdx): Controls the camera zoom level
+- [`videoSource`](../v2.2/video-source.mdx): Selects the video source for capturing video
+
+## Related control messages
+
+- [`cameraSetTorch`](../../control/camera.mdx): Control camera flashlight at runtime
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions4_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_0({
+    videoSource: "camera",
+    cameraTorch: true, // Enable flashlight at startup
+});
+```

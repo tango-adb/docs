@@ -1,0 +1,30 @@
+---
+sidebar_position: 57
+---
+
+import Version from "../../version-span";
+
+# minSizeAlignment
+
+:::info
+
+Added in Scrcpy 4.0
+
+:::
+
+* **Type**: `1 | 2 | 4 | 8 | 16`
+* **Default value**: `1`
+
+Sets the alignment for the minimum video stream size.
+
+This option helps with hardware decoder requirements that need specific alignment. When the device screen size is not a multiple of this value, the video stream size will be rounded down to the nearest multiple.
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions4_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_0({
+    minSizeAlignment: 16, // Align minimum size to 16 pixels
+});
+```

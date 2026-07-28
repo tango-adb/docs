@@ -2,6 +2,8 @@
 sidebar_position: 19
 ---
 
+import Version from "../../version-span";
+
 # sendDeviceMeta
 
 :::info
@@ -10,16 +12,38 @@ Added in Scrcpy 1.22
 
 :::
 
-* **Type**: `boolean`
-* **Default value**: `true`
+- **Type**: `boolean`
+- **Default value**: `true`
 
-Controls whether the server should send device name and size at the start of the video stream.
+Controls whether the server should send device meta at the start of the video stream.
 
-By default, sending device metadata is enabled in Scrcpy, meaning the server sends the device name and size information at the start of the video stream. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable sending device name and size information at the start of the video stream.
+See [complete video stream format](../../video/index.mdx#format) for details.
+
+## Changelog
+
+### v1.15
+
+This option didn't exist. Device meta is always sent at the start of the video stream which includes:
+
+- Device name (64-byte null-terminated string)
+- Initial video width (2 bytes)
+- Initial video height (2 bytes)
+
+### v1.22
+
+Option added. When `false`, device meta is not sent at the start of the video stream.
+
+### v2.0
+
+This option only controls whether device name is sent.
+
+Whether the initial video width and height are sent is controlled by [`sendCodecMeta`](../v2.0/send-codec-meta.mdx) option.
 
 ## Related options
 
 - [`sendFrameMeta`](../v1.15/send-frame-meta.mdx): Send presentation timestamps so that the client may record properly
+- [`sendCodecMeta`](../v2.0/send-codec-meta.mdx): Controls codec metadata (v2.0 ~ v3.3.4)
+- [`sendStreamMeta`](../v4.0/send-stream-meta.mdx): Controls stream metadata (v4.0+)
 
 ## Example
 
@@ -27,6 +51,6 @@ By default, sending device metadata is enabled in Scrcpy, meaning the server sen
 import { ScrcpyOptions1_22 } from "@yume-chan/scrcpy";
 
 const options = new ScrcpyOptions1_22({
-    sendDeviceMeta: false, // Disable sending device metadata
+  sendDeviceMeta: false, // Disable sending device metadata
 });
 ```

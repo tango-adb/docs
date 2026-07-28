@@ -1,0 +1,68 @@
+---
+sidebar_position: 13
+---
+
+import Version from '../version-span';
+
+# Camera Control
+
+:::info
+
+Added in Scrcpy v4.0
+
+:::
+
+Control the device camera settings including torch (flashlight) and zoom levels.
+
+These control messages only work when using `videoSource: "camera"` option.
+
+## Options
+
+### cameraSetTorch
+
+Turn the camera flashlight on or off.
+
+```ts
+interface ScrcpyCameraSetTorchControlMessage {
+    enabled: boolean;
+}
+```
+
+- `enabled`: Whether to enable (`true`) or disable (`false`) the camera flashlight.
+
+### cameraZoomIn
+
+Zoom in the camera by one step.
+
+This is an empty control message with no additional parameters.
+
+### cameraZoomOut
+
+Zoom out the camera by one step.
+
+This is an empty control message with no additional parameters.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const torchMessage: Uint8Array = serializer.cameraSetTorch(true);
+const zoomInMessage: Uint8Array = serializer.cameraZoomIn();
+const zoomOutMessage: Uint8Array = serializer.cameraZoomOut();
+
+// Using `ScrcpyControlMessageWriter`
+await writer.cameraSetTorch(true);
+await writer.cameraZoomIn();
+await writer.cameraZoomOut();
+
+// Using `AdbScrcpyClient`
+await client.controller!.cameraSetTorch(true);
+await client.controller!.cameraZoomIn();
+await client.controller!.cameraZoomOut();
+```
+
+## Related options
+
+- [`cameraTorch`](../options/v4.0/camera-torch.mdx): Initial torch state
+- [`cameraZoom`](../options/v4.0/camera-zoom.mdx): Initial zoom level
+- [`videoSource`](../options/v2.2/video-source.mdx): Selects camera as video source

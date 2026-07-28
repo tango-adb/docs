@@ -6,6 +6,57 @@ For changes in other packages, see [this page](../tango/upgrade.mdx).
 
 ## `@yume-chan/scrcpy`
 
+### Support for Server Versions 4.0 and 4.1
+
+Added support for Scrcpy server versions 4.0 and 4.1 with new option classes:
+
+- `ScrcpyOptions4_0` - Supports Scrcpy server v4.0
+- `ScrcpyOptions4_1` - Supports Scrcpy server v4.1
+
+#### New Options in v4.0
+
+- `minSizeAlignment`: Sets the alignment for the minimum video stream size (1, 2, 4, 8, or 16 pixels)
+- `cameraZoom`: Sets the zoom level for the camera when using camera video source
+- `cameraTorch`: Controls whether the camera flashlight is enabled
+- `flexDisplay`: Enables flexible display mode for video streaming
+- `keepActive`: Keeps the device active while the Scrcpy connection is established
+- `sendStreamMeta`: Controls whether stream metadata is sent (replaces `sendCodecMeta`)
+
+#### New Options in v4.1
+
+- `videoCodec` extended with `"vp8"` and `"vp9"` values
+- `ignoreVideoEncoderConstraints`: Ignores video encoder constraints when selecting an encoder
+
+#### New Control Messages
+
+- `cameraSetTorch(enabled: boolean)`: Control camera flashlight
+- `cameraZoomIn()`: Zoom in camera by one step
+- `cameraZoomOut()`: Zoom out camera by one step
+- `resizeDisplay({ width, height })`: Resize the device display
+- `scanFile(path: string)`: Trigger media scan for a file (v4.1 only)
+
+### Breaking Changes
+
+#### `sendCodecMeta` Removed, Replaced by `sendStreamMeta`
+
+The `sendCodecMeta` option has been removed in v4.0. Use `sendStreamMeta` instead:
+
+**Before:**
+
+```ts
+const options = new ScrcpyOptions3_3_4({
+    sendCodecMeta: false,
+});
+```
+
+**After:**
+
+```ts
+const options = new ScrcpyOptions4_0({
+    sendStreamMeta: false,
+});
+```
+
 ### Support for Multiple Minor Versions (v3.3.2, v3.3.3, v3.3.4)
 
 Added support for newer Scrcpy server versions with dedicated option classes:

@@ -1,0 +1,37 @@
+---
+sidebar_position: 63
+---
+
+import Version from "../../version-span";
+
+# ignoreVideoEncoderConstraints
+
+:::info
+
+Added in Scrcpy 4.1
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Ignores the maximum size constraints announced by video encoders.
+
+When enabled, the server will not filter encoders based on their reported maximum resolution. This is useful when the reported encoder constraints are incorrect and causing issues. When the encoder fails to encode at the requested size, the server will use the old downsize-on-error approach to reduce the resolution.
+
+## Related options
+
+- [`videoCodec`](../v2.0/video-codec.mdx): Specifies the video codec to use
+- [`videoEncoder`](../v2.0/video-encoder.mdx): Specifies the name of the encoder to use
+- [`downsizeOnError`](../v1.22/downsize-on-error.mdx): Controls whether the server should downsize on encoder error
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions4_1 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_1({
+    videoCodec: "vp8", // VP8 is only available in v4.1+
+    ignoreVideoEncoderConstraints: true, // Ignore encoder max size constraints
+});
+```

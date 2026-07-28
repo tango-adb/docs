@@ -1,0 +1,62 @@
+---
+sidebar_position: 14
+---
+
+import Version from '../version-span';
+
+# Resize Display
+
+:::info
+
+Added in Scrcpy v4.0
+
+:::
+
+Resize a virtual display to a custom resolution.
+
+This control message allows dynamically changing the size of a virtual display during an active Scrcpy session. The server will adjust the video stream to match the new display dimensions.
+
+:::note
+
+This control message only works with virtual displays created using [`newDisplay`](../options/v3.0/new-display.mdx) with [`flexDisplay`](../options/v4.0/flex-display.mdx) enabled.
+
+:::
+
+## Options
+
+```ts
+interface ScrcpyResizeDisplayControlMessage {
+    width: number;
+    height: number;
+}
+```
+
+- `width`: The new display width in pixels.
+- `height`: The new display height in pixels.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.resizeDisplay({
+    width: 1920,
+    height: 1080,
+});
+
+// Using `ScrcpyControlMessageWriter`
+await writer.resizeDisplay({
+    width: 1920,
+    height: 1080,
+});
+
+// Using `AdbScrcpyClient`
+await client.controller!.resizeDisplay({
+    width: 1920,
+    height: 1080,
+});
+```
+
+## Related options
+
+- [`newDisplay`](../options/v3.0/new-display.mdx): Creates a new virtual display for video streaming
+- [`flexDisplay`](../options/v4.0/flex-display.mdx): Enables flexible display mode for dynamic resizing

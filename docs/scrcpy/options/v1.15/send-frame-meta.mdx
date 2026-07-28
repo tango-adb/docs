@@ -2,18 +2,69 @@
 sidebar_position: 9
 ---
 
+import Version from "../../version-span";
+
 # sendFrameMeta
 
-* **Type**: `boolean`
-* **Default value**: `true`
+- **Type**: `boolean`
+- **Default value**: `true`
 
-Send presentation timestamps (PTS) so that the client may record properly.
+Controls whether the server should send video stream in packets with metadata.
 
-When enabled, the video stream will include frame timing metadata required for proper recording. When set to `false`, the video stream will not contain `configuration` typed packets, which means it can't be decoded by the companion decoders. However, it's still possible to record the stream into a file or decode it with a more tolerant decoder like FFMpeg.
+## Changelog
+
+### v1.15
+
+When `true`, video data is encapsulated in packets consists of:
+
+- Configuration flag (1 bit)
+- Presentation timestamp (63 bits)
+- Data length (4 bytes)
+- Data (variable length)
+
+When `false`, raw video data is sent without any encapsulation.
+
+If the configuration flag bit is set, the packet is a configuration packet. Presentation timestamp is 0, and data contains codec-specific configuration data (e.g. SPS/PPS for H.264).
+
+Otherwise, the packet is a data packet, the remaining 63 bits is the presentation timestamp, the data contains exactly one encoded frame.
+
+### v1.23
+
+When `true`, the packet format is changed to:
+
+- Configuration flag (1 bit)
+- Keyframe flag (1 bit)
+- Presentation timestamp (62 bits)
+- Data length (4 bytes)
+- Data (variable length)
+
+If the keyframe flag is set, the packet is a keyframe packet. Both keyframe and non-keyframe packets contain presentation timestamp and data.
+
+### v4.0
+
+The first bit becomes the session flag. When session flag is set, the packet is:
+
+- Session flag (1 bit, set)
+- Reserved (6 bits)
+- Client initiated resize flag (1 bit)
+- Reserved (3 bytes)
+- Video width (4 bytes)
+- Video height (4 bytes)
+
+When session flag is not set, the packet is:
+
+- Session flag (1 bit, not set)
+- Configuration flag (1 bit)
+- Keyframe flag (1 bit)
+- Presentation timestamp (61 bits)
+- Data length (4 bytes)
+- Data (variable length)
 
 ## Related options
 
-- [`sendDeviceMeta`](../v1.22/send-device-meta.mdx): Controls whether the server should send device name and size at the start of the video stream
+- [`sendDeviceMeta`](../v1.22/send-device-meta.mdx): Controls whether device name is sent
+- [`sendCodecMeta`](../v2.0/send-codec-meta.mdx): Controls codec metadata (v2.0 ~ v3.3.4)
+- [`sendStreamMeta`](../v4.0/send-stream-meta.mdx): Controls stream metadata (v4.0+)
 
 ## Example
 
@@ -21,6 +72,6 @@ When enabled, the video stream will include frame timing metadata required for p
 import { ScrcpyOptions1_15 } from "@yume-chan/scrcpy";
 
 const options = new ScrcpyOptions1_15({
-    sendFrameMeta: false, // Disable sending frame metadata
+  sendFrameMeta: false, // Disable sending frame metadata
 });
 ```

@@ -2,6 +2,8 @@
 sidebar_position: 35
 ---
 
+import Version from "../../version-span";
+
 # sendCodecMeta
 
 :::info
@@ -10,17 +12,39 @@ Added in Scrcpy 2.0
 
 :::
 
-* **Type**: `boolean`
-* **Default value**: `true`
+:::danger
+
+Deprecated in Scrcpy 4.0
+
+Use [`sendStreamMeta`](../v4.0/send-stream-meta.mdx) instead.
+
+:::
+
+- **Type**: `boolean`
+- **Default value**: `true`
 
 Controls whether codec metadata should be sent at the start of the video and audio streams.
 
-By default, sending codec metadata is enabled in Scrcpy, meaning the server sends codec configuration data needed for proper decoding. Adding this option with a value of `true` has no effect since this is the default behavior. Only setting this option to `false` will disable sending codec metadata.
+## Changelog
+
+### v2.0
+
+When `true`, server will send codec metadata after device name (controlled by [`sendDeviceMeta`](../v1.22/send-device-meta.mdx) option). Codec metadata includes:
+
+- Codec ID (4 bytes)
+- Initial video width (2 bytes)
+- Initial video height (2 bytes)
+
+### v4.0
+
+- Replaced by [`sendStreamMeta`](../v4.0/send-stream-meta.mdx).
 
 ## Related options
 
 - [`videoCodec`](./video-codec.mdx): Specifies the video codec to use
 - [`audioCodec`](./audio-codec.mdx): Specifies the audio codec to use
+- [`sendDeviceMeta`](../v1.22/send-device-meta.mdx): Controls whether device name is sent
+- [`sendStreamMeta`](../v4.0/send-stream-meta.mdx): Replacement option in v4.0+
 
 ## Example
 
@@ -28,6 +52,6 @@ By default, sending codec metadata is enabled in Scrcpy, meaning the server send
 import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
 
 const options = new ScrcpyOptions2_0({
-    sendCodecMeta: false, // Disable sending codec metadata
+  sendCodecMeta: false, // Disable sending codec metadata
 });
 ```

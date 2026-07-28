@@ -1,0 +1,79 @@
+---
+sidebar_position: 15
+---
+
+import Version from '../version-span';
+
+# Scan File
+
+:::info
+
+Added in Scrcpy v4.1
+
+:::
+
+Trigger a media scan for a file on the device.
+
+This control message asks the Android system to scan a specific file path, making it visible in media libraries (like Gallery, Music apps, etc.). This is useful when you push media files to the device and want them to appear immediately without rebooting.
+
+## Options
+
+```ts
+interface ScrcpyScanFileControlMessage {
+    path: string;
+}
+```
+
+- `path`: The absolute path to the file on the device to scan.
+
+## Usage
+
+```ts transpile
+// Using `ScrcpyControlMessageSerializer`
+const message: Uint8Array = serializer.scanFile("/sdcard/DCIM/photo.jpg");
+
+// Using `ScrcpyControlMessageWriter`
+await writer.scanFile("/sdcard/DCIM/photo.jpg");
+
+// Using `AdbScrcpyClient`
+await client.controller!.scanFile("/sdcard/DCIM/photo.jpg");
+```
+
+## Example
+
+After pushing a file to the device using [`sync.write`](../../api/adb/sync/write.mdx), trigger a media scan to make it visible immediately:
+
+```ts transpile
+import { encodeUtf8 } from "@yume-chan/adb";
+
+declare const sync: AdbSync;
+declare const client: AdbScrcpyClient;
+
+// Write file to device
+await sync.write({
+    filename: "/sdcard/DCIM/photo.jpg",
+    file: new ReadableStream({
+        start(controller) {
+            controller.enqueue(encodeUtf8("file content"));
+            controller.close();
+        },
+    }),
+});
+
+// Trigger media scan
+await client.controller!.scanFile("/sdcard/DCIM/photo.jpg");
+```
+
+Scanning multiple files:
+
+```ts transpile
+const files = [
+    "/sdcard/DCIM/photo1.jpg",
+    "/sdcard/DCIM/photo2.jpg",
+    "/sdcard/Music/song.mp3",
+];
+
+for (const file of files) {
+    await client.controller!.scanFile(file);
+}
+```

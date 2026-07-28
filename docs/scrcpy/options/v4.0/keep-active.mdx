@@ -1,0 +1,34 @@
+---
+sidebar_position: 61
+---
+
+import Version from "../../version-span";
+
+# keepActive
+
+:::info
+
+Added in Scrcpy 4.0
+
+:::
+
+* **Type**: `boolean`
+* **Default value**: `false`
+
+Keeps the device active while the Scrcpy connection is established.
+
+This option periodically signals user activity to the system to prevent the device from turning off due to inactivity. Unlike `stayAwake`, this does not change any global settings, and works whether the device is plugged in or not.
+
+## Related options
+
+- [`stayAwake`](../v1.15/stay-awake.mdx): Prevents the device from sleeping while screen casting is active
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions4_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_0({
+    keepActive: true, // Keep device active
+});
+```

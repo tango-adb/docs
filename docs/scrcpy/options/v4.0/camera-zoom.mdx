@@ -1,0 +1,43 @@
+---
+sidebar_position: 58
+---
+
+import Version from "../../version-span";
+
+# cameraZoom
+
+:::info
+
+Added in Scrcpy 4.0
+
+:::
+
+* **Type**: `number`
+* **Default value**: `1`
+
+Sets the zoom level for the camera when using camera video source.
+
+The supported zoom range for each camera can be found using `--list-cameras`. Any value outside the supported range will be clamped to the nearest valid value.
+
+This option only affects the initial value. To change the zoom level at runtime, use the [`cameraZoomIn`](../../control/camera.mdx) and [`cameraZoomOut`](../../control/camera.mdx) control messages.
+
+## Related options
+
+- [`cameraTorch`](./camera-torch.mdx): Controls the camera flashlight
+- [`videoSource`](../v2.2/video-source.mdx): Selects the video source for capturing video
+
+## Related control messages
+
+- [`cameraZoomIn`](../../control/camera.mdx): Zoom in camera by one step
+- [`cameraZoomOut`](../../control/camera.mdx): Zoom out camera by one step
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions4_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_0({
+    videoSource: "camera",
+    cameraZoom: 1.5, // 1.5x zoom at startup
+});
+```

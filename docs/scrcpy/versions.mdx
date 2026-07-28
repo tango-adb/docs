@@ -17,6 +17,37 @@ Generally, the latest version should be used, as they contain bug fixes and new 
 - ⛔: Not supported
 - (**Breaking**): A breaking change. Some new options are not marked as breaking changes even if they contain protocol changes, as the old client can still work with the new server when the new options are not used.
 
+## v4.1 (3/3)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v4.1)
+
+### New options
+
+- ✅ VP8 and VP9 video codecs (`--video-codec=vp8`/`vp9`)
+- ✅ Ignore video encoder constraints (`--ignore-video-encoder-constraints`)
+
+### Protocol changes
+
+- ✅ Trigger media scan after file push (`scanFile` control message)
+
+## v4.0 (8/8)
+
+[Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v4.0)
+
+### New options
+
+- ✅ Flex display support (`--flex-display`)
+- ✅ Camera torch and zoom support (`--camera-torch`, `--camera-zoom`)
+- ✅ Keep active (`--keep-active`)
+- ✅ Minimum size alignment (`--min-size-alignment`)
+- ✅ Add session metadata for the video stream (`--send-stream-meta`)
+
+### Protocol changes
+
+- ✅ Camera control messages (`cameraSetTorch`, `cameraZoomIn`, `cameraZoomOut`)
+- ✅ Resize display control message (`resizeDisplay`)
+- ✅ Add session metadata for the video stream
+
 ## v3.3.1 (1/1)
 
 [Official release notes](https://github.com/Genymobile/scrcpy/releases/tag/v3.3.1)

@@ -1,0 +1,36 @@
+---
+sidebar_position: 62
+---
+
+import Version from "../../version-span";
+
+# sendStreamMeta
+
+:::info
+
+Added in Scrcpy 4.0
+
+:::
+
+- **Type**: `boolean`
+- **Default value**: `true`
+
+Controls whether the server should send codec ID at the start of the video and audio stream, and [session packets](../v1.15/send-frame-meta.mdx#v40) in video stream.
+
+[`sendFrameMeta`](../v1.15/send-frame-meta.mdx) option must be enabled for session packets to be correctly parsed.
+
+## Related options
+
+- [`sendDeviceMeta`](../v1.22/send-device-meta.mdx): Controls whether device name is sent
+- [`sendCodecMeta`](../v2.0/send-codec-meta.mdx): Controls codec metadata (v2.0 ~ v3.3.4)
+- [`sendFrameMeta`](../v1.15/send-frame-meta.mdx): Controls whether presentation timestamps are sent
+
+## Example
+
+```ts transpile
+import { ScrcpyOptions4_0 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_0({
+  sendStreamMeta: true, // Send stream metadata (default)
+});
+```
