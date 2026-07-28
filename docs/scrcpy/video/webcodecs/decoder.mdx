@@ -135,7 +135,7 @@ export namespace WebCodecsVideoDecoder {
 
 The constructor requires an options object with the following properties:
 
-- `codec`: the video codec to be decoded. It can be retrieved from the [video stream metadata](../index.mdx#video-stream-metadata), or hard-coded if you only use a specific video codec.
+- `codec`: the video codec to be decoded. It can be retrieved from the [video stream metadata](../index.mdx#metadata), or hard-coded if you only use a specific video codec.
 - `renderer`: a renderer created in the [Renderers](./renderer.mdx) section (optional, defaults to `AutoCanvasRenderer`).
 - `hardwareAcceleration`: controls hardware acceleration preference (`"no-preference"`, `"require-hardware"`, `"prefer-hardware"`, or `"prefer-software"`). Default is `"no-preference"`.
 - `optimizeForLatency`: optimizes for latency when set to `true`. Default is `true`.

@@ -150,7 +150,7 @@ type ScrcpyVideoStreamPacket =
 
 ### Session packet
 
-When the video encoder restarts (due to screen rotation, [`resetVideo`](../control/reset-video.mdx) control message, or [`resizeDisplay`](../control/resize-display.mdx) control message with [`flexDisplay`](../options/v4.0/flex-display.mdx)), the server sends a session packet before the new configuration packet.
+A session packet is sent after the [metadata](#metadata), and when the video encoder restarts (due to screen rotation, [`resetVideo`](../control/reset-video.mdx) control message, or [`resizeDisplay`](../control/resize-display.mdx) control message with [`flexDisplay`](../options/v4.0/flex-display.mdx)).
 
 ```ts
 interface ScrcpyVideoStreamSessionPacket {
@@ -169,11 +169,9 @@ interface ScrcpyVideoStreamSessionPacket {
 
 ### Configuration packet
 
-When video streaming starts, or when the server re-creates new video encoders due to configuration changes, a configuration packet will generated and sent.
+If the choosen video codec has configuration data, a configuration packet will be sent before the first encoded video frame, and each time the encoder restarts.
 
-The first configuration packet will be send immediately after [metadata](#video-stream-metadata) (or at the beginning of video stream if metadata was disabled), and when each time the screen size or orientation changes.
-
-The format of configuration packets depend on the codec:
+The format of configuration packets depend on the codec. More information can be found at https://developer.android.com/reference/android/media/MediaCodec#CSD
 
 #### H.264 and H.265
 
@@ -200,9 +198,13 @@ For AV1, the configuration packet contains the first 3 bytes of `AV1CodecConfigu
 
 These 3 bytes are required when [saving the stream to video files](./record.mdx), although they can also be inferred from the configuration OBUs.
 
-#### VP8 and VP9
+#### VP8
 
-For VP8 and VP9, the configuration packet contains the codec-specific configuration data needed for decoding.
+VP8 does not have configuration data, so no configuration packet will be sent.
+
+#### VP9
+
+A VP9 CodecPrivate Data.
 
 ### Data packet
 
