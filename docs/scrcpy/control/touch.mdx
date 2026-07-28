@@ -56,7 +56,7 @@ declare const client: AdbScrcpyClient;
 console.log(client.videoWidth, client.videoHeight);
 ```
 
-When using one of the [built-in video decoders](../video/index.mdx#decode-and-render-in-browsers), the [`sizeChanged` event](../video/tiny-h264.mdx#handle-size-changes) can be used to get the latest `videoWidth` and `videoHeight` values.
+When using one of the [built-in video decoders](../video/index.mdx#decode-and-render-in-browsers), the [`sizeChanged` event](../video/decoder/handle-size.mdx) can be used to get the latest `videoWidth` and `videoHeight` values.
 
 ```ts transpile
 import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-shared";

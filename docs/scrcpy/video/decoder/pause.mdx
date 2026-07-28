@@ -1,0 +1,78 @@
+---
+sidebar_position: 4
+---
+
+# Pause Decoding
+
+The decoder provides built-in support for pausing and resuming video decoding. This allows you to temporarily stop processing video frames without tearing down the connection.
+
+Users typically want to pause the decoder when the rendering canvas is invisible or when the user switches away from the page to save system resources and reduce CPU usage.
+
+When paused, incoming video packets are queued and processed when the decoder resumes, focusing on keyframes to restore the most recent frame efficiently.
+
+## `paused`
+
+Gets whether the decoder is currently paused:
+
+```ts
+const isPaused = decoder.paused;
+```
+
+When paused, incoming video packets will be queued until resumed. The paused state can be controlled programmatically using the `pause()` and `resume()` methods, or automatically managed using the `trackDocumentVisibility()` method.
+
+## `pause()`
+
+Pauses the decoder, preventing incoming video packets from being processed. When paused, video packets continue to be received and are stored internally until the decoder resumes.
+
+This method pauses the decoder explicitly, and it can only be resumed by calling `resume()`. `pause` takes priority over `trackDocumentVisibility`:
+
+```ts transpile
+decoder.pause();
+```
+
+## `resume()`
+
+Resumes the decoder if it was paused. When resuming, any pending video packets that accumulated while paused will be processed. If the decoder was paused due to document visibility changes, this method will override that automatic pause:
+
+```ts transpile
+decoder.resume();
+```
+
+## `trackDocumentVisibility()`
+
+Automatically tracks document visibility to pause and resume the decoder based on whether the page is visible to the user. This method intelligently manages the decoder's state by:
+
+- Pausing the decoder when the document becomes hidden (e.g., when the user switches tabs)
+- Resuming the decoder when the document becomes visible again
+- Preventing automatic resume if the decoder was manually paused with `pause()`
+- Processing any accumulated frames when visibility returns
+
+The method returns an unsubscribe function that removes the visibility listeners and performs a final resume when called:
+
+```ts transpile
+const unsubscribe = decoder.trackDocumentVisibility(document);
+
+// Call unsubscribe() to stop tracking
+```
+
+## Example
+
+Here's a complete example showing how to use the pause functionality:
+
+```ts transpile
+// Basic pause/resume
+console.log('Decoder paused:', decoder.paused);
+decoder.pause();
+console.log('Decoder paused:', decoder.paused);
+decoder.resume();
+
+// Track document visibility automatically
+const unsubscribe = decoder.trackDocumentVisibility(document);
+
+// You can still manually pause/resume even with visibility tracking
+decoder.pause(); // This will stay paused even if document becomes visible
+decoder.resume(); // This will resume regardless of document visibility
+
+// Stop tracking visibility
+unsubscribe();
+```

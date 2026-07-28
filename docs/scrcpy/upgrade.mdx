@@ -57,3 +57,53 @@ writer.setScreenPowerMode(mode);
 ```typescript
 writer.setDisplayPower(mode);
 ```
+
+## `@yume-chan/scrcpy-decoder-tinyh264` → `@yume-chan/scrcpy-decoder-h264bsd`
+
+### 💥🔄 Replace `TinyH264Decoder` with `H264BsdDecoder`
+
+The `@yume-chan/scrcpy-decoder-tinyh264` package has been replaced by `@yume-chan/scrcpy-decoder-h264bsd`, a WebAssembly build of the Android H264BSD software decoder.
+
+**Migration guide:**
+
+- Replace `@yume-chan/scrcpy-decoder-tinyh264` with `@yume-chan/scrcpy-decoder-h264bsd`
+- Replace `TinyH264Decoder` with `H264BsdDecoder`
+- Replace `decoder.renderer` with `decoder.canvas`
+
+**Before:**
+
+```ts
+import { TinyH264Decoder } from "@yume-chan/scrcpy-decoder-tinyh264";
+
+const decoder = new TinyH264Decoder();
+document.body.appendChild(decoder.renderer as HTMLCanvasElement);
+
+videoPacketStream
+  .pipeTo(decoder.writable)
+  .catch(() => {});
+```
+
+**After:**
+
+```ts
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
+
+const decoder = new H264BsdDecoder();
+document.body.appendChild(decoder.canvas as HTMLCanvasElement);
+
+videoPacketStream
+  .pipeTo(decoder.writable)
+  .catch(() => {});
+```
+
+### ✨ Add `worker` option for Web Worker control
+
+The H264BSD decoder adds a `worker` option to control whether decoding runs in a Web Worker. It accepts `"auto"` (default), `true`, or `false`.
+
+### ✨ Add pause/resume and document visibility tracking
+
+The decoder can now be paused/resumed with `pause()` and `resume()`. Use `trackDocumentVisibility(document)` to automatically pause when the page is hidden.
+
+### ✨ Add video size properties and expanded metrics
+
+The decoder now exposes `width` and `height` properties, and provides detailed rendering metrics including `framesDecoded`, `framesSkippedDecoding`, `framesDisplayed`, and `decoderResetCount`.

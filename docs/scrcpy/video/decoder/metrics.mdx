@@ -1,0 +1,80 @@
+---
+sidebar_position: 5
+---
+
+# Rendering Metrics
+
+The decoder will try to render every frame when it arrives, to minimize latency.
+
+However, when the video frame rate is higher than the display refresh rate, or when the hardware can't keep up, some frames will be dropped.
+
+The following properties provide accumulated metrics for monitoring decoder performance.
+
+## Decoder metrics
+
+### `framesDecoded`
+
+Number of frames successfully decoded:
+
+```ts
+const framesDecoded = decoder.framesDecoded;
+```
+
+### `framesSkippedDecoding`
+
+Number of frames skipped by the decoder. Frames are typically skipped when the device is too slow to decode all frames in the queue. When a new keyframe arrives, the decoder discards all queued frames since decoding can only start from keyframes. This mechanism limits the maximum latency to one keyframe interval but may skip many frames when the decoder cannot keep up:
+
+```ts
+const framesSkipped = decoder.framesSkippedDecoding;
+```
+
+### `decoderResetCount`
+
+Number of times the decoder was reset to catch up with new keyframes:
+
+```ts
+const resetCount = decoder.decoderResetCount;
+```
+
+## Renderer metrics
+
+### `framesRendered`
+
+Number of frames drawn on the renderer:
+
+```ts
+const framesRendered = decoder.framesRendered;
+```
+
+### `framesDisplayed`
+
+Number of frames visible to the user. Multiple frames may be rendered during one vertical sync interval, but only the last is shown. This costs some performance but reduces latency by 1 frame. May be `0` if the renderer is in a nested Web Worker on Chrome due to a [Chrome bug](https://issues.chromium.org/issues/41483010):
+
+```ts
+const framesDisplayed = decoder.framesDisplayed;
+```
+
+### `framesSkippedRendering`
+
+Number of frames not drawn because the renderer can't keep up with the frame rate:
+
+```ts
+const framesSkipped = decoder.framesSkippedRendering;
+```
+
+## Example
+
+Here's an example using a 1-second timer to update a UI element with performance statistics:
+
+```ts transpile
+setInterval(() => {
+  console.log(
+    decoder.framesDecoded,
+    decoder.framesSkippedDecoding,
+    decoder.framesRendered,
+    decoder.framesDisplayed,
+    decoder.framesSkippedRendering,
+    decoder.decoderResetCount,
+  );
+}, 1000);
+```

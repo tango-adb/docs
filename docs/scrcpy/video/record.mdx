@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # Save to file
@@ -23,9 +23,9 @@ There are two ways to convert the raw encoded video frames into a video file: re
 
 ## Re-encode the video
 
-The [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) API can record the rendering canvas (from [H264BSD decoder](./tiny-h264.mdx) or [WebCodecs decoder](./webcodecs/index.mdx#create-a-renderer)) into a MP4 or WEBM file.
+The [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) API can record the rendering canvas (from [H264BSD decoder](./tiny-h264.mdx) or [WebCodecs decoder](./webcodecs/index.mdx#create-decoder)) into a MP4 or WEBM file.
 
-Note that for [`WebGLVideoFrameRenderer`](./webcodecs/index.mdx#create-a-renderer), the `enableCapture` parameter must be set to `true`.
+Note that for [`WebGLVideoFrameRenderer`](./webcodecs/renderer.mdx#webglvideoframerenderer) and [`AutoCanvasRenderer`](./webcodecs/renderer.mdx#autocanvasrenderer), the `enableCapture` parameter must be set to `true`.
 
 MDN has an [example](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#example) of using `MediaRecorder`. There is nothing special for using `MediaRecorder` with our decoder canvases.
 
@@ -336,7 +336,7 @@ How to use the above `AvcDecoderConfigurationRecord` data depend on the containe
 
 The H.265 configuration packet contains the Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS).
 
-Same as [H.264](#configuration), it also need to be converted and stored in video metadata, and prepended to the next frame data to be stored in the video stream. Except, the functions for doing that are different because the data is different.
+Same as [H.264](#h264-configuration), it also need to be converted and stored in video metadata, and prepended to the next frame data to be stored in the video stream. Except, the functions for doing that are different because the data is different.
 
 First extract them from a packet:
 

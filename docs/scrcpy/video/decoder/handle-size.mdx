@@ -1,0 +1,35 @@
+---
+sidebar_position: 3
+---
+
+# Handle Size Changes
+
+When the device orientation changes, the Scrcpy server recreates the video encoder with new dimensions. The decoder automatically parses the updated video configuration and adjusts the canvas size accordingly.
+
+## `width` and `height`
+
+Returns the current video dimensions in pixels:
+
+```ts
+const width = decoder.width;
+const height = decoder.height;
+```
+
+These values update automatically when the device orientation changes.
+
+## `sizeChanged`
+
+An event that fires when the video size changes, typically due to device orientation changes. This event is useful for other purposes like [injecting touch events](../../control/touch.mdx):
+
+```ts transpile
+decoder.sizeChanged(({ width, height }) => {
+    console.log(`Video size changed to ${width}x${height}`);
+});
+```
+
+The event callback receives an object with:
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `width` | `number` | The new video width in pixels |
+| `height` | `number` | The new video height in pixels |

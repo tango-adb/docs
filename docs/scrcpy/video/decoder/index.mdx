@@ -1,0 +1,69 @@
+---
+sidebar_position: 1
+---
+
+# Video Decoder
+
+All built-in video decoders implement the `ScrcpyVideoDecoder` interface from `@yume-chan/scrcpy-decoder-shared`. This page describes the common interface shared by all decoders.
+
+## Interface
+
+```ts
+import type { ScrcpyVideoDecoder } from "@yume-chan/scrcpy-decoder-shared";
+```
+
+The `ScrcpyVideoDecoder` interface provides a unified API for decoding and rendering Scrcpy video streams. Both the [H264BSD decoder](../tiny-h264.mdx) and [WebCodecs decoder](../webcodecs/index.mdx) implement this interface.
+
+### Properties
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `type` | `"software" \| "hardware"` | Whether the decoder uses software or hardware decoding |
+| `rendererType` | `"software" \| "hardware"` | Whether the renderer uses software or hardware rendering |
+| `writable` | `WritableStream<ScrcpyVideoStreamPacket>` | Writable stream that accepts video packets for decoding |
+| `paused` | `boolean` | Whether the decoder is currently paused |
+| `width` | `number` | Current video width in pixels |
+| `height` | `number` | Current video height in pixels |
+| `sizeChanged` | `Event<{ width, height }>` | Event fired when the video size changes |
+| `framesDecoded` | `number` | Number of frames successfully decoded |
+| `framesSkippedDecoding` | `number` | Number of frames skipped by the decoder |
+| `framesRendered` | `number` | Number of frames drawn on the renderer |
+| `framesDisplayed` | `number` | Number of frames visible to the user |
+| `framesSkippedRendering` | `number` | Number of frames not drawn because the renderer can't keep up |
+| `decoderResetCount` | `number` | Number of times the decoder was reset to catch up with new keyframes |
+
+### Methods
+
+| Method | Description |
+| ------ | ----------- |
+| `pause()` | Pause the decoder |
+| `resume()` | Resume the decoder if it was paused |
+| `trackDocumentVisibility(document)` | Automatically pause/resume based on document visibility |
+| `dispose()` | Clean up decoder resources |
+
+## Common usage
+
+Regardless of which decoder you use, the basic usage pattern is the same:
+
+1. [Create a decoder](#create-a-decoder) instance
+2. [Pipe the video stream](./pipe-stream.mdx) into `decoder.writable`
+3. [Handle size changes](./handle-size.mdx) via `decoder.sizeChanged`
+4. Optionally [pause the decoder](./pause.mdx) when the canvas is not visible
+5. Monitor [rendering metrics](./metrics.mdx) for performance insights
+
+## Create a decoder
+
+Each decoder has its own constructor with different options. See the specific decoder documentation for details:
+
+- [H264BSD decoder](../tiny-h264.mdx#create-a-decoder)
+- [WebCodecs decoder](../webcodecs/decoder.mdx#create-a-decoder)
+
+After creating the decoder, append the render target to the DOM:
+
+```ts transpile
+// For H264BSD decoder:
+document.body.appendChild(decoder.canvas as HTMLCanvasElement);
+
+// For WebCodecs decoder:
+document.body.appendChild(decoder.renderer.canvas);
+```

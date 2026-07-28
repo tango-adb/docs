@@ -1,0 +1,63 @@
+---
+sidebar_position: 2
+---
+
+# Pipe Video Stream
+
+All decoders provide a `writable` property that returns a `WritableStream` for accepting video packet data from the device.
+
+## `writable`
+
+```ts
+get writable(): WritableStream<ScrcpyVideoStreamPacket>;
+```
+
+Pipe the [video stream](../index.mdx#video-packets) into the `writable` property to begin decoding:
+
+```ts transpile
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+
+declare const videoPacketStream: ReadableStream<ScrcpyMediaStreamPacket>;
+declare const decoder: ScrcpyVideoDecoder;
+
+void videoPacketStream.pipeTo(decoder.writable).catch((e) => {
+  console.error(e);
+});
+```
+
+:::note
+
+Don't `await` the `pipeTo`. The returned `Promise` only resolves when the video stream ends. Awaiting it here while not handling other streams could block the video socket, causing a deadlock.
+
+:::
+
+## React example
+
+When using MVVM frameworks like React, it might be simpler to attach the decoder to an existing canvas element:
+
+```ts transpile
+import React from "react";
+import { H264BsdDecoder } from "@yume-chan/scrcpy-decoder-h264bsd";
+import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";
+
+export function Renderer(props: {
+  videoStream: ReadableStream<ScrcpyMediaStreamPacket>;
+}) {
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+
+  React.useEffect(() => {
+    const decoder = new H264BsdDecoder({ canvas: canvasRef.current });
+    void props.videoStream.pipeTo(decoder.writable).catch(() => {});
+
+    return () => {
+      void decoder.dispose();
+    };
+  }, [props.videoStream]);
+
+  return (
+    <div className="container">
+      <canvas ref={canvasRef} />
+    </div>
+  );
+}
+```

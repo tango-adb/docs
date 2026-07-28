@@ -80,7 +80,7 @@ interface ScrcpyVideoStreamMetadata {
 
 The metadata will only be sent once. When device screen size changes (for example, when device orientation changes, or a foldable device unfolds), the server will restart the video encoder, but it won't send a new metadata with the new size.
 
-To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-in-browsers) have a [`sizeChanged`](./tiny-h264.mdx#handle-size-changes) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) also contains [size information](#video-size).
+To track the video resolution, parsing the video stream is required. [built-in video decoders](#decode-and-render-in-browsers) have a [`sizeChanged`](./decoder/handle-size.mdx) event, and [`AdbScrcpyClient`](../start-server.mdx#with-yume-chanadb-scrcpy) also contains [size information](#video-size).
 
 
 ### With `@yume-chan/scrcpy`
@@ -157,8 +157,8 @@ The format of configuration packets depend on the codec:
 
 For H.26x codecs, the configuration packets include the following data:
 
-- H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS), in [Annex B format](./record.mdx#h264).
-- H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS), in [Annex B format](./record.mdx#h265).
+- H.264: Sequence Parameter Set (SPS) and Picture Parameter Set (PPS), in [Annex B format](./record.mdx#avcchevc-vs-annex-b-for-h264h265-codecs).
+- H.265: Video Parameter Set (VPS), Sequence Parameter Set (SPS), and Picture Parameter Set (PPS), in [Annex B format](./record.mdx#avcchevc-vs-annex-b-for-h264h265-codecs).
 
 These information are essential for proper decoding of the video, so they will still be sent through the video stream even when configuration packets are disabled. Enabling configuration packets only adds a mark to them, so the client can more easily find and handle them.
 
@@ -186,7 +186,7 @@ Each data packet represents exactly one encoded frame, and if [version and optio
 
 - `keyframe`: `true` if the current packet is a keyframe. Many decoders can decode the video stream without knowing if each frame is a keyframe or not, but some decoders require this information.
 - `pts`: Presentation timestamp in nanoseconds. When rendering the video in real-time, generally you want to present the decoded frames as they arrive to minimize the latency, but this information can be used to remove processing time deviations when [recording](./record.mdx).
-- `data`: Contains exactly one encoded frame. For H.264 and H.265, in [Annex B format](./record.mdx#h264).
+- `data`: Contains exactly one encoded frame. For H.264 and H.265, in [Annex B format](./record.mdx#avcchevc-vs-annex-b-for-h264h265-codecs).
 
 
 ### With `@yume-chan/scrcpy`
@@ -318,6 +318,8 @@ We provide two packages to decode and render the video stream in Web browsers:
 
 - [H264BSD decoder](./tiny-h264.mdx)
 - [WebCodecs decoder](./webcodecs/index.mdx)
+
+Both decoders implement the common [`ScrcpyVideoDecoder` interface](./decoder/index.mdx) for piping video streams, handling size changes, pausing, and monitoring rendering metrics.
 
 To use them, the `sendFrameMeta` options must be `true` (the default value) to enable [configuration packets](#configuration-packet).
 
