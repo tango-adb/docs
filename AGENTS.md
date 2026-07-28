@@ -62,6 +62,38 @@ grep -c "*/}" path/to/file.mdx  # Should match the same count
 
 Always verify MDX comments after edits before committing changes.
 
+#### Using `<Version>` Tag
+
+Best practices for using the `<Version>` component to conditionally render version-dependent content.
+
+- Import `Version` from `"../version-span"` at the top of the file when using this component
+- Use `since` and `until` props to define version ranges (e.g., `<Version since="v2.0" until="v3.3.4">`)
+- The tag renders its content with a version badge appended (e.g., `"(since v2.0)"` or `"(v1.22 to v1.25)"`), so do not duplicate version numbers inside the tag content
+- Use mutually exclusive, non-overlapping version ranges to avoid conflicting content being rendered together
+- Each `<Version>` branch should produce a complete, coherent sentence when combined with the surrounding base text
+- The base text outside `<Version>` tags can be a fragment — it's acceptable for it to be incomplete since at least one Version branch will always complete it
+
+**Example:**
+
+```mdx
+`deviceName`: Always present<Version until="v1.22"> (no option to disable)</Version><Version since="v1.22">, unless [`sendDeviceMeta`](../options/v1.22/send-device-meta.mdx) is `false`</Version>.
+```
+
+- `until="v1.22"` branch renders: "Always present (no option to disable) (until v1.22)."
+- `since="v1.22"` branch renders: "Always present, unless sendDeviceMeta is false (since v1.22)."
+
+**Avoid:**
+
+- Do not put version numbers like "v1.22" inside the tag content — the tag adds them automatically
+- Do not use overlapping or duplicate version ranges (e.g., both `<Version until="v3.3.4">` and `<Version since="v2.0" until="v3.3.4">` active at the same time)
+
+**Incorrect example to avoid:**
+
+```mdx
+❌ Version number duplicated in content:
+<Version since="v1.22">From v1.22+, present unless...</Version>
+```
+
 ### Frontmatter & Navigation
 
 Rules for configuring sidebar navigation, positioning, and category organization in Docusaurus.
@@ -146,6 +178,25 @@ declare const socket: AdbSyncSocket;
 declare const path: string;
 
 const stream: ReadableStream<Uint8Array> = AdbSync.Receive.stream(socket, path);
+```
+
+#### Showing Imported Types
+
+When referencing types from other packages in type declaration code blocks:
+
+- Keep real `import type` statements only for very common/simple types (e.g., `Event`, `ReadableStream`)
+- For non-trivial types, inline the full definition so readers can see the shape at a glance
+- Add a commented `import type` line to show the import path for copy-paste usage
+
+```ts
+import type { Event } from "@yume-chan/event";
+
+// import type { ScrcpyVideoSizeChangedEvent } from "@yume-chan/scrcpy";
+interface ScrcpyVideoSizeChangedEvent {
+  width: number;
+  height: number;
+  isClientResize?: boolean | undefined;
+}
 ```
 
 **Incorrect examples to avoid:**

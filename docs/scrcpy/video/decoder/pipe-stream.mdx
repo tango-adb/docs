@@ -12,7 +12,7 @@ All decoders provide a `writable` property that returns a `WritableStream` for a
 get writable(): WritableStream<ScrcpyVideoStreamPacket>;
 ```
 
-Pipe the [video stream](../index.mdx#video-packets) into the `writable` property to begin decoding:
+Pipe the [video stream](../index.mdx#stream-packets) into the `writable` property to begin decoding:
 
 ```ts transpile
 import type { ScrcpyMediaStreamPacket } from "@yume-chan/scrcpy";

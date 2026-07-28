@@ -60,7 +60,7 @@ First, install the required packages:
 npm install @yume-chan/media-codec @yume-chan/scrcpy @yume-chan/stream-extra mediabunny
 ```
 
-To connect Scrcpy video stream to Mediabunny, we need to create an `Output` instance and pipe Scrcpy's `videoPacketStream` (from [`createMediaStreamTransformer`](./index.mdx#with-yume-chanscrcpy-1) or [`AdbScrcpyClient.videoStream`](./index.mdx#with-yume-chanadb-scrcpy-1)) to it.
+To connect Scrcpy video stream to Mediabunny, we need to create an `Output` instance and pipe Scrcpy's `videoPacketStream` (from [`createMediaStreamTransformer`](./index.mdx#parsing-packets) or [`AdbScrcpyClient.videoStream`](./index.mdx#with-yume-chanadb-scrcpy)) to it.
 
 This example uses `MkvOutputFormat` which produces a `.mkv` file. Technically, MKV files only support AVCC/HEVC format for H.264/H.265 codec, but most video players (VLC, Windows Media Player, etc.) and tools (FFmpeg) can also handle Annex B formatted streams, so we don't need to convert the stream.
 
