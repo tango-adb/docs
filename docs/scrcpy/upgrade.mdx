@@ -4,6 +4,39 @@ This page lists changes from version 2.0.0 in Scrcpy-related packages.
 
 For changes in other packages, see [this page](../tango/upgrade.mdx).
 
+## New in beta 1
+
+### ScrcpyCodecOptions API improvements
+
+[`ScrcpyCodecOptions`](../scrcpy/options/v1.15/codec-options.mdx) and `ScrcpyVideoCodecOptions` classes have been updated with a more flexible API:
+
+- All setter methods now accept `undefined` to remove a previously set option. Previously, users had to call `delete(key)` and know the internal key name.
+- `setLong` now accepts `number | bigint` (previously only `bigint`). `number` values are converted via `Math.floor`.
+- `setInt` now validates that the value is within the `int32` range (`-2147483648` to `2147483647`) and truncates it.
+
+**Before:**
+
+```ts
+import { ScrcpyVideoCodecOptions } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyVideoCodecOptions()
+    .setProfile(1)
+    .setLong("key", 123n);
+
+options.delete("key"); // Removing required knowing the internal key name
+```
+
+**After:**
+
+```ts
+import { ScrcpyVideoCodecOptions } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyVideoCodecOptions()
+    .setProfile(1)
+    .setProfile(undefined)
+    .setLong("key", 123);
+```
+
 ## `@yume-chan/scrcpy`
 
 ### Support for Server Versions 4.0 and 4.1

@@ -53,12 +53,72 @@ content = content.replace(
 // Also handle the case where there's no content between fences
 content = content.replace(/(```\w+\n)\n*(```)/g, "$1$2");
 
-// Final cleanup
+// Move any {/* Source: ... */} comments to after the H1 heading, with proper spacing
+const lines = content.split("\n");
+
+// Locate the end of frontmatter (second '---' line)
+let frontmatterEnd = -1;
+let dashCount = 0;
+for (let i = 0; i < lines.length; i++) {
+  if (lines[i].trim() === "---") {
+    dashCount++;
+    if (dashCount === 2) {
+      frontmatterEnd = i;
+      break;
+    }
+  }
+}
+
+let afterFrontmatter = frontmatterEnd !== -1 ? lines.slice(frontmatterEnd + 1) : lines;
+
+// Find first H1 line (starts with '# ') in afterFrontmatter
+const h1Idx = afterFrontmatter.findIndex(l => l.trim().startsWith("# "));
+
+// Separate comment lines and other lines
+const commentLines = [];
+const otherLines = [];
+for (const line of afterFrontmatter) {
+  if (/^\s*{\/\* Source:/ .test(line)) {
+    commentLines.push(line);
+  } else {
+    otherLines.push(line);
+  }
+}
+
+let rebuilt = [];
+if (h1Idx !== -1) {
+  // Include everything up to and including the H1 line
+  rebuilt = otherLines.slice(0, h1Idx + 1);
+  // Ensure a blank line after H1 before comments
+  if (rebuilt[rebuilt.length - 1].trim() !== "") {
+    rebuilt.push("");
+  }
+  // Insert comment lines
+  rebuilt = rebuilt.concat(commentLines);
+  // Ensure a blank line after comments before the remaining content
+  if (commentLines.length > 0) {
+    rebuilt.push("");
+  }
+  // Append the rest of the content after H1
+  rebuilt = rebuilt.concat(otherLines.slice(h1Idx + 1));
+} else {
+  // No H1 – just prepend comments
+  rebuilt = commentLines.concat([""], otherLines);
+}
+
+// Reassemble with frontmatter if present
+let finalLines = [];
+if (frontmatterEnd !== -1) {
+  finalLines = lines.slice(0, frontmatterEnd + 1).concat(rebuilt);
+} else {
+  finalLines = rebuilt;
+}
+
+content = finalLines.join("\n");
+
+// Final cleanup: ensure file ends with a single newline
 content = content.trim() + "\n";
 
-// Write the file back
 fs.writeFileSync(filePath, content);
 
-console.log(
-  `Successfully formatted ${filePath} according to MDX documentation standards`,
-);
+console.log(`Successfully formatted ${filePath} according to MDX documentation standards`);

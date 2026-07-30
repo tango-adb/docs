@@ -1,8 +1,10 @@
 ---
+
 ---
-{/* 
+
+{/*
 To Agents:
-When editing this file, please follow these specific formatting rules:
+When editing this file, follow these specific formatting rules:
 1. Maintain two separate listings of options:
    - "by version introduced" section: Each option appears only once in the version it was first introduced, with nested lists showing type changes/deprecations across versions
    - "by category" section: Options may appear in multiple categories as applicable, with subcategories for broader areas like "Video" (broken down into Physical Display, Camera, Virtual Display, etc.)
@@ -15,6 +17,9 @@ When editing this file, please follow these specific formatting rules:
 import Version from "../version-span";
 
 # Options
+
+{/* Source: libraries/scrcpy/src/latest.ts | Commit: f65f90fe93a5c18bcfe11a93edd49515a4cea3ae */}
+
 
 Scrcpy protocol changes over time, and are usually not backward compatible. Tango is compatible with many versions of Scrcpy server, by providing a set of options classes for each server version (or range).
 
@@ -29,7 +34,7 @@ If the latest version of Scrcpy server doesn't have a matching options class, th
 
 ## With `@yume-chan/scrcpy`
 
-Tango supports all version between 1.15 and 3.1, by providing a set of options classes for each server version.
+Tango supports all version between 1.15 and 4.1, by providing a set of options classes for each server version.
 
 For example, `ScrcpyOptions1_15` is the options class for server version 1.15, `ScrcpyOptions1_15_1` for version 1.15.1, and `ScrcpyOptions3_1` for version 3.1, and so on.
 
@@ -193,8 +198,6 @@ const options = new AdbScrcpyOptions2_1({
   - [`cameraHighSpeed`](./v2.2/camera-high-speed.mdx) (`boolean`): Controls whether the camera should operate in high-speed mode when `videoSource` is set to `"camera"`
   - [`listCameras`](./v2.2/list-cameras.mdx) (`boolean`): Lists available cameras on the device and exits
   - [`listCameraSizes`](./v2.2/list-camera-sizes.mdx) (`boolean`): Lists available camera sizes for a specific camera and exits
-
-
 
 ### v2.6
 

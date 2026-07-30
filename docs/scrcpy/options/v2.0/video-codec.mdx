@@ -2,7 +2,13 @@
 sidebar_position: 24
 ---
 
+import Version from "../../version-span";
+
 # videoCodec
+
+{/* Source: libraries/scrcpy/src/2_0/impl/init.ts | Commit: f65f90fe93a5c18bcfe11a93edd49515a4cea3ae */}
+{/* Source: libraries/scrcpy/src/4_1/impl/init.ts | Commit: f65f90fe93a5c18bcfe11a93edd49515a4cea3ae */}
+
 
 :::info
 
@@ -10,7 +16,9 @@ Added in Scrcpy 2.0
 
 :::
 
-* **Type**: `"h264" | "h265" | "av1"`
+* **Type**:
+  * <Version until="4.1">`"h264" | "h265" | "av1"`</Version>
+  * <Version since="4.1">`"h264" | "h265" | "av1" | "vp8" | "vp9"`</Version>
 * **Default value**: `"h264"`
 
 Specifies the video codec to use by the server.
@@ -39,18 +47,52 @@ AV1 encoder is mandatory since Android 14, however, the built-in, software-based
 
 Support for hardware-based AV1 encoders can be found at https://en.wikipedia.org/wiki/AV1#Hardware.
 
+<Version since="4.1">
+
+## VP8
+
+VP8 provides a good balance between compatibility and performance, and can be used alongside other codecs.
+
+VP8 encoder is available on many Android devices.
+
+## VP9
+
+VP9 provides better video quality at the same bitrate compared to VP8.
+
+VP9 encoder is available on a subset of Android devices.
+
+</Version>
+
 ## Related options
 
 - [`videoBitRate`](./video-bit-rate.mdx): Sets the video bitrate for the stream in bits per second
 - [`videoCodecOptions`](./video-codec-options.mdx): Configures video encoding parameters for the selected video codec
 - [`videoEncoder`](./video-encoder.mdx): Specifies the name of the encoder to use for video encoding
 
-## Example
+## Changelog
+
+### v4.1
+
+Extended type to include `"vp8"` and `"vp9"`.
+
+## Examples
+
+Using v2.0:
 
 ```ts transpile
 import { ScrcpyOptions2_0 } from "@yume-chan/scrcpy";
 
 const options = new ScrcpyOptions2_0({
     videoCodec: "h265", // Use H.265 codec
+});
+```
+
+Using v4.1:
+
+```ts transpile
+import { ScrcpyOptions4_1 } from "@yume-chan/scrcpy";
+
+const options = new ScrcpyOptions4_1({
+    videoCodec: "vp8", // Use VP8 codec (available in v4.1+)
 });
 ```

@@ -366,9 +366,14 @@ Scrcpy documentation covers screen mirroring and control functionality, includin
 Scrcpy options documentation details the various configuration parameters, organized by version (v1.15 through v3.2) and including inheritance mechanisms and option value types.
 
 - Order by: foundational concepts first (like `ScrcpyOptionValue`), then options by version added and by order in source code, with advanced topics (like `Inheritance`) at bottom
-- When adding new options, assign `sidebar_position` reflecting chronological order of when feature was added in Scrcpy versions
-- Ensure `sidebar_position` values are unique (check existing positions before assigning new one)
-- Position values should increase incrementally based on version timeline to maintain logical ordering in sidebar
+- For Scrcpy options documentation pages, include a source reference comment indicating the originating source file and the repository commit hash. The comment must be placed **immediately after the H1 heading** (and any import statements) using the format:
+
+```mdx
+{/* Source: libraries/scrcpy/src/<path>.ts | Commit: <commit-hash> */}
+```
+
+Maintain a blank line before and after the comment. This rule will later be extended to cover all API documentation pages.
+
 
 #### Strongly-Typed Options
 
