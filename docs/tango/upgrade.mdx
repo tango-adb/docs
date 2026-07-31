@@ -16,6 +16,42 @@ This page lists changes from version 2.0.0 in core packages.
 
 For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
 
+## New in beta 1
+
+### ✨ Add `AdbServerNodeJsClient` wrapper class
+
+Added `AdbServerNodeJsClient`, a high-level wrapper class that extends `AdbServerClient` and uses `AdbServerNodeTcpConnector` internally. This is the recommended way to create ADB server clients in Node.js environments.
+
+**Before:**
+
+```ts
+import { AdbServerClient, AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+
+const connector = new AdbServerNodeTcpConnector({
+  host: "localhost",
+  port: 5037,
+});
+const client = new AdbServerClient(connector);
+```
+
+**After:**
+
+```ts
+import { AdbServerNodeJsClient } from "@yume-chan/adb-server-node-tcp";
+
+// Recommended: Use the wrapper class directly
+const client = new AdbServerNodeJsClient();
+
+// Advanced: Use the connector directly for low-level control
+const connector = new AdbServerNodeTcpConnector({
+  host: "localhost",
+  port: 5037,
+});
+const client2 = new AdbServerClient(connector);
+```
+
+**Recommendation:** Use `AdbServerNodeJsClient` by default, and only use `AdbServerNodeTcpConnector` in advanced, low-level situations that require direct socket manipulation or custom connection management.
+
 ## `@yume-chan/adb`
 
 ### 💥🔄 Replace `AdbDaemonTransport.authenticate` with `adbDaemonAuthenticate` function
@@ -801,6 +837,31 @@ Fixed an issue where device observers would lose track of manually selected devi
 **Fix**: Now manually dispatches a connect event after successful device selection to notify observers.
 
 ## `@yume-chan/adb-server-node-tcp`
+
+### ✨ Add `AdbServerNodeJsClient` wrapper class
+
+Added `AdbServerNodeJsClient`, a high-level wrapper class that extends `AdbServerClient` and uses `AdbServerNodeTcpConnector` internally. This is the recommended way to create ADB server clients in Node.js environments.
+
+{/*
+Source files:
+
+- libraries/adb-server-node-tcp/src/client.ts (AdbServerNodeJsClient)
+- libraries/adb-server-node-tcp/src/connector.ts (AdbServerNodeTcpConnector)
+  */}
+
+```ts
+import { AdbServerNodeJsClient } from "@yume-chan/adb-server-node-tcp";
+
+// highlight-start
+// Recommended: Use the wrapper class directly
+const client: AdbServerNodeJsClient = new AdbServerNodeJsClient();
+
+// Advanced: Use the connector directly for low-level control
+import { AdbServerNodeTcpConnector, AdbServerClient } from "@yume-chan/adb-server-node-tcp";
+const connector = new AdbServerNodeTcpConnector();
+const client2: AdbServerClient = new AdbServerClient(connector);
+// highlight-end
+```
 
 ### ✨ Add new `AdbServerNodeTcpConnector` constructor overloads
 
