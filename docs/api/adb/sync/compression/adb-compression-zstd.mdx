@@ -1,0 +1,91 @@
+# @yume-chan/adb-compression-zstd
+
+{/* Source: libraries/adb-compression-zstd/src/index.ts | Commit: 6f0e703e2e67162afa2b459936c17124c465739d */}
+
+Zstandard compression adapter for Tango ADB.
+
+```sh npm2yarn
+npm install @yume-chan/adb-compression-zstd
+```
+
+This package provides Zstd compression/decompression adapters for the `AdbSync.Compression` namespace. It uses WebAssembly (`@structured-world/structured-zstd`) and Comlink to run compression in a Web Worker, keeping the main thread responsive.
+
+## Registration
+
+```ts
+import { registerZstdCompression } from "@yume-chan/adb-compression-zstd";
+
+registerZstdCompression();
+```
+
+After registration, `AdbSync.Compression.canUseZstd(adb, Compression.Mode.Compress)` and `Decompress` will return `true` (given device `sendrecv_v2` support), and auto-selection will pick Zstd first.
+
+## `registerZstdCompression(options)`
+
+```ts
+function registerZstdCompression(options?: {
+  worker?: "auto" | boolean;
+  compressionLevel?: number;
+}): void;
+```
+
+### Options
+
+#### `compressionLevel` (default: `1`)
+
+The Zstd compression level. The default of `1` matches [Google ADB's default Zstd compression level](https://android.googlesource.com/platform/packages/modules/adb/+/bdebc9b22cee5b2aec2e919d176d915725188fc8/compression_utils.h#442). Lower levels compress faster but produce larger output; higher levels compress slower but achieve better ratios. Only applies when the Zstd compression adapter is used.
+
+#### `worker` (default: `"auto"`)
+
+Controls whether compression runs in a Web Worker. This mirrors the behavior of the [H264BSD decoder's Web Worker option](../../../../scrcpy/video/tiny-h264.mdx#web-worker):
+
+| `worker` | Current thread | Behavior |
+| -------- | -------------- | -------- |
+| `"auto"` | Main thread | Spawns a Web Worker; compression runs off the main thread. |
+| `"auto"` | Web Worker | Runs on the current thread. No worker is created. |
+| `true`   | Main thread | Same as `"auto"` on the main thread. |
+| `true`   | Web Worker | Spawns a nested Web Worker. |
+| `false`  | Main thread | Runs on the main thread; compression blocks the main thread. |
+| `false`  | Web Worker | Runs on the current thread. No worker is created. |
+
+A `Worker` instance is created per adapter and terminated on flush/cancel. The default `"auto"` is recommended for most cases.
+
+## Runtime Support
+
+| Environment | Support |
+|-------------|---------|
+| Browsers | ✅ Full support (requires Web Worker + WASM) |
+| Node.js | ❌ Not supported (no Web Worker / WASM target) |
+
+The package uses `@structured-world/structured-zstd` (WebAssembly) and `comlink` for worker communication. It is designed for browser environments only.
+
+## Example
+
+```ts transpile
+import { AdbSync } from "@yume-chan/adb";
+import { registerZstdCompression } from "@yume-chan/adb-compression-zstd";
+
+declare const adb: Adb;
+declare const sync: AdbSync.Service;
+declare const readable: ReadableStream<Uint8Array>;
+
+// Register Zstd adapter (once at startup)
+registerZstdCompression();
+
+// Use Zstd compression explicitly
+await sync.write({
+  path: "/sdcard/large-file.bin",
+  readable,
+  compression: AdbSync.Compression.Format.Zstd,
+});
+
+// Or let auto-selection pick the best format (will prefer Zstd)
+await sync.write({
+  path: "/sdcard/large-file.bin",
+  readable,
+});
+```
+
+## See Also
+
+- [Compression overview](./index.mdx): Core compression API and adapter registration.

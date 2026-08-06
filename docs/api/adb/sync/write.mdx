@@ -2,20 +2,25 @@
 sidebar_position: 6
 ---
 
-import CanIUse from "../../../can-i-use";
-
 # write
+
+{/* Source: libraries/adb/src/service/sync/service.ts | Commit: 6f0e703e2e67162afa2b459936c17124c465739d */}
 
 Write files to the device filesystem.
 
-If the parent directory does not exist, it will be created.
+- If the parent directory does not exist, it will be created.
+- If the file already exists, it will be overwritten.
 
-If the file already exists, it will be overwritten.
+Two APIs are provided:
+
+- [write](#write-1): returns a `Promise` for simple and quick file writing.
+- [createWritable](#createwritable): returns a `SendSession` for advanced use cases, allowing manual stream control and live progress tracking.
+
+## `write`
 
 ```ts
 interface AdbSyncWriteOptions {
-  filename: string;
-  file: ReadableStream<MaybeConsumable<Uint8Array>>;
+  path: string;
   type?: LinuxFileType;
   permission?: number;
   mtime?: number;
@@ -24,14 +29,18 @@ interface AdbSyncWriteOptions {
 }
 
 declare class AdbSync {
-  write(options: AdbSyncWriteOptions): Promise<void>;
+  write(
+    options: AdbSyncWriteOptions & {
+      readable: ReadableStream<MaybeConsumable<Uint8Array>>;
+    },
+  ): Promise<Omit<SendSession, "writable">>;
 }
 ```
 
-## Options
+### Options
 
-- `filename`: Path to the file on the device filesystem
-- `file`: File content. It uses the [Consumable](/tango/consumable.mdx) pattern.
+- `path`: Path to the file on the device filesystem. Unlike `cp` or `adb push` commands, it can't point to an existing directory, it must be the full path to the file to be created.
+- `readable`: File content. It uses the [Consumable](/tango/consumable.mdx) pattern.
 - `type`: File type, defaults to `LinuxFileType.File`. Can't be `LinuxFileType.Directory`.
 - `permission`: File permission, defaults to `0o644`
 - `mtime`: File modification time, defaults to current time (in seconds since Unix epoch).
@@ -40,149 +49,20 @@ declare class AdbSync {
 
 ### Compression
 
-<CanIUse feature="mdn-api_compressionstream_compressionstream_brotli" />
+The `compression` option specifies the compression format to use when transferring the file:
 
-<CanIUse feature="mdn-api_compressionstream_compressionstream_zstd" />
+- If `compression` is `undefined`, the best format supported by both the device and the current runtime is selected automatically.
+- If `Compression.Format.None` is specified, compression is disabled.
+- Otherwise the explicitly specified format is used. If the format is not supported by either the device or runtime, an error is thrown.
 
-The `compression` option allows runtime-selectable compression for push operations:
+See [Compression](./compression/index.mdx) for more details.
 
-```ts
-import { Compression } from "@yume-chan/adb";
-
-// Check if a compression format is supported
-if (Compression.canUseFormat(adb, Compression.Format.Brotli)) {
-  await sync.write({
-    filename: "/sdcard/large-file.bin",
-    file: stream,
-    compression: Compression.Format.Brotli,
-  });
-}
-```
-
-Available compression formats:
-
-- `Compression.Format.None` - No compression (default)
-- `Compression.Format.Brotli` - Brotli compression
-- `Compression.Format.Lz4` - LZ4 compression
-- `Compression.Format.Zstd` - Zstandard compression
-
-#### Compression Format Selection
-
-The `compression` option behavior depends on the protocol version and device capabilities:
-
-**1. When `compression` is `undefined` (default):**
-
-The library automatically selects the best compression format based on:
-
-- Device capabilities (`sendrecv_v2` feature support)
-- Runtime compression library availability
-- Performance considerations
-
-```ts
-// compression: undefined (default) - auto-selects best format
-await sync.write({
-  filename: "/sdcard/file.bin",
-  file: stream,
-  // compression is undefined by default
-});
-```
-
-Auto-selection priority:
-
-1. If device supports `sendrecv_v2` and Zstd is available → Zstd
-2. If device supports `sendrecv_v2` and LZ4 is available → LZ4
-3. If device supports `sendrecv_v2` and Brotli is available → Brotli
-4. Otherwise → No compression (`Compression.Format.None`)
-
-:::info
-
-The auto-selection priority follows the [Android ADB source code](https://android.googlesource.com/platform/packages/modules/adb/+/3da39565cad412a743a58b94b875a43ed3c640d3/client/file_sync_client.cpp#277), which prefers Zstd over LZ4 and Brotli.
-
-:::
-
-**2. When using protocol version 1 (legacy devices):**
-
-If the device doesn't support `sendrecv_v2` feature (Android 9 and below), compression is **automatically disabled** regardless of the `compression` option value:
-
-```ts
-// Device doesn't support sendrecv_v2
-// compression option is ignored, no compression is used
-await sync.write({
-  filename: "/sdcard/file.bin",
-  file: stream,
-  compression: Compression.Format.Brotli, // Ignored on v1 devices
-});
-```
-
-**3. When `compression` is set to an unsupported format:**
-
-If you explicitly set a compression format that is not supported by either the device or runtime, an error is thrown:
-
-```ts
-// Device supports sendrecv_v2, but runtime doesn't support Brotli
-await sync.write({
-  filename: "/sdcard/file.bin",
-  file: stream,
-  compression: Compression.Format.Brotli, // Throws Error!
-});
-```
-
-Error message example:
-
-```
-Error: Compression type brotli is not supported
-```
-
-To avoid this, always check support before using a specific format:
-
-```ts
-import { Compression } from "@yume-chan/adb";
-
-// Check both device and runtime support
-if (!Compression.canUseFormat(adb, Compression.Format.Brotli)) {
-  throw new Error("Brotli compression is not available");
-}
-
-await sync.write({
-  filename: "/sdcard/file.bin",
-  file: stream,
-  compression: Compression.Format.Brotli,
-});
-```
-
-**4. When `compression` is explicitly set to `Compression.Format.None`:**
-
-Compression is disabled even if the device supports it:
-
-```ts
-// Explicitly disable compression
-await sync.write({
-  filename: "/sdcard/file.bin",
-  file: stream,
-  compression: Compression.Format.None, // No compression
-});
-```
-
-This is useful when:
-
-- Compressing already-compressed data (images, videos, archives)
-- Debugging compression issues
-- Benchmarking performance differences
-
-:::info
-
-Compression requires both device support (`sendrecv_v2` feature) and runtime support for the compression library. Use `Compression.canUseFormat()` to check before using.
-
-:::
-
-## Example
-
-### Write a file
+### Example
 
 ```ts transpile
 import { encodeUtf8 } from "@yume-chan/adb";
 
-const file = new ReadableStream({
+const readable = new ReadableStream({
   start(controller) {
     controller.enqueue(encodeUtf8("Hello, world!"));
     controller.close();
@@ -190,8 +70,8 @@ const file = new ReadableStream({
 });
 
 await sync.write({
-  filename: "/sdcard/Download/hello.txt",
-  file,
+  path: "/sdcard/Download/hello.txt",
+  readable,
 });
 ```
 
@@ -204,53 +84,66 @@ adb push hello.txt /sdcard/Download/hello.txt
 
 :::
 
-### Write a symbolic link
+## `createWritable`
 
-To write a symbolic link, write the target path as content and set type to `LinuxFileType.SymbolicLink`.
+For advanced use cases, `createWritable` returns a `SendSession` that allows manual control over the stream and progress tracking.
+
+```ts
+interface SendSession {
+  /**
+   * The writable stream to write the file content into.
+   */
+  readonly writable: WritableStream<MaybeConsumable<Uint8Array>>;
+  /**
+   * Gets the number of bytes written into `writable`.
+   */
+  readonly bytesWritten: number;
+  /**
+   * Gets the compression format used (might be `None`).
+   */
+  readonly compression?: Compression.Format | undefined;
+  /**
+   * Gets the size of the compressed data sent to the device.
+   */
+  readonly bytesCompressed: number;
+}
+
+declare class AdbSync {
+  createWritable(options: AdbSyncWriteOptions): Promise<SendSession>;
+}
+```
+
+`bytesWritten` and `bytesCompressed` are **live getters**. You can poll them while writing to the `writable` stream to calculate real-time compression ratios or show progress in a UI.
+
+### Compression
+
+See [compression](#compression) section above for details.
+
+### Example
 
 ```ts transpile
-import { encodeUtf8 } from "@yume-chan/adb";
+import type { AdbSync } from "@yume-chan/adb";
+import { MaybeConsumable } from "@yume-chan/stream-extra";
 
-await sync.write({
-  filename: "/sdcard/Download/hello.txt",
-  file: new ReadableStream({
-    start(controller) {
-      controller.enqueue(encodeUtf8("/sdcard/Download/target.txt"));
-      controller.close();
-    },
-  }),
-  type: LinuxFileType.SymbolicLink,
+declare const sync: AdbSync.Service;
+declare const readable: ReadableStream<Uint8Array>;
+
+const session = await sync.createWritable({
+  path: "/sdcard/large-file.bin",
 });
-```
 
-:::info[Equivalent ADB Command]
+const progressInterval = setInterval(() => {
+  const ratio = session.bytesCompressed / session.bytesWritten;
+  console.log(
+    `Progress: ${session.bytesWritten} bytes, Ratio: ${ratio.toFixed(2)}`,
+  );
+}, 1000);
 
-```sh
-adb shell ln -s /sdcard/Download/target.txt /sdcard/Download/hello.txt
-```
-
-:::
-
-### (Web) upload a user-selected file
-
-```ts transpile
-import { type ReadableStream } from "@yume-chan/stream-extra";
-
-const input = document.createElement("input");
-input.type = "file";
-input.accept = "*/*";
-input.onchange = async () => {
-  const file = input.files[0];
-  if (!file) {
-    return;
-  }
-
-  await sync.write({
-    filename: `/sdcard/Download/${file.name}`,
-    file: file.stream(),
-  });
-};
-input.click();
+try {
+  await readable.pipeTo(session.writable);
+} finally {
+  clearInterval(progressInterval);
+}
 ```
 
 ## Internal API
@@ -268,14 +161,14 @@ import type { SocketPool } from "@yume-chan/adb";
 import { AdbSync, Compression } from "@yume-chan/adb";
 
 declare const pool: SocketPool;
-declare const filename: string;
-declare const file: ReadableStream<Uint8Array>;
+declare const path: string;
+declare const readable: ReadableStream<Uint8Array>;
 
 // highlight-start
-await AdbSync.Send.send({
+const session = await AdbSync.Send.send({
   pool,
-  filename,
-  file,
+  path,
+  readable,
   version: 2, // or 1 for legacy protocol
   compression: Compression.Format.Brotli, // optional
   dryRun: false, // optional
@@ -301,7 +194,7 @@ await AdbSync.Send.send({
 ### How it works
 
 1. Acquires a socket from the pool
-2. Sends a `SEND` or `SND2` request with filename and mode
+2. Sends a `SEND` or `SND2` request with path and mode
 3. Streams file data in chunks (default 64KB packets)
 4. Sends `DONE` with mtime when complete
 5. Waits for `OKAY` response

@@ -1,5 +1,6 @@
 # Overview
 
+
 Sync command is used to interact with device filesystem.
 
 ## Socket Pool Architecture
@@ -26,6 +27,8 @@ The socket pool automatically manages sync socket connections:
 - **Automatic lifecycle management**: No need to call `dispose()` - sockets are managed by the pool
 - **Configurable pooling**: Pool size and idle timeout can be configured via `ServiceOptions`
 - **Idle timeout**: Idle sockets are automatically closed after a configurable timeout (default: 60 seconds)
+
+In Node.js, the pool `unref`s its idle sockets and timers, allowing the process to exit when no sync command is running. While a command is active, it adds a reference to keep the process alive.
 
 ### Advanced Socket Access
 
@@ -64,4 +67,6 @@ await adb.sync.withSocket(async (socket) => {
 - [`isDirectory`](./isDirectory.md): Check if a path is a directory
 - [`opendir`/`readdir`](./opendir.mdx): List files in a directory
 - [`read`](./read.mdx): Read file content
+- [`createReadable`](./read.mdx#createreadable): Advanced file reading with progress tracking
 - [`write`](./write.mdx): Write file content
+- [`createWritable`](./write.mdx#createwritable): Advanced file writing with progress tracking

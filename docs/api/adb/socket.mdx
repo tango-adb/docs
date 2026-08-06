@@ -4,6 +4,7 @@ sidebar_position: 2
 
 # Socket
 
+
 :::note
 
 This page describes how to use an ADB socket. See [this page](/tango/custom-transport/socket.mdx) for how to implement it in a custom transport.
@@ -34,11 +35,16 @@ The `Adb` class provides a `createSocket` method to create a socket. It calls th
 
 ```ts
 declare class Adb {
-  createSocket(address: string): Promise<Adb.Socket>;
+  createSocket(
+    address: string,
+    options?: { unref?: boolean },
+  ): Promise<Adb.Socket>;
 }
 ```
 
 Most commands create a socket by calling this method internally, so you don't need to call it directly in most cases.
+
+The `unref` option (Node.js only) allows creating a connection that doesn't keep the Node.js process alive. This is used internally by `SocketPool` for idle sync sockets.
 
 ## Read from socket
 

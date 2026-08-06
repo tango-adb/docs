@@ -1,0 +1,179 @@
+import CanIUse from "../../../../can-i-use";
+
+# Compression
+
+{/* Source: libraries/adb/src/service/sync/compression/adapters.ts | Commit: 6f0e703e2e67162afa2b459936c17124c465739d */}
+
+The `AdbSync.Compression` namespace provides compression support for [read](../read.mdx) and [write](../write.mdx) operations.
+
+ADB support three compression algorithms: Brotli, LZ4 and Zstd.
+
+## Overview
+
+The compression support can be provided by:
+
+- The runtime (Node.js or browsers) via native `CompressionStream`/`DecompressionStream`.
+- External adapters registered via `registerCompressionAdapter()` and `registerDecompressionAdapter()`.
+
+External adapters has higher priority because native runtime supports are highly experimental. This might change in the future when native support matures.
+
+## Runtime Support
+
+### Brotli
+
+<CanIUse feature="mdn-api_compressionstream_compressionstream_brotli" />
+
+Node.js: v22.20+ / v24.7+ (https://nodejs.org/api/webstreams.html#new-compressionstreamformat)
+
+Proposal: https://github.com/whatwg/compression/pull/80
+
+### Zstd
+
+<CanIUse feature="mdn-api_compressionstream_compressionstream_zstd" />
+
+Node.js: ❌ Not supported natively
+
+Proposal: https://github.com/whatwg/compression/issues/54
+
+### LZ4
+
+LZ4 is not supported natively in Node.js or browsers. And currently there is no proposal to add LZ4 support to `CompressionStream`/`DecompressionStream`.
+
+## Adapter
+
+```ts
+namespace AdbSync {
+  namespace Compression {
+    function createCompressionStream(
+      format: Exclude<Format, typeof Format.None>,
+    ): TransformStream<Uint8Array, Uint8Array>;
+
+    function createDecompressionStream(
+      format: Exclude<Format, typeof Format.None>,
+    ): TransformStream<Uint8Array, Uint8Array>;
+  }
+}
+```
+
+External compression adapters can be registered via `registerCompressionAdapter()` and `registerDecompressionAdapter()`.
+
+Adapter packages might provide a helper function to register both compression and decompression adapters at once.
+
+```ts
+import { AdbSync } from "@yume-chan/adb";
+import { registerZstdCompression } from "@yume-chan/adb-compression-zstd";
+
+registerZstdCompression();
+
+// Now Zstd is available for sync operations
+const canUse = AdbSync.Compression.canUseZstd(
+  adb,
+  AdbSync.Compression.Mode.Compress,
+);
+```
+
+## Compression Format Selection
+
+The `compression` option in [read](../read.mdx) and [write](../write.mdx) accept:
+
+- `undefined` (default): Auto-select the best format based on device capabilities and available adapters.
+- `Compression.Format.None`: Disable compression. Useful for already compressed files (e.g. `.zip`, `.tar.gz`, `.mp4`) to reduce unnecessary CPU usage.
+- Explicit format (`Brotli`, `Lz4`, `Zstd`): Use that format, throws if unsupported.
+
+Auto-selection priority:
+
+1. Zstd (if device supports `sendrecv_v2` and `sendrecv_v2_zstd` features, and Zstd compression/decompression is available)
+2. LZ4 (if device supports `sendrecv_v2` and `sendrecv_v2_lz4` features, and LZ4 compression/decompression is available)
+3. Brotli (if device supports `sendrecv_v2` and `sendrecv_v2_brotli` features, and Brotli compression/decompression is available)
+4. None
+
+:::info
+
+The auto-selection priority follows the [Android ADB source code](https://android.googlesource.com/platform/packages/modules/adb/+/3da39565cad412a743a58b94b875a43ed3c640d3/client/file_sync_client.cpp#277).
+
+:::
+
+On protocol version 1 devices (no `sendrecv_v2`), compression is always disabled regardless of the option value.
+
+## API Reference
+
+### `registerCompressionAdapter(format, adapter)`
+
+Registers a compression adapter for a format. The adapter function must return a `TransformStream<Uint8Array, Uint8Array>` that compresses data.
+
+```ts
+import { AdbSync } from "@yume-chan/adb";
+
+AdbSync.Compression.registerCompressionAdapter(
+  AdbSync.Compression.Format.Brotli,
+  () => new CompressionStream("brotli"),
+);
+```
+
+### `registerDecompressionAdapter(format, adapter)`
+
+Registers a decompression adapter for a format.
+
+```ts
+import { AdbSync } from "@yume-chan/adb";
+
+AdbSync.Compression.registerDecompressionAdapter(
+  AdbSync.Compression.Format.Brotli,
+  () => new DecompressionStream("brotli"),
+);
+```
+
+### `canUseFormat(adb, format, mode)`
+
+Returns `true` if the specified format is supported for the given mode (`Compress` or `Decompress`). Checks both device capabilities (`sendrecv_v2`) and adapter/runtime support.
+
+```ts
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+if (
+  AdbSync.Compression.canUseFormat(
+    adb,
+    AdbSync.Compression.Format.Zstd,
+    AdbSync.Compression.Mode.Compress,
+  )
+) {
+  // Zstd compression is available
+}
+```
+
+### `canUseBrotli(adb, mode)`, `canUseLz4(adb, mode)`, `canUseZstd(adb, mode)`
+
+Convenience functions for checking specific formats.
+
+### `chooseFormat(adb, mode)`
+
+Returns the best available format for the given mode, following the auto-selection priority.
+
+```ts
+import { AdbSync } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const format = AdbSync.Compression.chooseFormat(
+  adb,
+  AdbSync.Compression.Mode.Compress,
+);
+```
+
+### `createCompressionStream(format)`, `createDecompressionStream(format)`
+
+Creates a transform stream for the given format. Throws if no adapter is registered and native support is not available.
+
+```ts
+import { AdbSync } from "@yume-chan/adb";
+
+const stream = AdbSync.Compression.createCompressionStream(
+  AdbSync.Compression.Format.Zstd,
+);
+```
+
+## See Also
+
+- [`@yume-chan/adb-compression-zstd`](./adb-compression-zstd.mdx): Zstd adapter package for browsers.

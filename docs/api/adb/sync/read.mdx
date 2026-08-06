@@ -4,31 +4,51 @@ sidebar_position: 5
 
 # read
 
-Read file content on the device filesystem.
+{/* Source: libraries/adb/src/service/sync/service.ts | Commit: 6f0e703e2e67162afa2b459936c17124c465739d */}
+
+Read file content on the device filesystem. If the file doesn't exist or can't be read, an error will be thrown.
+
+Two APIs are provided:
+
+- [read](#read-1): returns a `ReadableStream` for simple and quick file content retrieval.
+- [createReadable](#createreadable): returns a `PullSession` for advanced use cases, allowing live progress tracking and compression ratio calculation.
+
+## `read`
 
 ```ts
 declare class AdbSync {
-  read(filename: string): ReadableStream<Uint8Array>;
+  read(
+    path: string,
+    compression?: Compression.Format,
+  ): ReadableStream<Uint8Array>;
 }
 ```
 
-:::danger[output must be used!]
+### Compression
 
-`read` uses streaming output. If you don't read the output, the command will never finish, and blocking future commands from running.
+The `compression` parameter specifies the compression format to use when transferring the file:
 
-:::
+- If `compression` is `undefined`, the best format supported by both the device and the current runtime is selected automatically.
+- If `AdbSync.Compression.Format.None` is specified, compression is disabled.
+- Otherwise the explicitly specified format is used. If the format is not supported by either the device or runtime, an error is thrown.
 
-## Example
+See [Compression](./compression/index.mdx) for more details.
+
+### Example
 
 ```ts transpile
-const content = sync.read("/sdcard/Download/hello.txt");
-await content.pipeTo(
-  new WritableStream({
-    write(chunk) {
-      console.log(chunk);
-    },
-  }),
+import type { Adb } from "@yume-chan/adb";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+declare const adb: Adb;
+
+const content: ReadableStream<Uint8Array> = adb.sync.read(
+  "/sdcard/Download/hello.txt",
 );
+
+for await (const chunk of content) {
+  console.log(chunk);
+}
 ```
 
 :::info[Equivalent ADB Command]
@@ -39,6 +59,66 @@ adb pull /sdcard/Download/hello.txt
 
 :::
 
+## `createReadable`
+
+For advanced use cases, `createReadable` returns a `PullSession` that allows manual control over the stream and progress tracking.
+
+```ts
+interface PullSession {
+  /**
+   * The readable stream to read the file content from.
+   */
+  readonly readable: ReadableStream<Uint8Array>;
+  /**
+   * Gets the number of bytes read from `readable`.
+   */
+  readonly bytesRead: number;
+  /**
+   * Gets the compression format used (might be `None`).
+   */
+  readonly compression?: Compression.Format | undefined;
+  /**
+   * Gets the size of the compressed data received from the device.
+   */
+  readonly bytesCompressed: number;
+}
+
+declare class AdbSync {
+  createReadable(path: string, compression?: Compression.Format): PullSession;
+}
+```
+
+`bytesRead` and `bytesCompressed` are **live getters**. You can poll them while reading from the `readable` stream to calculate real-time compression ratios or show progress in a UI.
+
+### Compression
+
+See [compression](#compression) section above for details.
+
+### Example
+
+```ts transpile
+import type { Adb } from "@yume-chan/adb";
+
+declare const adb: Adb;
+
+const session = adb.sync.createReadable("/sdcard/large-file.bin");
+
+const progressInterval = setInterval(() => {
+  const ratio = session.bytesCompressed / session.bytesRead;
+  console.log(
+    `Progress: ${session.bytesRead} bytes, Ratio: ${ratio.toFixed(2)}`,
+  );
+}, 1000);
+
+try {
+  for await (const chunk of content) {
+    console.log(chunk);
+  }
+} finally {
+  clearInterval(progressInterval);
+}
+```
+
 ## Internal API
 
 :::info
@@ -47,7 +127,7 @@ adb pull /sdcard/Download/hello.txt
 
 :::
 
-The `read` method uses `AdbSync.Receive.stream()` internally, which operates on a `SocketPool`:
+The `read` method uses `AdbSync.Receive.pull()` internally, which operates on a `SocketPool`:
 
 ```ts
 import type { SocketPool } from "@yume-chan/adb";
@@ -57,15 +137,16 @@ declare const pool: SocketPool;
 declare const path: string;
 
 // highlight-start
-const stream: ReadableStream<Uint8Array> = AdbSync.Receive.stream(pool, path);
+const session = AdbSync.Receive.pull(2, pool, path);
+const stream: ReadableStream<Uint8Array> = session.readable;
 // highlight-end
 ```
 
 ### How it works
 
 1. Acquires a socket from the pool
-2. Sends a `RECV` request with the file path
-3. Streams `DATA` responses until completion
+2. Sends a `RECV` (v1) or `RCV2` (v2) request with the file path
+3. Reads `DATA` responses and enqueues them into the `readable` stream, until a `DONE` response is received
 4. Automatically releases the socket back to the pool
 
 The socket is automatically released after the stream completes or errors. If a non-sync error occurs (like a network issue), the socket is discarded to prevent connection corruption.

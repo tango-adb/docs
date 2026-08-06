@@ -1,5 +1,6 @@
 # Upgrade from 2.0.0
 
+
 import DiffTable from "../tango/diff-table";
 
 :::info[Legend]
@@ -15,6 +16,65 @@ import DiffTable from "../tango/diff-table";
 This page lists changes from version 2.0.0 in core packages.
 
 For changes in Scrcpy-related packages, see [this page](../scrcpy/upgrade.mdx).
+
+## New in beta 2
+
+### 💥🔄 Sync `read`/`write` API changes
+
+`Service.write` options now have `path` instead of `filename` and `readable` instead of `file`, it now resolves with `{ bytesWritten, compression, bytesCompressed }` instead of `void`.
+
+New `Service.createReadable` and `Service.createWritable` methods return a `PullSession`/`SendSession`, which expose live `bytesRead`/`bytesWritten`/`bytesCompressed` getters for progress and compression-ratio tracking.
+
+**Before:**
+
+```ts
+await adb.sync.write({
+  filename: "/sdcard/file.txt",
+  file: stream,
+});
+```
+
+**After:**
+
+{/*
+Source files:
+
+- libraries/adb/src/adb.ts (Adb)
+- libraries/adb/src/service/sync/service.ts (AdbSync.Service)
+  */}
+
+```ts
+await adb.sync.write({
+  path: "/sdcard/file.txt",
+  readable: stream,
+});
+```
+
+See the [read](../api/adb/sync/read.mdx) and [write](../api/adb/sync/write.mdx) pages for detailed usage examples.
+
+### ✨ External compression adapters
+
+The `AdbSync.Compression` namespace now supports registering external compression adapters via `registerCompressionAdapter()` and `registerDecompressionAdapter()`. The new `@yume-chan/adb-compression-zstd` package adds Zstd support for browsers.
+
+```ts
+import { registerZstdCompression } from "@yume-chan/adb-compression-zstd";
+
+registerZstdCompression();
+```
+
+After registration, `canUseZstd()` returns `true` (given device support) and auto-selection picks Zstd first.
+
+Compression support checks (`canUseFormat`, `canUseBrotli`, `canUseLz4`, `canUseZstd`, `chooseFormat`) now check registered adapters in addition to native runtime support.
+
+See the [compression documentation](../api/adb/sync/compression/index.mdx) for detailed usage examples.
+
+### 🔄 SocketPool uses `unref` for Node.js
+
+`SocketPool` now `unref`s idle sockets and Node.js timers so the process can exit when no sync command is running. Active commands add references to keep the process alive.
+
+### 💥🔄 `AdbTransport.connect` accepts `options`
+
+`AdbTransport.connect(service)` now accepts an optional `options` parameter. `AdbTransport.ConnectOptions.unref` lets a connection avoid keeping the Node.js process alive.
 
 ## New in beta 1
 
@@ -52,9 +112,11 @@ const client2 = new AdbServerClient(connector);
 
 **Recommendation:** Use `AdbServerNodeJsClient` by default, and only use `AdbServerNodeTcpConnector` in advanced, low-level situations that require direct socket manipulation or custom connection management.
 
-## `@yume-chan/adb`
+## New in beta 0
 
-### 💥🔄 Replace `AdbDaemonTransport.authenticate` with `adbDaemonAuthenticate` function
+### `@yume-chan/adb`
+
+#### 💥🔄 Replace `AdbDaemonTransport.authenticate` with `adbDaemonAuthenticate` function
 
 The authentication process for daemon transport has been refactored from a static method on `AdbDaemonTransport` class to a standalone `adbDaemonAuthenticate` function. This change provides better flexibility and separates authentication logic from the transport class.
 
@@ -136,7 +198,7 @@ const transport: AdbDaemonTransport = await adbDaemonAuthenticate({
 
 See documentation page [Handshake and authenticate](./daemon/connect-device/index.mdx) for more details about authentication options and usage.
 
-### ✨ Add state filtering to server client device methods
+#### ✨ Add state filtering to server client device methods
 
 `AdbServerClient.prototype.getDevices` and `AdbServerClient.prototype.trackDevices` now accept an optional `includeStates` parameter.
 
@@ -172,7 +234,7 @@ const observer: DeviceObserver<AdbServerClient.Device> =
 
 See documentation pages [Get devices](./server/devices.mdx) and [Watch devices](./server/watch.mdx) for more details and usages.
 
-### ✨ Add `state` property to `AdbServerClient.Device`
+#### ✨ Add `state` property to `AdbServerClient.Device`
 
 To comply with the change in `getDevices` and `trackDevices`, `AdbServerClient.Device` now also has a `state` property.
 
@@ -197,7 +259,7 @@ console.log(device.authenticating); // `true` when `device.state === "unauthoriz
 
 See documentation page [Get devices](./server/devices.mdx) for more details about the `state` property and device states.
 
-### 💥🔄 Move subprocess `spawnWait` and `spawnWaitText` to method chaining
+#### 💥🔄 Move subprocess `spawnWait` and `spawnWaitText` to method chaining
 
 **Before:**
 
@@ -275,7 +337,7 @@ const exitCode: number = result.exitCode;
 
 See documentation pages [None protocol](../api/adb/subprocess/none-protocol.mdx) and [Shell protocol](../api/adb/subprocess/shell-protocol.mdx) for more details about subprocess protocols and their APIs.
 
-### ✨ Add `stdin` closing support to shell protocol raw mode
+#### ✨ Add `stdin` closing support to shell protocol raw mode
 
 Shell protocol in raw mode is the only combination that supports [closing `stdin`](../api/adb/subprocess/shell-protocol.mdx#closing-stdin). Some programs (like `cat`) might rely on this behavior to properly function.
 
@@ -360,11 +422,11 @@ const output: Uint8Array = await adb.subprocess
 
 See documentation page [Shell protocol](../api/adb/subprocess/shell-protocol.mdx) for more details about closing stdin and shell protocol usage.
 
-### 💥🔄 Sync API no longer needs manual socket management
+#### 💥🔄 Sync API no longer needs manual socket management
 
 The sync API has been completely reorganized with a new namespace structure and automatic socket pooling. The public API is now simpler and no longer requires manual socket management.
 
-#### Socket Pool Architecture
+##### Socket Pool Architecture
 
 The key change is the introduction of `SocketPool`, which manages sync socket connections automatically:
 
@@ -375,7 +437,7 @@ The key change is the introduction of `SocketPool`, which manages sync socket co
 
 The `AdbSync.Service` class now uses `SocketPool` internally, which enables the simplified public API.
 
-#### Public API Changes
+##### Public API Changes
 
 The `adb.sync()` method has been changed to `adb.sync` property, following the same pattern as other services like `subprocess`, `power`, `reverse`, and `tcpip`.
 
@@ -432,7 +494,7 @@ await adb.sync.write({
 // highlight-end
 ```
 
-#### Internal API Changes
+##### Internal API Changes
 
 :::info
 
@@ -523,7 +585,7 @@ const stat = await AdbSync.Stat.lstat(pool, path, {
 // highlight-end
 ```
 
-#### Socket Pool Usage
+##### Socket Pool Usage
 
 For advanced use cases requiring direct socket access, the pool provides `acquire()` and `release()` methods:
 
@@ -580,7 +642,7 @@ await adb.sync.withSocket(async (socket) => {
 // highlight-end
 ```
 
-#### Public API Usage Examples
+##### Public API Usage Examples
 
 For most use cases, use the high-level public API:
 
@@ -672,7 +734,7 @@ const stat: AdbSync.Stat.Stat = await adb.sync.stat(
 );
 ```
 
-#### Additional Improvements
+##### Additional Improvements
 
 - **Compression support**: Runtime-selectable compression (Brotli/LZ4/Zstd) for push operations via `compression` option
 - **Better error handling**: Improved error signaling with dedicated `AdbSyncError` types
@@ -680,7 +742,7 @@ const stat: AdbSync.Stat.Stat = await adb.sync.stat(
 
 See the [Sync API documentation](../api/adb/sync/index.mdx) for detailed usage examples.
 
-### 💥🔄 Type renames
+#### 💥🔄 Type renames
 
 Several types and interfaces have been renamed for consistency and clarity. These are pure renaming changes without functional modifications.
 
@@ -754,9 +816,9 @@ declare const handler: Adb.IncomingSocketHandler;
 // highlight-end
 ```
 
-## `@yume-chan/adb-credential-web`
+### `@yume-chan/adb-credential-web`
 
-### 💥🔄 Replace `AdbWebCredentialStore` with `AdbWebCryptoCredentialManager`
+#### 💥🔄 Replace `AdbWebCredentialStore` with `AdbWebCryptoCredentialManager`
 
 The old `AdbWebCredentialStore` class can only store private keys in IndexedDB.
 
@@ -807,9 +869,9 @@ const credentialManager: AdbWebCryptoCredentialManager =
 
 See documentation page [Credential manager](./daemon/credential-store/index.mdx) for more details about credential managers and available storage implementations.
 
-## `@yume-chan/adb-credential-nodejs`
+### `@yume-chan/adb-credential-nodejs`
 
-### ✨ Add `TangoNodeStorage` class
+#### ✨ Add `TangoNodeStorage` class
 
 Added `TangoNodeStorage` class which is a Node.js ADB key storage manager that implements the `TangoKeyStorage` interface. It supports all Google ADB key storage conventions including:
 
@@ -822,23 +884,23 @@ Added `TangoNodeStorage` class which is a Node.js ADB key storage manager that i
 
 See documentation page [TangoNodeStorage](./daemon/credential-store/node-storage.mdx) for more details and usages.
 
-## `@yume-chan/adb-daemon-webusb`
+### `@yume-chan/adb-daemon-webusb`
 
-### 🐛 Fix WebUSB SharedArrayBuffer transfer issue
+#### 🐛 Fix WebUSB SharedArrayBuffer transfer issue
 
 Fixed an issue where WebUSB transfers would fail when using SharedArrayBuffer. The problem occurred because WebUSB doesn't support SharedArrayBuffer directly, which could cause connection failures.
 
 **Fix**: Added conversion to local Uint8Array before WebUSB transfer using `toLocalUint8Array()` function.
 
-### 🐛 Fix WebUSB connection event handling
+#### 🐛 Fix WebUSB connection event handling
 
 Fixed an issue where device observers would lose track of manually selected devices. When a device was selected via `navigator.usb.requestDevice()`, Chrome wouldn't fire a "connect" event, causing device observers to miss the device.
 
 **Fix**: Now manually dispatches a connect event after successful device selection to notify observers.
 
-## `@yume-chan/adb-server-node-tcp`
+### `@yume-chan/adb-server-node-tcp`
 
-### ✨ Add `AdbServerNodeJsClient` wrapper class
+#### ✨ Add `AdbServerNodeJsClient` wrapper class
 
 Added `AdbServerNodeJsClient`, a high-level wrapper class that extends `AdbServerClient` and uses `AdbServerNodeTcpConnector` internally. This is the recommended way to create ADB server clients in Node.js environments.
 
@@ -863,7 +925,7 @@ const client2: AdbServerClient = new AdbServerClient(connector);
 // highlight-end
 ```
 
-### ✨ Add new `AdbServerNodeTcpConnector` constructor overloads
+#### ✨ Add new `AdbServerNodeTcpConnector` constructor overloads
 
 The `AdbServerNodeTcpConnector` class has been completely rewritten with support for Google ADB-style socket specs and environment variable support.
 
@@ -903,7 +965,7 @@ const connector4: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
 // highlight-end
 ```
 
-### ✨ Add environment variable support
+#### ✨ Add environment variable support
 
 Added support for ADB environment variables that automatically reads `ADB_SERVER_SOCKET`, `ANDROID_ADB_SERVER_ADDRESS`, and `ANDROID_ADB_SERVER_PORT` environment variables.
 
