@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Node.js
 
-`TangoNodeStorage` is a Node.js implementation of the `TangoKeyStorage` interface that provides file-based credential storage compatible with Google ADB's format. It stores RSA private keys in the standard `~/.android/adbkey` location with proper file permissions and supports the `ADB_VENDOR_KEYS` environment variable for additional vendor keys.
+`TangoNodeJsStorage` is a Node.js implementation of the `TangoKeyStorage` interface that provides file-based credential storage compatible with Google ADB's format. It stores RSA private keys in the standard `~/.android/adbkey` location with proper file permissions and supports the `ADB_VENDOR_KEYS` environment variable for additional vendor keys.
 
 | Characteristic   | Description                         |
 | ---------------- | ----------------------------------- |
@@ -23,20 +23,20 @@ npm i @yume-chan/adb-credential-nodejs
 ```ts transpile
 import {
   AdbWebCryptoCredentialManager,
-  TangoNodeStorage,
+  TangoNodeJsStorage,
 } from "@yume-chan/adb-credential-nodejs";
 
-const storage = new TangoNodeStorage();
+const storage = new TangoNodeJsStorage();
 const manager = new AdbWebCryptoCredentialManager(storage);
 ```
 
-To interop with Google ADB, don't chain `TangoNodeStorage` with any other encrypted storages.
+To interop with Google ADB, don't chain `TangoNodeJsStorage` with any other encrypted storages.
 
 ## Features
 
 ### File-Based Storage
 
-`TangoNodeStorage` stores keys in `~/.android/adbkey` format compatible with Google ADB. The class creates both private and public key files with the following characteristics:
+`TangoNodeJsStorage` stores keys in `~/.android/adbkey` format compatible with Google ADB. The class creates both private and public key files with the following characteristics:
 
 - Private key file: `~/.android/adbkey` with permissions `0o600`
 - Public key file: `~/.android/adbkey.pub` with permissions `0o644`

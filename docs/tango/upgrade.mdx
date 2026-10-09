@@ -871,9 +871,9 @@ See documentation page [Credential manager](./daemon/credential-store/index.mdx)
 
 ### `@yume-chan/adb-credential-nodejs`
 
-#### ✨ Add `TangoNodeStorage` class
+#### ✨ Add `TangoNodeJsStorage` class
 
-Added `TangoNodeStorage` class which is a Node.js ADB key storage manager that implements the `TangoKeyStorage` interface. It supports all Google ADB key storage conventions including:
+Added `TangoNodeJsStorage` class which is a Node.js ADB key storage manager that implements the `TangoKeyStorage` interface. It supports all Google ADB key storage conventions including:
 
 - File-based storage compatible with Google ADB format (`~/.android/adbkey`)
 - Secure file permissions (0o600 for private keys, 0o644 for public keys)
@@ -882,7 +882,7 @@ Added `TangoNodeStorage` class which is a Node.js ADB key storage manager that i
 - Proper PEM-format handling with both strict and lax format parsing
 - Custom error types for robust key management (`KeyError`, `InvalidKeyError`, `VendorKeyError`)
 
-See documentation page [TangoNodeStorage](./daemon/credential-store/node-storage.mdx) for more details and usages.
+See documentation page [TangoNodeJsStorage](./daemon/credential-store/node-storage.mdx) for more details and usages.
 
 ### `@yume-chan/adb-daemon-webusb`
 
@@ -902,7 +902,7 @@ Fixed an issue where device observers would lose track of manually selected devi
 
 #### ✨ Add `AdbServerNodeJsClient` wrapper class
 
-Added `AdbServerNodeJsClient`, a high-level wrapper class that extends `AdbServerClient` and uses `AdbServerNodeTcpConnector` internally. This is the recommended way to create ADB server clients in Node.js environments.
+Added `AdbServerNodeJsClient`, a high-level wrapper class that extends `AdbServerClient` and uses `AdbServerNodeJsTcpConnector` internally. This is the recommended way to create ADB server clients in Node.js environments.
 
 {/*
 Source files:
@@ -927,39 +927,39 @@ const client2: AdbServerClient = new AdbServerClient(connector);
 
 #### ✨ Add new `AdbServerNodeTcpConnector` constructor overloads
 
-The `AdbServerNodeTcpConnector` class has been completely rewritten with support for Google ADB-style socket specs and environment variable support.
+The `AdbServerNodeJsTcpConnector` class has been completely rewritten with support for Google ADB-style socket specs and environment variable support.
 
 {/*
 Source files:
 
-- libraries/adb-server-node-tcp/src/connector.ts (AdbServerNodeTcpConnector)
+- libraries/adb-server-node-tcp/src/connector.ts (AdbServerNodeJsTcpConnector)
   */}
 
 ```ts
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+import { AdbServerNodeJsTcpConnector } from "@yume-chan/adb-server-node-tcp";
 
 // highlight-start
 // Using a Node.js `SocketConnectOpts` interface is still supported
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+const connector: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector({
   host: "localhost",
   port: 5037,
 });
 
 // 1. ✨ No parameters - uses environment variables or defaults
-const connector1: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
+const connector1: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector();
 
 // 2. ✨ String specification
-const connector2: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector(
+const connector2: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector(
   "tcp:localhost:5037",
 );
 
 // 3. ✨ TCP socket options with optional port
-const connector3: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+const connector3: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector({
   host: "localhost",
 });
 
 // 4. ✨ IPC socket options (Unix domain sockets)
-const connector4: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+const connector4: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector({
   path: "/path/to/socket",
 });
 // highlight-end
@@ -974,18 +974,18 @@ Added support for ADB environment variables that automatically reads `ADB_SERVER
 {/*
 Source files:
 
-- libraries/adb-server-node-tcp/src/connector.ts (AdbServerNodeTcpConnector)
+- libraries/adb-server-node-tcp/src/connector.ts (AdbServerNodeJsTcpConnector)
   */}
 
 ```ts
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+import { AdbServerNodeJsTcpConnector } from "@yume-chan/adb-server-node-tcp";
 
 // Automatically uses environment variables if set:
 // ADB_SERVER_SOCKET - full socket specification
 // ANDROID_ADB_SERVER_ADDRESS - server address
 // ANDROID_ADB_SERVER_PORT - server port
 process.env.ADB_SERVER_SOCKET = "tcp:192.168.1.100:5037";
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
+const connector: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector();
 ```
 
 See documentation page [Server client transport](./custom-transport/server-client/transport.mdx) for more details about connector usage and transport configuration.

@@ -45,7 +45,7 @@ To support different runtime environments, `AdbServerClient` uses an `AdbServerC
 
 ```mermaid
 flowchart TB
-    A["new AdbServerNodeTcpConnector()"] --> B[/"an AdbServerNodeTcpConnector instance"/] --> C["new AdbServerClient()"]
+    A["new AdbServerNodeJsTcpConnector()"] --> B[/"an AdbServerNodeJsTcpConnector instance"/] --> C["new AdbServerClient()"]
     D[/Custom connector/] --> E["new AdbServerClient()"]
 
     subgraph F ["an AdbServerClient instance"]

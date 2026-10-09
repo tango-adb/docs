@@ -33,7 +33,7 @@ The following constructor overloads are available for both `AdbServerNodeJsClien
 Connects to the default socket spec using environment variables if set.
 
 ```ts
-declare class AdbServerNodeTcpConnector {
+declare class AdbServerNodeJsTcpConnector {
   constructor();
 }
 
@@ -60,10 +60,10 @@ adb devices
 :::
 
 ```ts transpile
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+import { AdbServerNodeJsTcpConnector } from "@yume-chan/adb-server-node-tcp";
 import { AdbServerNodeJsClient } from "@yume-chan/adb-server-node-tcp";
 
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector();
+const connector: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector();
 // OR
 const client: AdbServerNodeJsClient = new AdbServerNodeJsClient();
 ```
@@ -73,7 +73,7 @@ const client: AdbServerNodeJsClient = new AdbServerNodeJsClient();
 Connects to the specified socket using an ADB socket spec string.
 
 ```ts
-declare class AdbServerNodeTcpConnector {
+declare class AdbServerNodeJsTcpConnector {
   constructor(spec: string);
 }
 
@@ -113,10 +113,10 @@ adb devices
 :::
 
 ```ts transpile
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+import { AdbServerNodeJsTcpConnector } from "@yume-chan/adb-server-node-tcp";
 import { AdbServerNodeJsClient } from "@yume-chan/adb-server-node-tcp";
 
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector(
+const connector: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector(
   "tcp:localhost:5037",
 );
 // OR
@@ -130,7 +130,7 @@ const client: AdbServerNodeJsClient = new AdbServerNodeJsClient(
 Connects using specific TCP socket connection options.
 
 ```ts
-declare class AdbServerNodeTcpConnector {
+declare class AdbServerNodeJsTcpConnector {
   constructor(
     spec: Omit<TcpSocketConnectOpts, "port"> & {
       port?: number | undefined;
@@ -168,10 +168,10 @@ adb devices
 :::
 
 ```ts transpile
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+import { AdbServerNodeJsTcpConnector } from "@yume-chan/adb-server-node-tcp";
 import { AdbServerNodeJsClient } from "@yume-chan/adb-server-node-tcp";
 
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+const connector: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector({
   host: "localhost",
   port: 5037,
 });
@@ -187,7 +187,7 @@ const client: AdbServerNodeJsClient = new AdbServerNodeJsClient({
 Connects using Node.js Unix domain socket connection options.
 
 ```ts
-declare class AdbServerNodeTcpConnector {
+declare class AdbServerNodeJsTcpConnector {
   constructor(spec: IpcSocketConnectOpts);
 }
 
@@ -208,10 +208,10 @@ adb -L local:/path/to/adb_socket devices
 :::
 
 ```ts transpile
-import { AdbServerNodeTcpConnector } from "@yume-chan/adb-server-node-tcp";
+import { AdbServerNodeJsTcpConnector } from "@yume-chan/adb-server-node-tcp";
 import { AdbServerNodeJsClient } from "@yume-chan/adb-server-node-tcp";
 
-const connector: AdbServerNodeTcpConnector = new AdbServerNodeTcpConnector({
+const connector: AdbServerNodeJsTcpConnector = new AdbServerNodeJsTcpConnector({
   path: "/path/to/socket",
 });
 // OR
