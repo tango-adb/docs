@@ -2,10 +2,201 @@
 sidebar_position: 9
 ---
 
+import Version from "./version-span";
+
 # Handle server output
 
 {/* Source: libraries/scrcpy/src/base/device-message.ts | Commit: 6bb9151c3d5bc6cf1e94d7684e99e7cfa3c827b1 */}
 
-Scrcpy sends device messages and clipboard updates to the client on the control socket. These are separate from server process logs exposed through [`AdbScrcpyClient.output`](./start-server.mdx#server-output).
+Scrcpy sends device messages back to the client on the control socket. These are separate from the server process logs exposed as [`AdbScrcpyClient.output`](./start-server.mdx#server-output), and from the [video](./video/index.mdx) and audio streams.
 
-For setting clipboard content or handling clipboard acknowledgments, see [Set Clipboard](./control/clipboard.mdx).
+## Output messages
+
+Device messages are multiplexed on the control socket. Each message starts with a one-byte ID, followed by a message body whose format depends on that ID. The parser routes these messages to the appropriate handler:
+
+- ID `0`: Clipboard content, when clipboard synchronization is enabled.
+- ID `1`: <Version since="v1.21">Clipboard acknowledgements, handled internally by [`setClipboard`](./control/clipboard.mdx) when a non-zero sequence number is used</Version>.
+- ID `2`: <Version since="v2.4">UHID output reports</Version>.
+
+For details on UHID output reports, see [UHID output stream](./uhid/output-stream.mdx).
+
+## With `@yume-chan/scrcpy`
+
+### Create a parser and feed it messages
+
+`ScrcpyOptionsX_YY.createDeviceMessageParser()` creates the parser for the selected Scrcpy version. It is unavailable when control is disabled. The parser's `parse(id, stream)` method expects the message ID separately from a readable containing the message body.
+
+Read each ID byte from the control socket, then pass the ID and the remaining buffered stream to the parser. The parser consumes the bytes for that message before the loop reads the next ID:
+
+```ts transpile
+import { ScrcpyOptions4_1 } from "@yume-chan/scrcpy";
+import { BufferedReadableStream, tryCancel } from "@yume-chan/stream-extra";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+import type { ScrcpyDeviceMessageParser } from "@yume-chan/scrcpy";
+import { ExactReadableEndedError } from "@yume-chan/struct";
+
+const options: ScrcpyOptions4_1<{ control: true }> = new ScrcpyOptions4_1({
+    control: true,
+});
+declare const controlSocketReadable: ReadableStream<Uint8Array>;
+
+const parser: ScrcpyDeviceMessageParser | undefined =
+    options.createDeviceMessageParser?.();
+if (!parser) {
+    throw new Error("Device messages are unavailable");
+}
+
+const buffered = new BufferedReadableStream(controlSocketReadable);
+try {
+    while (true) {
+        let id: number;
+        try {
+            const header: Uint8Array = await buffered.readExactly(1);
+            id = header[0]!;
+        } catch (e) {
+            if (e instanceof ExactReadableEndedError) {
+                parser.close();
+                break;
+            }
+            throw e;
+        }
+
+        await parser.parse(id, buffered);
+    }
+} catch (e) {
+    parser.error(e);
+    await tryCancel(buffered);
+    throw e;
+}
+```
+
+Call `close()` when the socket ends normally and `error()` if parsing fails so the parser can close or error its output streams. Keep consuming the socket while the session is active.
+
+### Handle UHID output manually
+
+:::info
+
+Added in v2.4
+
+:::
+
+`parser.uHidOutput` routes reports to a stream registered for each device ID. Register the ID before sending the corresponding UHID create control message, and use the same ID to retrieve and remove that stream:
+
+```ts transpile
+import type {
+    ScrcpyDeviceMessageParser,
+    ScrcpyUHidOutputStream,
+    ScrcpyUHidOutputDeviceMessage,
+} from "@yume-chan/scrcpy";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const parser: ScrcpyDeviceMessageParser;
+declare const deviceId: number;
+
+const uhidOutput: ScrcpyUHidOutputStream | undefined = parser.uHidOutput;
+if (!uhidOutput) {
+    throw new Error("UHID output is unavailable");
+}
+
+const deviceOutput: ReadableStream<ScrcpyUHidOutputDeviceMessage> =
+    uhidOutput.addDevice(deviceId);
+void deviceOutput
+    .pipeTo(
+        new WritableStream<ScrcpyUHidOutputDeviceMessage>({
+            write(message: ScrcpyUHidOutputDeviceMessage) {
+                console.log(message.data);
+            },
+        }),
+    )
+    .catch((e) => console.error(e));
+
+```
+
+This approach requires managing device IDs and creation/destruction messages yourself. Register the stream before sending the create message.<Version since="v2.7"> After sending the destroy message, call `deleteDevice(deviceId)` to close the local stream.</Version> See [UHID control messages](./control/uhid.mdx) for those messages.
+
+### Use `createUHidManager`
+
+The options class can create a version-specific manager that allocates IDs, sends create/destroy messages, and routes output reports to each device's `output` stream:
+
+```ts transpile
+import type {
+    ScrcpyDeviceMessageParser,
+    ScrcpyOptions4_1,
+    ScrcpyUHidDevice,
+    ScrcpyUHidManager,
+    ScrcpyUHidOutputDeviceMessage,
+} from "@yume-chan/scrcpy";
+import type {
+    Consumable,
+    WritableStreamDefaultWriter,
+} from "@yume-chan/stream-extra";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const options: ScrcpyOptions4_1<{ control: true }>;
+declare const writer: WritableStreamDefaultWriter<Consumable<Uint8Array>>;
+declare const parser: ScrcpyDeviceMessageParser;
+declare const descriptor: Uint8Array;
+
+const manager: ScrcpyUHidManager | undefined =
+    options.createUHidManager?.(writer, parser);
+if (!manager) {
+    throw new Error("UHID is unavailable");
+}
+
+const device: ScrcpyUHidDevice = await manager.createDevice({
+    name: "Example HID",
+    vendorId: 0x1234,
+    productId: 0x5678,
+    descriptor,
+});
+
+void device.output
+    .pipeTo(
+        new WritableStream<ScrcpyUHidOutputDeviceMessage>({
+            write(message: ScrcpyUHidOutputDeviceMessage) {
+                console.log(message.data);
+            },
+        }),
+    )
+    .catch((e) => console.error(e));
+```
+
+`createUHidManager` is available starting with Scrcpy v2.4; its device creation arguments and cleanup methods vary by server version. See [UHID manager](./uhid/manager.mdx) and [UHID device](./uhid/device.mdx) for the version-specific API.
+
+## With `@yume-chan/adb-scrcpy`
+
+`AdbScrcpyClient` reads and parses device messages automatically. Use `client.clipboard` to receive clipboard updates:
+
+### Clipboard stream
+
+If [`control: false`](./options/v1.15/control.mdx) is not specified<Version since="v2.1"> and [`clipboardAutosync: false`](./options/v1.21/clipboard-autosync.mdx) is also not specified</Version>, Scrcpy server monitors the device clipboard and sends changes to the client.
+
+When clipboard synchronization is enabled, `client.clipboard` is a `ReadableStream<string>` containing clipboard content:
+
+```ts transpile
+import type { AdbScrcpyClient } from "@yume-chan/adb-scrcpy";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+import { WritableStream } from "@yume-chan/stream-extra";
+
+declare const client: AdbScrcpyClient;
+
+const clipboard: ReadableStream<string> | undefined = client.clipboard;
+if (clipboard) {
+    void clipboard
+        .pipeTo(
+            new WritableStream<string>({
+                write(text: string) {
+                    console.log(text);
+                },
+            }),
+        )
+        .catch((e) => console.error(e));
+}
+```
+
+Scrcpy only supports text in the clipboard.
+
+### UHID output streams
+
+The client also exposes `client.uHidManager` when the selected version supports UHID and control is enabled. See [UHID manager](./uhid/manager.mdx) to create devices and read their output reports.
