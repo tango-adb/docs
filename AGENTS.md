@@ -41,27 +41,6 @@ Formatting guidelines for spacing, line breaks, paragraph structure, and general
 - Script handles internal code block formatting to ensure proper empty line requirements
 - Run script on MDX files to ensure they comply with documentation standards
 
-#### MDX Comment Escaping Issue
-
-**Important:** The `edit` tool has a bug that breaks MDX comments (`{/* ... */}`) by escaping backslashes.
-
-**Symptoms:** MDX comments become malformed after edits and no longer render. Run the workaround command below to fix them.
-
-**Workaround:** After any `edit` operation on MDX files, run this fix command:
-
-```bash
-sed -i 's/{\/\\\*/{\/\*/g' path/to/file.mdx && sed -i 's/\\\*\/*}/\*\/}/g' path/to/file.mdx
-```
-
-**Verification:** Check that MDX comments are properly formatted:
-
-```bash
-grep -c "{/*" path/to/file.mdx  # Should return count > 0
-grep -c "*/}" path/to/file.mdx  # Should match the same count
-```
-
-Always verify MDX comments after edits before committing changes.
-
 #### Using `<Version>` Tag
 
 Best practices for using the `<Version>` component to conditionally render version-dependent content.
@@ -91,6 +70,7 @@ Best practices for using the `<Version>` component to conditionally render versi
 
 ```mdx
 ❌ Version number duplicated in content:
+
 <Version since="v1.22">From v1.22+, present unless...</Version>
 ```
 
@@ -144,10 +124,10 @@ const stream: ReadableStream<Uint8Array> = adb.sync.read("/sdcard/file.txt");
 
 // Using namespaced function
 await AdbSync.Send.send({
-  v2: true,
-  socket,
-  filename: "/sdcard/file.txt",
-  file: stream,
+    v2: true,
+    socket,
+    filename: "/sdcard/file.txt",
+    file: stream,
 });
 
 // Using runtime value
@@ -193,9 +173,9 @@ import type { Event } from "@yume-chan/event";
 
 // import type { ScrcpyVideoSizeChangedEvent } from "@yume-chan/scrcpy";
 interface ScrcpyVideoSizeChangedEvent {
-  width: number;
-  height: number;
-  isClientResize?: boolean | undefined;
+    width: number;
+    height: number;
+    isClientResize?: boolean | undefined;
 }
 ```
 
@@ -373,7 +353,6 @@ Scrcpy options documentation details the various configuration parameters, organ
 ```
 
 Maintain a blank line before and after the comment. This rule will later be extended to cover all API documentation pages.
-
 
 #### Strongly-Typed Options
 

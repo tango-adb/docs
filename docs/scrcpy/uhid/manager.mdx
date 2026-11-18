@@ -1,0 +1,69 @@
+---
+sidebar_position: 1
+---
+
+import Version from "../version-span";
+
+# UHID Manager
+
+{/* Source: libraries/scrcpy/src/base/uhid.ts | Commit: 6bb9151c3d5bc6cf1e94d7684e99e7cfa3c827b1 */}
+
+`ScrcpyUHidManager` creates and tracks virtual HID devices. With `@yume-chan/adb-scrcpy`, access it through `AdbScrcpyClient.uHidManager`; it is unavailable when control is disabled or the selected Scrcpy version doesn't support UHID.
+
+Use the manager to create a [device](./device.mdx), then use it to send input reports and receive output reports through its [output stream](./output-stream.mdx).
+
+## `createDevice`
+
+Creates a virtual HID device on the Android device and returns a `ScrcpyUHidDevice`.
+
+```ts
+// import type { ScrcpyUHidDevice, ScrcpyUHidManager } from "@yume-chan/scrcpy";
+interface ScrcpyUHidManager {
+    createDevice(device: {
+        name: string;
+        vendorId: number;
+        productId: number;
+        descriptor: Uint8Array;
+    }): Promise<ScrcpyUHidDevice>;
+
+    close?(): Promise<undefined>;
+}
+```
+
+- `name`: Human-readable device name.<Version since="v2.7"> This is sent to the server.</Version>
+- `vendorId` and `productId`: USB vendor and product identifiers.<Version since="v3.1"> These are sent to the server.</Version>
+- `descriptor`: HID report descriptor that defines the device's capabilities.
+
+The device ID is allocated by the manager. It does not need to be supplied when creating a device.
+
+<Version since="v2.4" until="v2.7">
+
+In Scrcpy v2.4, `createDevice` accepts only `{ descriptor }`. The ID is allocated automatically. This version does not expose device destruction or manager cleanup methods.
+
+</Version>
+
+<Version since="v2.7" until="v3.1">
+
+In Scrcpy v2.7 and v3.0, `createDevice` accepts `{ name, descriptor }`. The manager also adds `close()` to destroy all devices it owns.
+
+</Version>
+
+<Version since="v3.1">
+
+In Scrcpy v3.1 and later, `createDevice` accepts `{ name, vendorId, productId, descriptor }`.
+
+</Version>
+
+## `close`
+
+<Version since="v2.7">
+
+Destroys all devices created by this manager and clears its internal tracking state. Call it when the application no longer needs those devices. This method is not available in Scrcpy v2.4.
+
+</Version>
+
+:::note
+
+See [UHID control messages](../control/uhid.mdx) for the low-level protocol messages, or read about the [device](./device.mdx) and its [output stream](./output-stream.mdx).
+
+:::

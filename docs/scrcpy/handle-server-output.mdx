@@ -1,0 +1,11 @@
+---
+sidebar_position: 9
+---
+
+# Handle server output
+
+{/* Source: libraries/scrcpy/src/base/device-message.ts | Commit: 6bb9151c3d5bc6cf1e94d7684e99e7cfa3c827b1 */}
+
+Scrcpy sends device messages and clipboard updates to the client on the control socket. These are separate from server process logs exposed through [`AdbScrcpyClient.output`](./start-server.mdx#server-output).
+
+For setting clipboard content or handling clipboard acknowledgments, see [Set Clipboard](./control/clipboard.mdx).

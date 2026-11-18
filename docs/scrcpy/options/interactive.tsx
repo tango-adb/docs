@@ -1,24 +1,33 @@
 import React from "react";
 
+import type {
+    vvvv,
+    ScrcpyOptionsListEncoders,
+} from "@yume-chan/scrcpy";
+
+type Feature =
+    | keyof ScrcpyOptions<object>
+    | keyof ScrcpyOptionsListEncoders;
+
 interface Version {
     name: string;
-    features: string[];
+    features: Feature[];
 }
 
 const VERSIONS: Version[] = [
     {
         name: "v1.15",
         features: [
-            "clipboard",
+            "createDeviceMessageParser",
             "serialize",
             "setListDisplays",
             "parseDisplay",
             "parseVideoStreamMetadata",
-            "parseDeviceMessage",
             "createMediaStreamTransformer",
             "serializeInjectTouchControlMessage",
             "serializeBackOrScreenOnControlMessage",
             "serializeSetClipboardControlMessage",
+            "serializeSetDisplayPowerControlMessage",
             "createScrollController",
         ],
     },
@@ -60,7 +69,7 @@ const VERSIONS: Version[] = [
     },
     {
         name: "v2.1",
-        features: ["parseDeviceMessage"],
+        features: ["createDeviceMessageParser"],
     },
     {
         name: "v2.2",
@@ -70,10 +79,26 @@ const VERSIONS: Version[] = [
         name: "v2.3",
         features: ["parseAudioStreamMetadata"],
     },
+    {
+        name: "v2.4",
+        features: [
+            "createDeviceMessageParser",
+            "serializeUHidCreateControlMessage",
+            "createUHidManager",
+        ],
+    },
+    {
+        name: "v2.7",
+        features: ["createUHidManager"],
+    },
+    {
+        name: "v3.1",
+        features: ["createUHidManager"],
+    },
 ];
 
-const ALL_FEATURES: string[] = [];
-const FEATURE_ADDED = new Map<string, number>();
+const ALL_FEATURES: Feature[] = [];
+const FEATURE_ADDED = new Map<Feature, number>();
 for (let i = 0; i < VERSIONS.length; i += 1) {
     for (let j = 0; j < VERSIONS[i].features.length; j++) {
         if (FEATURE_ADDED.has(VERSIONS[i].features[j])) {
@@ -86,8 +111,8 @@ for (let i = 0; i < VERSIONS.length; i += 1) {
 
 function buildFeatures(
     index: number,
-    features: string[],
-    overriddenFeatures: Set<string>,
+    features: Feature[],
+    overriddenFeatures: Set<Feature>,
     enableDim: boolean,
     enableOverride: boolean
 ) {

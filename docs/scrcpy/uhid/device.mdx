@@ -1,0 +1,55 @@
+---
+sidebar_position: 2
+---
+
+import Version from "../version-span";
+
+# UHID Device
+
+{/* Source: libraries/scrcpy/src/base/uhid.ts | Commit: 6bb9151c3d5bc6cf1e94d7684e99e7cfa3c827b1 */}
+
+`ScrcpyUHidManager.createDevice` returns a `ScrcpyUHidDevice`. The device exposes a readable [output stream](./output-stream.mdx) and sends input reports to the Android device.
+
+## Properties
+
+```ts
+// import type { ScrcpyUHidDevice, ScrcpyUHidOutputDeviceMessage } from "@yume-chan/scrcpy";
+import type { ReadableStream } from "@yume-chan/stream-extra";
+
+interface ScrcpyUHidDevice {
+    readonly id: number;
+    readonly output: ReadableStream<ScrcpyUHidOutputDeviceMessage>;
+    readonly name?: string;
+    readonly productId?: number;
+    readonly vendorId?: number;
+    readonly destroyed?: boolean;
+}
+```
+
+- `id`: ID assigned by the manager.
+- `output`: Stream of output reports sent by the virtual HID device, such as keyboard LED state changes.
+- `name`: Device name.<Version since="v2.7"> Available when the server version supports device names.</Version>
+- `vendorId` and `productId`: USB identifiers.<Version since="v3.1"> Available when the server version supports these identifiers.</Version>
+- `destroyed`: Whether the device has been destroyed.<Version since="v2.7"> Available when explicit device destruction is supported.</Version>
+
+## `sendReport`
+
+Sends an input report to the virtual device. The report bytes must match the input report format declared by its HID descriptor.
+
+```ts
+sendReport(report: Uint8Array): Promise<undefined>;
+```
+
+## `destroy`
+
+<Version since="v2.7">
+
+Destroys this virtual HID device. Repeated calls share the in-progress operation. After a successful call, `sendReport` rejects because the device is destroyed. Scrcpy v2.4 devices do not expose this method; their lifetime is tied to the connection.
+
+</Version>
+
+:::note
+
+See [UHID manager](./manager.mdx) to create and manage devices, or read about its [output stream](./output-stream.mdx).
+
+:::

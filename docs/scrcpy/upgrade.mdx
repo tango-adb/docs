@@ -4,6 +4,88 @@ This page lists changes from version 2.0.0 in Scrcpy-related packages.
 
 For changes in other packages, see [this page](../tango/upgrade.mdx).
 
+## Device message parser and UHID manager
+
+The `ScrcpyOptions` API now creates its device message parser on demand. The old `deviceMessageParsers`, `clipboard`, and `uHidOutput` properties on options classes have been replaced by `createDeviceMessageParser()`. The parser owns the clipboard and UHID output streams, and `serializeSetClipboardControlMessage` now receives that parser as its second argument.
+
+When using `AdbScrcpyClient`, continue to access the clipboard through `client.clipboard`. The client also exposes `client.deviceMessageParser` and, for versions that support UHID with control enabled, `client.uHidManager`.
+
+Code that constructs a parser or control writer directly must create and pass the parser:
+
+```ts
+import { ScrcpyControlMessageWriter } from "@yume-chan/scrcpy";
+import type {
+    ScrcpyDeviceMessageParser,
+    ScrcpyOptions,
+} from "@yume-chan/scrcpy";
+import type {
+    Consumable,
+    WritableStreamDefaultWriter,
+} from "@yume-chan/stream-extra";
+
+declare const options: ScrcpyOptions<{ control: boolean }>;
+declare const controlWriter: WritableStreamDefaultWriter<
+    Consumable<Uint8Array>
+>;
+
+const deviceMessageParser: ScrcpyDeviceMessageParser | undefined =
+    options.createDeviceMessageParser?.();
+if (!deviceMessageParser) {
+    throw new Error("Device messages are not supported by these options");
+}
+
+const writer: ScrcpyControlMessageWriter = new ScrcpyControlMessageWriter(
+    controlWriter,
+    options,
+    deviceMessageParser,
+);
+```
+
+UHID control messages can still be sent directly with `uHidCreate`, `uHidInput`, and `uHidDestroy`. For managed devices, replace the manual ID allocation, message writes, and output demultiplexing with `client.uHidManager`:
+
+```ts
+import type {
+    AdbScrcpyClient,
+    AdbScrcpyOptions4_1,
+} from "@yume-chan/adb-scrcpy";
+import type {
+    ScrcpyUHidDevice,
+    ScrcpyUHidManager,
+} from "@yume-chan/scrcpy";
+
+declare const client: AdbScrcpyClient<AdbScrcpyOptions4_1>;
+declare const descriptor: Uint8Array;
+declare const report: Uint8Array;
+
+const manager: ScrcpyUHidManager | undefined = client.uHidManager;
+if (!manager) {
+    throw new Error("UHID is not available");
+}
+
+const device: ScrcpyUHidDevice = await manager.createDevice({
+    name: "Example HID",
+    vendorId: 0x1234,
+    productId: 0x5678,
+    descriptor,
+});
+
+await device.sendReport(report);
+const outputReader = device.output.getReader();
+const outputResult = await outputReader.read();
+if (!outputResult.done) {
+    console.log("UHID output report:", outputResult.value.data);
+}
+
+if (device.destroy) {
+    await device.destroy();
+}
+if (manager.close) {
+    await manager.close();
+}
+```
+
+`ScrcpyUHidManager` is available starting with Scrcpy v2.4. The v2.4 manager accepts only a descriptor and keeps the device alive for the connection lifetime. Scrcpy v2.7 adds device names, `destroy()`, and `close()`; Scrcpy v3.1 adds vendor and product IDs. See the [UHID documentation](./uhid/index.mdx) for details.
+
 ## New in beta 1
 
 ### ScrcpyCodecOptions API improvements

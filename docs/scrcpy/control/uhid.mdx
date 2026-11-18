@@ -2,7 +2,7 @@
 sidebar_position: 10
 ---
 
-import Version from '../version-span';
+import Version from "../version-span";
 
 # User-space HID Device (UHID) Control
 
@@ -16,18 +16,26 @@ Added in Scrcpy v2.4
 
 :::
 
-Create a new virtual HID device on the device. The device is identified by a unique ID and configured with a HID descriptor that defines its capabilities.
+Create a new virtual HID device on the device. The device is identified by an ID and configured with a HID descriptor that defines its capabilities. The create message format gains fields in later server versions:
+
+- <Version since="v2.7">`name`: The device name.</Version>
+- <Version since="v3.1">`vendorId` and `productId`: USB vendor and product identifiers.</Version>
 
 ### Options
 
 ```ts
 interface ScrcpyUHidCreateControlMessage {
     id: number;
+    name: string;
+    vendorId: number;
+    productId: number;
     data: Uint8Array;
 }
 ```
 
-- `id`: Unique identifier for the HID device (must be unique across the system).
+- `id`: Identifier for the HID device. When using the low-level writer, choose an ID that isn't already in use.
+- `name`: Human-readable name for the device (since Scrcpy v2.7).
+- `vendorId` and `productId`: USB identifiers (since Scrcpy v3.1).
 - `data`: The HID report descriptor as a byte array defining the device capabilities. The descriptor follows the USB HID specification and defines input/output/feature reports that the device supports.
 
 ### Usage
@@ -36,53 +44,30 @@ interface ScrcpyUHidCreateControlMessage {
 // Using `ScrcpyControlMessageSerializer`
 const message: Uint8Array = serializer.uHidCreate({
     id: 1,
+    name: "Example HID",
+    vendorId: 0x1234,
+    productId: 0x5678,
     data: new Uint8Array([
-        // Sample keyboard HID descriptor (usage page 0x01, usage 0x06 - keyboard)
-        0x05, 0x01,         // Usage Page (Generic Desktop)
-        0x09, 0x06,         // Usage (Keyboard)
-        0xA1, 0x01,         // Collection (Application)
-        0x05, 0x07,         // Usage Page (Key Codes)
-        0x19, 0xE0,         // Usage Minimum (224)
-        0x29, 0xE7,         // Usage Maximum (231)
-        0x15, 0x00,         // Logical Minimum (0)
-        0x25, 0x01,         // Logical Maximum (1)
-        0x75, 0x01,         // Report Size (1)
-        0x95, 0x08,         // Report Count (8)
-        0x81, 0x02,         // Input (Data, Variable, Absolute) ; Modifier byte
-        0x95, 0x01,         // Report Count (1)
-        0x75, 0x08,         // Report Size (8)
-        0x81, 0x01,         // Input (Constant) ; Reserved byte
-        0x95, 0x05,         // Report Count (5)
-        0x75, 0x01,         // Report Size (1)
-        0x05, 0x08,         // Usage Page (LEDs)
-        0x19, 0x01,         // Usage Minimum (1)
-        0x29, 0x05,         // Usage Maximum (5)
-        0x91, 0x02,         // Output (Data, Variable, Absolute) ; LED report
-        0x95, 0x01,         // Report Count (1)
-        0x75, 0x03,         // Report Size (3)
-        0x91, 0x01,         // Output (Constant) ; LED report padding
-        0x95, 0x06,         // Report Count (6)
-        0x75, 0x08,         // Report Size (8)
-        0x15, 0x00,         // Logical Minimum (0)
-        0x25, 0x65,         // Logical Maximum (101)
-        0x05, 0x07,         // Usage Page (Key Codes)
-        0x19, 0x00,         // Usage Minimum (0)
-        0x29, 0x65,         // Usage Maximum (101)
-        0x81, 0x00,         // Input (Data, Array, Absolute)
-        0xC0                // End Collection
+        // ...
     ]),
 });
 
 // Using `ScrcpyControlMessageWriter`
 await writer.uHidCreate({
     id: 1,
-    data: new Uint8Array([ /* HID descriptor bytes */ ]),
+    name: "Example HID",
+    vendorId: 0x1234,
+    productId: 0x5678,
+    data: new Uint8Array([/* HID descriptor bytes */]),
 });
 
 // Using `AdbScrcpyClient`
 await client.controller!.uHidCreate({
     id: 1,
-    data: new Uint8Array([ /* HID descriptor bytes */ ]),
+    name: "Example HID",
+    vendorId: 0x1234,
+    productId: 0x5678,
+    data: new Uint8Array([/* HID descriptor bytes */]),
 });
 ```
 
@@ -116,20 +101,27 @@ const message: Uint8Array = serializer.uHidInput({
     id: 1,
     // Send a key press event (e.g., press 'A' key)
     data: new Uint8Array([
-        0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00  // Report with modifier + key code
+        0x00,
+        0x00,
+        0x04,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00, // Report with modifier + key code
     ]),
 });
 
 // Using `ScrcpyControlMessageWriter`
 await writer.uHidInput({
     id: 1,
-    data: new Uint8Array([ /* HID report bytes */ ]),
+    data: new Uint8Array([/* HID report bytes */]),
 });
 
 // Using `AdbScrcpyClient`
 await client.controller!.uHidInput({
     id: 1,
-    data: new Uint8Array([ /* HID report bytes */ ]),
+    data: new Uint8Array([/* HID report bytes */]),
 });
 ```
 
@@ -166,19 +158,8 @@ await writer.uHidDestroy(1);
 await client.controller!.uHidDestroy(1);
 ```
 
-## UHID Output
+:::note
 
-The UHID output stream receives output events from the emulated HID device. This enables bidirectional communication, allowing the device to send data back to the host, such as LED status updates for keyboards or other device feedback.
+See the [UHID manager](../uhid/manager.mdx) to create and manage virtual devices, and [UHID output stream](../uhid/output-stream.mdx) to read their output reports.
 
-```ts transpile
-// Access the UHID output stream through the client
-const uhidOutput = client.uhidOutput;
-
-if (uhidOutput) {
-    for await (const message of uhidOutput) {
-        console.log(`Received HID output for device ${message.id}:`, message.data);
-        // Process HID output data (e.g., LED status changes)
-        // message.data contains the HID output report
-    }
-}
-```
+:::

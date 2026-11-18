@@ -94,7 +94,7 @@ flowchart TD
     click G "#video-stream"
     click J "#audio-stream"
     click L "#controller"
-    click N "#clipboard-stream"
+    click N "./control/clipboard.mdx"
     click H "../video/"
     click I "../video/record/"
 ```
@@ -220,6 +220,8 @@ If the remaining data is not needed, `stream.cancel()` (or `reader.cancel()` if 
 
 :::
 
+This stream contains process logs. For device messages sent over the control socket, see [Handle server output](./handle-server-output.mdx).
+
 ### Video stream
 
 `videoStream` field contains the `AdbScrcpyVideoStream` object<Version since="v2.1">, or `undefined` if [`video: false`](./options/v2.1/video.mdx) option is specified.</Version>
@@ -312,33 +314,6 @@ if (controller) {
   await controller.setScreenPowerMode(AndroidScreenPowerMode.Off);
 }
 ```
-
-### Clipboard stream
-
-If [`control: false`](./options/v1.15/control.mdx) option is not specified<Version since="v2.1"> and [`clipboardAutosync: false`](./options/v1.21/clipboard-autosync.mdx) option is also not specified</Version>, Scrcpy server will monitor device clipboard and send the change to client.
-
-When clipboard syncing is enabled, the `clipboard` field will be a `ReadableStream<string>` that contains the clipboard content.
-
-```ts transpile
-import type { ReadableStream } from "@yume-chan/stream-extra";
-
-const clipboard: ReadableStream<string> | undefined = client.clipboard;
-
-if (clipboard) {
-  void clipboard
-    ?.pipeTo(
-      new WritableStream<string>({
-        write(chunk) {
-          // Handle device clipboard change
-          console.log(chunk);
-        },
-      })
-    )
-    .catch((e) => console.error(e));
-}
-```
-
-Scrcpy only supports text type in clipboard.
 
 ### Stop the server
 

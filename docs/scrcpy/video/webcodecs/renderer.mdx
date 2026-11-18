@@ -135,7 +135,8 @@ The `CanvasVideoFrameRenderer` is an abstract base class that provides common fu
 
 ```ts
 export abstract class CanvasVideoFrameRenderer<
-    TOptions extends CanvasVideoFrameRenderer.Options = CanvasVideoFrameRenderer.Options,
+    TOptions extends CanvasVideoFrameRenderer.Options =
+        CanvasVideoFrameRenderer.Options,
 > implements VideoFrameRenderer {
     abstract get type(): ScrcpyVideoDecoder.RendererType;
 
@@ -160,26 +161,26 @@ export abstract class CanvasVideoFrameRenderer<
     dispose(): undefined;
 }
 
- export namespace CanvasVideoFrameRenderer {
-     export interface Options {
-         canvas?: HTMLCanvasElement | OffscreenCanvas;
+export namespace CanvasVideoFrameRenderer {
+    export interface Options {
+        canvas?: HTMLCanvasElement | OffscreenCanvas;
 
-         /**
-          * Whether to update the canvas size (rendering resolution) automatically.
-          *
-          * * `"video"` (default): update the canvas size to match the video resolution
-          * * `"display"` (only for `HTMLCanvasElement`):
-          *    update the canvas size to match the display size.
-          *    The display size can be set using `canvas.style.width/height`,
-          *    and must be in correct aspect ratio.
-          * * `"external"`: use the canvas size as it is.
-          *    The size must be manually set using `canvas.width/height`,
-          *    and must be in correct aspect ratio.
-          */
-         canvasSize?: "video" | "display" | "external";
-     }
- }
- ```
+        /**
+         * Whether to update the canvas size (rendering resolution) automatically.
+         *
+         * * `"video"` (default): update the canvas size to match the video resolution
+         * * `"display"` (only for `HTMLCanvasElement`):
+         *    update the canvas size to match the display size.
+         *    The display size can be set using `canvas.style.width/height`,
+         *    and must be in correct aspect ratio.
+         * * `"external"`: use the canvas size as it is.
+         *    The size must be manually set using `canvas.width/height`,
+         *    and must be in correct aspect ratio.
+         */
+        canvasSize?: "video" | "display" | "external";
+    }
+}
+```
 
 ### `canvasSize` option
 
@@ -201,17 +202,17 @@ Gives the user full control of the canvas size. This allows for custom scaling b
 
 The `"display"` option is generally the best choice when running in the main thread with an HTML canvas, because it optimizes performance by rendering only the pixels needed for the current display size, while avoiding browser scaling artifacts. However, since it doesn't work with `OffscreenCanvas` in Web Workers, `"video"` remains the default for broader compatibility.
 
- ### BitmapVideoFrameRenderer
+### BitmapVideoFrameRenderer
 
 `BitmapVideoFrameRenderer` is a concrete implementation of `CanvasVideoFrameRenderer` that uses the ImageBitmap rendering context for software-based rendering. It creates an `ImageBitmap` from each incoming `VideoFrame` and transfers it to the canvas using `transferFromImageBitmap`.
 
 #### Definition
+
 ```ts
 export class BitmapVideoFrameRenderer extends CanvasVideoFrameRenderer {
     override get type(): "software";
     constructor(options?: CanvasVideoFrameRenderer.Options);
 }
-
 ```
 
 #### Characteristics
@@ -222,6 +223,7 @@ export class BitmapVideoFrameRenderer extends CanvasVideoFrameRenderer {
 - Better performance than 2D canvas rendering
 
 #### Example
+
 ```ts
 // 1. Create canvas automatically
 const bitmapRenderer1 = new BitmapVideoFrameRenderer();
@@ -237,13 +239,14 @@ if (bitmapRenderer1.canvas instanceof HTMLCanvasElement) {
 }
 
 // 2. Use an external HTML canvas element
-const canvasElement = document.getElementById('myCanvas');
+const canvasElement = document.getElementById("myCanvas");
 const bitmapRenderer2 = new BitmapVideoFrameRenderer({ canvas: canvasElement });
 
 // 3. Use an external OffscreenCanvas
 const offscreenCanvas = new OffscreenCanvas(1920, 1080);
-const bitmapRenderer3 = new BitmapVideoFrameRenderer({ canvas: offscreenCanvas });
-
+const bitmapRenderer3 = new BitmapVideoFrameRenderer({
+    canvas: offscreenCanvas,
+});
 ```
 
 ### WebGLVideoFrameRenderer
@@ -251,6 +254,7 @@ const bitmapRenderer3 = new BitmapVideoFrameRenderer({ canvas: offscreenCanvas }
 `WebGLVideoFrameRenderer` is a hardware-accelerated implementation that uses WebGL shaders for rendering video frames. It provides superior performance on supported devices but requires hardware acceleration.
 
 #### Definition
+
 ```ts
 export class WebGLVideoFrameRenderer extends CanvasVideoFrameRenderer<WebGLVideoFrameRenderer.Options> {
     static get isSupported(): boolean;
@@ -283,7 +287,6 @@ export namespace WebGLVideoFrameRenderer {
         contextRestoreTimeout?: number;
     }
 }
-
 ```
 
 #### Characteristics
@@ -298,6 +301,7 @@ export namespace WebGLVideoFrameRenderer {
 - The `contextRestoreTimeout` option controls how long to wait for context restoration before giving up (set to `0` to fire `onContextLost` immediately)
 
 #### Context loss handling
+
 ```mermaid
 flowchart TD
     A[WebGL context lost] --> B{contextRestoreTimeout === 0?}
@@ -320,6 +324,7 @@ When the WebGL context is lost, the renderer first checks if `contextRestoreTime
 Otherwise, it prevents the browser's default context loss behavior and starts a timer. If the context is restored before the timer expires, the renderer re-initializes its WebGL state and redraws the last frame automatically. If the timeout expires without restoration, `onContextLost` is fired and the renderer is disposed.
 
 #### Example
+
 ```ts
 // 1. Check compatibility before creating renderer
 if (WebGLVideoFrameRenderer.isSupported) {
@@ -335,28 +340,35 @@ if (WebGLVideoFrameRenderer.isSupported) {
         // See "Web Workers" for detailed example
     }
 } else {
-    console.warn("WebGL is not supported, consider using BitmapVideoFrameRenderer instead");
+    console.warn(
+        "WebGL is not supported, consider using BitmapVideoFrameRenderer instead",
+    );
 }
 
 // 2. Use an external HTML canvas element with capture enabled
-const canvasElement = document.getElementById('myCanvas');
+const canvasElement = document.getElementById("myCanvas");
 if (WebGLVideoFrameRenderer.isSupported) {
     const webglRenderer2 = new WebGLVideoFrameRenderer({
         canvas: canvasElement,
-        enableCapture: true
+        enableCapture: true,
     });
 } else {
-    console.warn("WebGL is not supported, consider using BitmapVideoFrameRenderer instead");
+    console.warn(
+        "WebGL is not supported, consider using BitmapVideoFrameRenderer instead",
+    );
 }
 
 // 3. Use an external OffscreenCanvas
 const offscreenCanvas = new OffscreenCanvas(1920, 1080);
 if (WebGLVideoFrameRenderer.isSupported) {
-    const webglRenderer3 = new WebGLVideoFrameRenderer({ canvas: offscreenCanvas });
+    const webglRenderer3 = new WebGLVideoFrameRenderer({
+        canvas: offscreenCanvas,
+    });
 } else {
-    console.warn("WebGL is not supported, consider using BitmapVideoFrameRenderer instead");
+    console.warn(
+        "WebGL is not supported, consider using BitmapVideoFrameRenderer instead",
+    );
 }
-
 ```
 
 ## AutoCanvasRenderer
@@ -364,6 +376,7 @@ if (WebGLVideoFrameRenderer.isSupported) {
 `AutoCanvasRenderer` is a convenience class that automatically selects the best available canvas-based renderer based on hardware support. It will use `WebGLVideoFrameRenderer` if WebGL hardware acceleration is available, otherwise it falls back to `BitmapVideoFrameRenderer`. When WebGL context is lost and cannot be restored, it automatically falls back to `BitmapVideoFrameRenderer` and re-renders the last frame.
 
 #### Definition
+
 ```ts
 export class AutoCanvasRenderer implements VideoFrameRenderer {
     get type(): ScrcpyVideoDecoder.RendererType;
@@ -385,7 +398,6 @@ export namespace AutoCanvasRenderer {
         createCanvas?: () => HTMLCanvasElement | OffscreenCanvas;
     }
 }
-
 ```
 
 #### Characteristics
@@ -401,6 +413,7 @@ export namespace AutoCanvasRenderer {
 #### How it works
 
 ##### Initialization
+
 ```mermaid
 flowchart TD
     A["new AutoCanvasRenderer(options)"] --> B["createCanvas()"]
@@ -417,6 +430,7 @@ flowchart TD
 On construction, `AutoCanvasRenderer` creates a canvas using the `createCanvas` factory (or a default one), then checks if `WebGLVideoFrameRenderer.isSupported` is `true`. If so, it creates a `WebGLVideoFrameRenderer` with that canvas and registers a `onContextLost` handler. Otherwise, it creates a `BitmapVideoFrameRenderer` directly.
 
 ##### Context loss fallback
+
 ```mermaid
 flowchart TD
     A["WebGL context lost"] --> B["onContextLost fires"]
@@ -430,6 +444,7 @@ flowchart TD
 When WebGL context is lost and cannot be restored (see [Context loss handling](#context-loss-handling)), the `onContextLost` handler creates a new `BitmapVideoFrameRenderer` with a fresh canvas and re-renders the last frame on it.
 
 #### Example
+
 ```ts
 // 1. Basic usage - creates the best available renderer automatically
 const autoRenderer = new AutoCanvasRenderer();
@@ -444,7 +459,6 @@ autoRenderer.onTypeChanged((type) => {
     // The canvas might have changed, re-append it to the DOM
     document.body.appendChild(autoRenderer.canvas);
 });
-
 ```
 
 ### `createCanvas` option
@@ -452,6 +466,7 @@ autoRenderer.onTypeChanged((type) => {
 The `createCanvas` option in `AutoCanvasRenderer.Options` allows specifying a custom factory function for creating the canvas element. If not provided, a default canvas is created using `createCanvas()` from `@yume-chan/scrcpy-decoder-shared`.
 
 The factory function **must create and return a new `<canvas>` element each time it is called**. This is because `AutoCanvasRenderer` calls the factory each time it creates or replaces the inner renderer - both on initial construction and when falling back from WebGL to Bitmap after context loss. A different rendering context (WebGL or ImageBitmap) will be created on the canvas each time, so reusing the same element would cause conflicts.
+
 ```ts
 const autoRenderer = new AutoCanvasRenderer({
     createCanvas: () => {
@@ -462,7 +477,6 @@ const autoRenderer = new AutoCanvasRenderer({
         return canvas;
     },
 });
-
 ```
 
 ## InsertableStreamVideoFrameRenderer
@@ -470,6 +484,7 @@ const autoRenderer = new AutoCanvasRenderer({
 `InsertableStreamVideoFrameRenderer` renders video frames to a `<video>` element using the [Insertable Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Insertable_Streams_for_MediaStreamTrack_API). It uses a `MediaStreamTrackGenerator` to create a media stream that feeds video frames to the video element.
 
 ### Definition
+
 ```ts
 export class InsertableStreamVideoFrameRenderer implements VideoFrameRenderer {
     static get isSupported(): boolean;
@@ -481,7 +496,7 @@ export class InsertableStreamVideoFrameRenderer implements VideoFrameRenderer {
 
     constructor(
         element?: HTMLVideoElement,
-        options?: InsertableStreamVideoFrameRenderer.Options
+        options?: InsertableStreamVideoFrameRenderer.Options,
     );
 
     dispose(): undefined;
@@ -495,7 +510,6 @@ export namespace InsertableStreamVideoFrameRenderer {
         updateSize?: boolean;
     }
 }
-
 ```
 
 ### Characteristics
@@ -504,27 +518,28 @@ export namespace InsertableStreamVideoFrameRenderer {
 - Renders to an HTML `<video>` element using native browser media pipeline
 - Uses `MediaStreamTrackGenerator` to feed video frames to the video element
 - Sets various attributes on the video element for optimal performance:
-  - `muted: true` - Required for autoplay
-  - `autoplay: true` - Starts playback automatically
-  - `playsInline: true` - Prevents fullscreen playback on mobile
-  - `disablePictureInPicture: true` - Disables picture-in-picture mode
-  - `disableRemotePlayback: true` - Disables remote playback
+    - `muted: true` - Required for autoplay
+    - `autoplay: true` - Starts playback automatically
+    - `playsInline: true` - Prevents fullscreen playback on mobile
+    - `disablePictureInPicture: true` - Disables picture-in-picture mode
+    - `disableRemotePlayback: true` - Disables remote playback
 - Automatically handles video element creation if none is provided
 - Supports dynamic resizing of the video element based on frame dimensions
 
 ### Example
+
 ```ts
 // 1. Create video element automatically
 const streamRenderer1 = new InsertableStreamVideoFrameRenderer();
 document.body.appendChild(streamRenderer1.element);
 
 // 2. Use an existing video element
-const videoElement = document.getElementById('myVideo');
+const videoElement = document.getElementById("myVideo");
 const streamRenderer2 = new InsertableStreamVideoFrameRenderer(videoElement);
 
 // 3. Enable automatic size updates
 const streamRenderer3 = new InsertableStreamVideoFrameRenderer(videoElement, {
-    updateSize: true
+    updateSize: true,
 });
 
 // 4. Check compatibility before using
@@ -532,9 +547,10 @@ if (InsertableStreamVideoFrameRenderer.isSupported) {
     const compatibleRenderer = new InsertableStreamVideoFrameRenderer();
     document.body.appendChild(compatibleRenderer.element);
 } else {
-    console.warn("Insertable streams not supported, consider using WebGL or Bitmap renderers");
+    console.warn(
+        "Insertable streams not supported, consider using WebGL or Bitmap renderers",
+    );
 }
-
 ```
 
 ### Quirks
@@ -547,7 +563,11 @@ The Insertable Streams API is specifically designed to render video frames from 
 
 #### Compatibility
 
-Its [specification](https://w3c.github.io/mediacapture-transform/) has two versions: the old `MediaStreamTrackGenerator` API, and the new `VideoTrackGenerator`. Only Chrome implemented the old API. The new API was added in mid 2023, but until end of 2024, nobody (including Chrome, who authored the specification), has implemented the new API ([Chrome issue](https://issues.chromium.org/issues/40058895), [Firefox issue](https://bugzilla.mozilla.org/show_bug.cgi?id=1749532)).
+Its [specification](https://w3c.github.io/mediacapture-transform/) has two versions: the old `MediaStreamTrackGenerator` API, and the new `VideoTrackGenerator`. Only Chrome implemented the old API. The new API was added in mid 2023, but until now (November 2026), nobody (including Chrome, who authored the specification), has implemented the new API. Also see:
+
+- [Chrome platform status](https://chromestatus.com/feature/5590295839244288)
+- [Chrome tracking issue](https://issues.chromium.org/issues/40058895)
+- [Firefox tracking issue](https://bugzilla.mozilla.org/show_bug.cgi?id=1749532)).
 
 As a result, we implemented the Insertable Stream renderer using the old `MediaStreamTrackGenerator` API. We will monitor the situation and update the renderer if necessary.
 

@@ -45,7 +45,14 @@ await client.controller!.setClipboard({
 });
 ```
 
-When using a non-zero sequence number, the returned Promise resolves when the device acknowledges the clipboard change, which may take slightly longer than when using a zero sequence number. With `sequence: 0n`, the Promise resolves immediately after sending the message, without waiting for device acknowledgment.
+### Clipboard acknowledgments
+
+Set `sequence` to a non-zero value when the application needs confirmation that the Android device changed its clipboard:
+
+- `sequence: 0n` sends the message without waiting for an acknowledgment.
+- A non-zero sequence makes `setClipboard` return a Promise that resolves only after the device sends a matching acknowledgment.
+
+The Promise may take slightly longer to resolve with a non-zero sequence. With `sequence: 0n`, it resolves immediately after sending the message.
 
 ```ts transpile
 // Immediate return without waiting for device acknowledgment
@@ -65,3 +72,53 @@ const resultPromise = client.controller!.setClipboard({
 // resultPromise will resolve when device acknowledges the operation
 await resultPromise;
 ```
+
+This is commonly used to implement a paste operation. To change the clipboard before simulating `Ctrl+V`, set `paste: false`, use a non-zero sequence, await the acknowledgment, and then inject the paste shortcut:
+
+```ts transpile
+import {
+    AndroidKeyCode,
+    AndroidKeyEventMeta,
+    ScrcpyControlMessageWriter,
+} from "@yume-chan/scrcpy";
+
+declare const controller: ScrcpyControlMessageWriter;
+
+await controller.setClipboard({
+    content: "Text to paste",
+    paste: false,
+    sequence: 1n,
+});
+
+// The device clipboard is confirmed to contain the text.
+await controller.injectKeyDown({
+    keyCode: AndroidKeyCode.KeyV,
+    repeat: 0,
+    metaState: AndroidKeyEventMeta.Ctrl,
+});
+await controller.injectKeyUp({
+    keyCode: AndroidKeyCode.KeyV,
+    repeat: 0,
+    metaState: AndroidKeyEventMeta.Ctrl,
+});
+```
+
+The `paste` field may perform the paste operation for you. Set `paste: true` when normal keyboard injection is available and no explicit confirmation is needed:
+
+```ts transpile
+import { ScrcpyControlMessageWriter } from "@yume-chan/scrcpy";
+
+declare const controller: ScrcpyControlMessageWriter;
+
+await controller.setClipboard({
+    content: "Text to paste",
+    paste: true,
+    sequence: 0n,
+});
+```
+
+UHID keyboards do not use ordinary Android key injection for the paste shortcut. In UHID keyboard mode, set the text with `paste: false`, wait for acknowledgment, and then send the appropriate UHID input report. This prevents the `Ctrl+V` report from being sent before the device accepts the new clipboard content.
+
+Do not reuse an active sequence number for overlapping calls. Each non-zero sequence should identify one pending acknowledgment. The Promise rejects if the control socket closes or reports an error before the matching acknowledgment arrives.
+
+The control socket must be enabled to receive acknowledgments. See [Connect to server](../connect-server.mdx#sockets) for the socket setup.

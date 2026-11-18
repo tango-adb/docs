@@ -1,0 +1,57 @@
+---
+sidebar_position: 3
+---
+
+# UHID Output Stream
+
+{/* Source: libraries/scrcpy/src/2_4/impl/uhid-output-stream.ts | Commit: 6bb9151c3d5bc6cf1e94d7684e99e7cfa3c827b1 */}
+
+:::info
+
+Added in Scrcpy v2.4
+
+:::
+
+Each [UHID device](./device.mdx) has an output stream that receives reports sent by the virtual device, such as keyboard LED state changes. The [UHID manager](./manager.mdx) routes reports to the corresponding device, so applications do not need to filter a shared stream by device ID.
+
+## Output message
+
+```ts
+// import type { ScrcpyUHidOutputDeviceMessage } from "@yume-chan/scrcpy";
+interface ScrcpyUHidOutputDeviceMessage {
+    id: number;
+    data: Uint8Array;
+}
+```
+
+- `id`: ID of the UHID device that produced the report.
+- `data`: Output report bytes, formatted according to the device's HID descriptor.
+
+## Reading reports
+
+`ScrcpyUHidDevice.output` is a `ReadableStream<ScrcpyUHidOutputDeviceMessage>`. Read it while the device is active:
+
+```ts
+import type {
+    ScrcpyUHidDevice,
+    ScrcpyUHidOutputDeviceMessage,
+} from "@yume-chan/scrcpy";
+
+declare const device: ScrcpyUHidDevice;
+
+const reader: ReadableStreamDefaultReader<ScrcpyUHidOutputDeviceMessage> =
+    device.output.getReader();
+const result: ReadableStreamReadResult<ScrcpyUHidOutputDeviceMessage> =
+    await reader.read();
+if (!result.done) {
+    console.log("UHID output report:", result.value.data);
+}
+```
+
+The stream closes when the device is destroyed or the connection closes. If parsing the device message stream fails, the output stream errors with the same failure.
+
+:::note
+
+See [UHID manager](./manager.mdx) to create devices, or [UHID control messages](../control/uhid.mdx) for the low-level protocol.
+
+:::

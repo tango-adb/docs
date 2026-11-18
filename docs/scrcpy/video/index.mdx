@@ -120,7 +120,7 @@ if (client.videoStream) {
 
 Don't `await` the `Promise` returned by `pipeTo`. The `pipeTo` promise only resolves when the source stream ends (the scrcpy server disconnects). Awaiting it before consuming other required streams (e.g., audio or clipboard) blocks those streams from being consumed, causing a deadlock — the server waits for all streams to be read, but your code is stuck waiting for one to end.
 
-Similar to [`options.clipboard`](../start-server.mdx#clipboard-stream), you should store the returned promise in a variable and handle it asynchronously (e.g., using `.catch()` for errors) rather than awaiting it.
+Similar to [`client.clipboard`](../control/clipboard.mdx), you should store the returned promise in a variable and handle it asynchronously (e.g., using `.catch()` for errors) rather than awaiting it.
 
 :::
 
