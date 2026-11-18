@@ -49,8 +49,8 @@ await client.controller!.setClipboard({
 
 Set `sequence` to a non-zero value when the application needs confirmation that the Android device changed its clipboard:
 
-- `sequence: 0n` sends the message without waiting for an acknowledgment.
-- A non-zero sequence makes `setClipboard` return a Promise that resolves only after the device sends a matching acknowledgment.
+- `sequence: 0n` sets the clipboard without sending back an acknowledgment.
+- A non-zero sequence sets the clipboard, and makes the device send back an acknowledgment.
 
 The Promise may take slightly longer to resolve with a non-zero sequence. With `sequence: 0n`, it resolves immediately after sending the message.
 
@@ -73,7 +73,7 @@ const resultPromise = client.controller!.setClipboard({
 await resultPromise;
 ```
 
-This is commonly used to implement a paste operation. To change the clipboard before simulating `Ctrl+V`, set `paste: false`, use a non-zero sequence, await the acknowledgment, and then inject the paste shortcut:
+This is commonly used to implement a paste operation. To change the clipboard before simulating `Ctrl+V`, use a non-zero sequence, await the acknowledgment, and then inject the paste shortcut:
 
 ```ts transpile
 import {
